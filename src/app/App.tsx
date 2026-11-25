@@ -15,7 +15,7 @@ const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow').then((module)
 const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((module) => ({ default: module.WorkerDashboard })));
 const InsurerConsole = lazy(() => import('./pages/InsurerConsole').then((module) => ({ default: module.InsurerConsole })));
 const SurgeResults = lazy(() => import('./pages/SurgeResults').then((module) => ({ default: module.SurgeResults })));
-const AdminPanel = lazy(() => import('./pages/AdminPanel').then((module) => ({ default: module.AdminPanel })));
+const RegulatorAudit = lazy(() => import('./pages/RegulatorAudit').then((module) => ({ default: module.RegulatorAudit })));
 const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
 const workspaces = {
   worker: { path: '/worker', label: 'Worker workspace' },
@@ -200,9 +200,15 @@ function AppViews() {
         {surge ? <SurgeResults /> : <InsurerConsole provider={provider} session={session} onExpired={sessionEnded} />}
       </div>
     </AccountFrame>;
-    if (targetRole === 'regulator') {
-      return <>{message && <p role="alert">{message}</p>}<AdminPanel provider={provider} session={session} onExpired={sessionEnded} logout={logout} /></>;
-    }
+    if (targetRole === 'regulator') return <AccountFrame session={session} onSignOut={logout} variant="workspace">
+      {message && <p role="alert">{message}</p>}
+      <div className="account-workspace insurer-workspace">
+        <aside className="account-sidebar"><nav aria-label="Regulator workspace">
+          <Link to="/regulator" aria-current="page"><BarChart3 size={18} aria-hidden="true" /> Ledger audit</Link>
+        </nav></aside>
+        <RegulatorAudit provider={provider} session={session} onExpired={sessionEnded} />
+      </div>
+    </AccountFrame>;
   }
 
   if (session && protectedPage) return <AccountFrame session={session} onSignOut={logout} variant="workspace">

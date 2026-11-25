@@ -71,3 +71,5 @@
 - Slice 3 adds the worker onboarding profile, plan, review and activation routes, with encrypted server drafts, the existing premium calculation and a gateway-confirmed enrollment receipt.
 - Slice 4 replaces the old worker workspace, adds a payout status timeline and a right-side ledger proof drawer. Coverage, cap, event and payout values are sourced from the gateway. Historical caps are shown as unavailable when the current ledger configuration does not match the policy version.
 - Slice 5 replaces the insurer console with the shared shell, zone and status filters, signed storm simulation results, and a surge page using the published 32-, 200-, and 1,000-policy reports. Live reconciliation stays on the regulator route under the existing role checks.
+
+- Slice 6 regulator workspace now shows read-only events and paginated ledger reconciliation through the shared shell. Chromium verified live events, MFA, role denial and desktop/360 px accessibility. The Slice 5 retry also declared a live event with two signed readings and one offline oracle.
