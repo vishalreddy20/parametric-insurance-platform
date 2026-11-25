@@ -15,7 +15,19 @@ export interface Account {
 
 export type AccountSummary = Pick<Account, 'id' | 'username' | 'role' | 'platformId'>;
 
+export type AuditAction = 'LOGIN_SUCCESS' | 'LOGIN_FAILURE' | 'LOGIN_LOCKED' | 'MFA_ENROLLED' | 'MFA_FAILURE' |
+  'MFA_VERIFIED' | 'STAFF_PROVISIONED' | 'SESSIONS_REVOKED' | 'PASSWORD_CHANGED' | 'RESET_ISSUED' | 'PASSWORD_RESET';
+export interface AuthAuditEntry {
+  id: number;
+  at: number;
+  action: AuditAction;
+  role: AccountRole | null;
+  requestId: string;
+}
+
 export interface AccountRepository {
+  appendAudit(entry: Omit<AuthAuditEntry, 'id'>): Promise<void>;
+  auditPage(before?: number): Promise<AuthAuditEntry[]>;
   issuePasswordReset(accountId: string, hash: string, expiry: number): Promise<boolean>;
   redeemPasswordReset(hash: string, passwordHash: string, now: number): Promise<boolean>;
   listAccounts(after: string, platformId?: NonNullable<Account['platformId']>): Promise<AccountSummary[]>;
@@ -90,6 +102,13 @@ const migrations = [
     hash TEXT UNIQUE NOT NULL,
     expiresAt INTEGER NOT NULL
   ) STRICT;`,
+  `CREATE TABLE auth_audit (
+    id INTEGER PRIMARY KEY,
+    at INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    role TEXT,
+    requestId TEXT NOT NULL
+  ) STRICT;`,
 ];
 
 export interface Session {
@@ -161,6 +180,15 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
   private invalidateCredentials(accountId: string, now: number): void {
     this.database.prepare('UPDATE sessions SET revokedAt = ? WHERE accountId = ? AND revokedAt IS NULL').run(now, accountId);
     this.database.prepare('DELETE FROM password_resets WHERE accountId = ?').run(accountId);
+  }
+
+  async appendAudit(entry: Omit<AuthAuditEntry, 'id'>): Promise<void> {
+    this.database.prepare('INSERT INTO auth_audit (at, action, role, requestId) VALUES (@at, @action, @role, @requestId)').run(entry);
+  }
+
+  async auditPage(before = Number.MAX_SAFE_INTEGER): Promise<AuthAuditEntry[]> {
+    return this.database.prepare('SELECT id, at, action, role, requestId FROM auth_audit WHERE id < ? ORDER BY id DESC LIMIT 51')
+      .all(before) as AuthAuditEntry[];
   }
 
   async issuePasswordReset(accountId: string, hash: string, expiry: number): Promise<boolean> {

@@ -224,6 +224,14 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal((await resetter.send('/auth/reset-password', resetBody)).status, 400);
   assert.equal((await resetter.send('/auth/login', { username: credentials.username, password })).status, 200);
 
+  assert.equal((await platform.send('/auth/audit')).status, 403);
+  assert.equal((await worker.send('/auth/audit')).status, 401);
+  const audit = await (await admin.send('/auth/audit')).json();
+  assert(audit.records.some((entry: { action: string }) => entry.action === 'PASSWORD_RESET'));
+  assert(audit.records.some((entry: { action: string }) => entry.action === 'MFA_ENROLLED'));
+  for (const record of audit.records) {
+    assert.deepEqual(Object.keys(record).sort(), ['action', 'at', 'id', 'requestId', 'role']);
+  }
   const throttled = browser();
   await throttled.send('/auth/csrf');
   const attempt = (username: string) => throttled.send('/auth/login', { username, password: 'wrong' });

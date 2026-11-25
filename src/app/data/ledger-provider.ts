@@ -72,6 +72,7 @@ export function ledgerProvider(base: string): DataProvider {
   }
 
   return {
+    authAudit: (session, before) => request('/auth/audit' + (before ? '?before=' + before : ''), session),
     directory: (session, after) => request('/auth/directory' + (after ? '?after=' + encodeURIComponent(after) : ''), session),
     provisionStaff: (session, account) => request('/auth/admin/provision', session, account),
     issuePasswordReset: (session, accountId) => request('/auth/admin/reset-code', session, { accountId }),

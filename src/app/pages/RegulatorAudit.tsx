@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ClipboardList, RefreshCw } from 'lucide-react';
+import { AuthAudit } from './AuthAudit';
 import { Button } from '../components/ui/button';
 import { zones, type DataProvider, type Session, type Zone } from '../data/provider';
 import { useResource } from '../data/use-resource';
@@ -62,5 +63,6 @@ export function RegulatorAudit({ provider, session, onExpired }: {
         </details>
       </article>)}
     </section>}
+    <AuthAudit provider={provider} session={session} onExpired={onExpired} />
   </div>;
 }

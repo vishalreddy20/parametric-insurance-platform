@@ -125,7 +125,16 @@ export interface StaffAccount {
   platformId: 'zomato' | 'swiggy' | null;
 }
 
+export interface AuthAuditEntry {
+  id: number;
+  at: number;
+  action: string;
+  role: Session['role'] | null;
+  requestId: string;
+}
+
 export interface DataProvider {
+  authAudit(session: Session, before?: number): Promise<{ records: AuthAuditEntry[]; next: number | null }>;
   directory(session: Session, after?: string): Promise<{ records: DirectoryAccount[]; next: string | null }>;
   provisionStaff(session: Session, account: StaffAccount): Promise<void>;
   issuePasswordReset(session: Session, accountId: string): Promise<{ code: string; expiresAt: number }>;

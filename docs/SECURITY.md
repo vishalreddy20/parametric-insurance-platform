@@ -32,8 +32,9 @@ the account. A retry with the same details confirms the existing registration. W
 security. Administrators can issue a single-use reset code for another account.
 Codes expire after 15 minutes and the database stores only a keyed digest.
 Changing or resetting a password revokes all sessions. Staff MFA remains
-enrolled after a reset. SMTP reset, worker MFA management and the auth audit
-log remain pending.
+enrolled after a reset. The admin and regulator workspaces display an
+authentication audit with event type, time, role and request ID. It omits
+usernames and credentials. SMTP reset and worker MFA management remain pending.
 Workers and platforms must prove ownership of the payout before reading its
 indexed ledger proof. Regulators have event, audit and reconciliation access.
 Individual policies, claims, and payouts are excluded from their API access.

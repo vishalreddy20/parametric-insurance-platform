@@ -79,3 +79,5 @@
 - Slice 7 removes the unreferenced prototype screens, Supabase dependency, local browser data path and old launcher names. Existing claim-processor regression tests retain their fixtures outside the product import path. Strict frontend type checking now passes. The live smoke test and both integration scripts passed. The evaluator walkthrough documents separate role sessions and a prepared, signed settlement run.
 
 - Account security now changes passwords and revokes all sessions. The admin console issues hashed, expiring single-use reset codes. Chromium verified issue and redemption, staff sign-in with the new password and MFA, and axe. The gateway suite verified CSRF, replay denial and session revocation.
+
+- Authentication audit is persisted in SQLite and exposed only to admins and regulators. Entries carry event type, time, role and request ID. Gateway tests verified the privacy shape, role denial and logged MFA and reset events.

@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react';
+import { AuthAudit } from './AuthAudit';
 import { Button } from '../components/ui/button';
 import { DataError, type DataProvider, type Session, type StaffAccount } from '../data/provider';
 import { readableError, useResource } from '../data/use-resource';
@@ -96,5 +97,6 @@ export function StaffDirectory({ provider, session, onExpired }: {
         </div>
       </>}
     </section>
+    {admin && <AuthAudit provider={provider} session={session} onExpired={onExpired} />}
   </div>;
 }

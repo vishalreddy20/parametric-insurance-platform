@@ -6,7 +6,7 @@ import { zone } from '../schema.js';
 import { ApiError } from '../errors.js';
 import { Mfa } from './mfa.js';
 import { PasswordHasher, passwordError } from './password.js';
-import { type AccountRepository, type Account } from './repository.js';
+import { type AccountRepository, type Account, type AuditAction } from './repository.js';
 import { Sessions } from './sessions.js';
 
 const username = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$/);
@@ -163,9 +163,20 @@ export class AccountHttp {
     return onboardingDraft.parse(JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]).toString('utf8')));
   }
 
+  private audit(response: Response, action: AuditAction, role: Account['role'] | null = null) {
+    return this.options.store.appendAudit({ at: Date.now(), action, role, requestId: response.locals.requestId });
+  }
+
   mount(app: Express): void {
     const page = z.strictObject({ after: z.uuid().optional() });
     const forbidden = () => new ApiError('ERR_UNAUTHORIZED', 403, 'This account cannot perform the operation.');
+    app.get('/v1/auth/audit', async (request, response) => {
+      const { account } = await this.current(request);
+      if (account.role !== 'admin' && account.role !== 'regulator') throw forbidden();
+      const { before } = parse(z.strictObject({ before: z.coerce.number().int().positive().optional() }), request.query);
+      const records = await this.options.store.auditPage(before);
+      response.json({ records: records.slice(0, 50), next: records.length > 50 ? records[49].id : null });
+    });
     app.get('/v1/auth/directory', async (request, response) => {
       const { account } = await this.current(request);
       if (account.role !== 'admin' && account.role !== 'platform') throw forbidden();
@@ -192,6 +203,7 @@ export class AccountHttp {
       if (!await this.options.store.insert({ id: randomUUID(), username: name, role, platformId, passwordHash, createdAt: Date.now() })) {
         throw new ApiError('ERR_REGISTRATION', 409, 'Could not provision the account. Check that the username is available.');
       }
+      await this.audit(response, 'STAFF_PROVISIONED', role);
       response.sendStatus(201);
     });
     app.post('/v1/auth/admin/revoke', async (request, response) => {
@@ -202,6 +214,7 @@ export class AccountHttp {
       const { accountId } = parse(z.strictObject({ accountId: z.uuid() }), request.body);
       if (accountId === account.id) throw new ApiError('ERR_VALIDATION', 400, 'Use Account security to end your own sessions.');
       await this.options.sessions.revoke(accountId);
+      await this.audit(response, 'SESSIONS_REVOKED', 'admin');
       response.sendStatus(204);
     });
     const resetHash = (code: string) => createHmac('sha256', this.options.requestKey).update('password-reset:' + code).digest('hex');
@@ -218,6 +231,7 @@ export class AccountHttp {
       if (!await this.options.store.issuePasswordReset(accountId, resetHash(code), expiresAt)) {
         throw new ApiError('ERR_NOT_FOUND', 404, 'Account unavailable.');
       }
+      await this.audit(response, 'RESET_ISSUED', 'admin');
       response.json({ code, expiresAt });
     });
     app.post('/v1/auth/reset-password', async (request, response) => {
@@ -232,6 +246,7 @@ export class AccountHttp {
       if (!await this.options.store.redeemPasswordReset(resetHash(code), hash, Date.now())) {
         throw new ApiError('ERR_RESET_CODE', 400, 'The reset code is invalid or has expired.');
       }
+      await this.audit(response, 'PASSWORD_RESET');
       for (const cookie of ['ps_access', 'ps_refresh', 'ps_csrf']) this.setCookie(response, cookie, '', 0);
       response.sendStatus(204);
     });
@@ -284,21 +299,30 @@ export class AccountHttp {
       const key = createHmac('sha256', this.options.requestKey).update('login:' + body.username.toLowerCase()).digest('hex');
       const wait = await this.options.store.reserveLoginAttempt(key, Date.now(), 8, 15 * 60_000);
       if (wait > 0) {
+        await this.audit(response, 'LOGIN_LOCKED');
         const seconds = Math.ceil(wait / 1000);
         response.set('Retry-After', String(seconds));
         throw new ApiError('ERR_ACCOUNT_LOCKED', 423, 'Sign-in is temporarily locked. Try again in ' + seconds + ' seconds.');
       }
       const account = await this.options.store.findByUsername(body.username);
       const matches = await this.options.hasher.verify(body.password, account?.passwordHash);
-      if (!matches || !account) throw invalid();
+      if (!matches || !account) {
+        await this.audit(response, 'LOGIN_FAILURE');
+        throw invalid();
+      }
       const result = await this.options.mfa.verify(account, body.mfa);
-      if (result.status === 'invalid') throw invalid();
+      if (result.status === 'invalid') {
+        await this.audit(response, 'MFA_FAILURE', account.role);
+        throw invalid();
+      }
       if (result.status === 'enrol' || result.status === 'challenge') {
         response.status(202).json(result);
         return;
       }
       await this.options.store.clearLoginAttempts(key);
       const session = await this.options.sessions.start(account.id, account.passwordHash);
+      if (body.mfa) await this.audit(response, result.recoveryCodes?.length ? 'MFA_ENROLLED' : 'MFA_VERIFIED', account.role);
+      await this.audit(response, 'LOGIN_SUCCESS', account.role);
       this.setTokens(response, session.access, session.refresh);
       this.setCookie(response, 'ps_csrf', session.csrf, 8 * 60 * 60_000);
       response.json({ ...this.publicAccount(account), csrfToken: session.csrf, recoveryCodes: result.recoveryCodes ?? [] });
@@ -354,6 +378,7 @@ export class AccountHttp {
       if (body.newPassword === body.currentPassword) throw new ApiError('ERR_PASSWORD_POLICY', 400, 'Choose a different password.');
       const hash = await this.options.hasher.hash(body.newPassword);
       if (!await this.options.store.updatePassword(account.id, account.passwordHash, hash, Date.now())) throw invalid();
+      await this.audit(response, 'PASSWORD_CHANGED', account.role);
       for (const cookie of ['ps_access', 'ps_refresh', 'ps_csrf']) this.setCookie(response, cookie, '', 0);
       response.sendStatus(204);
     });
@@ -364,6 +389,7 @@ export class AccountHttp {
       if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
       if (sessionId === session.id) throw new ApiError('ERR_VALIDATION', 400, 'Use Sign out to end this session.');
       await this.options.sessions.revoke(account.id, sessionId);
+      await this.audit(response, 'SESSIONS_REVOKED', account.role);
       response.sendStatus(204);
     });
     app.post('/v1/auth/refresh', async (request, response) => {
@@ -372,6 +398,7 @@ export class AccountHttp {
       const refresh = cookies(request).get('ps_refresh');
       if (!refresh) throw invalid();
       const rotated = await this.options.sessions.refresh(refresh, csrf);
+      if (rotated.status === 'reuse') await this.audit(response, 'SESSIONS_REVOKED');
       if (!rotated.access || !rotated.refresh) throw invalid();
       this.setTokens(response, rotated.access, rotated.refresh);
       response.sendStatus(204);
@@ -383,6 +410,7 @@ export class AccountHttp {
         const { account, session } = await this.current(request);
         if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
         await this.options.sessions.revoke(account.id, everywhere ? undefined : session.id);
+        await this.audit(response, 'SESSIONS_REVOKED', account.role);
         for (const cookie of ['ps_access', 'ps_refresh', 'ps_csrf']) this.setCookie(response, cookie, '', 0);
         response.sendStatus(204);
       });
