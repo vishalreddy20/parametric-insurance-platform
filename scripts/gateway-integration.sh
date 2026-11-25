@@ -19,7 +19,9 @@ cleanup() {
 trap cleanup EXIT
 
 npm --prefix gateway run build
-export PARASHIELD_TEST_FIXTURE_AUTH=1
+export PARASHIELD_ORIGIN=http://127.0.0.1:15173
+export PARASHIELD_ACCOUNT_DB="$run_dir/accounts.sqlite"
+unset PARASHIELD_PASSWORD_PEPPER
 export PARASHIELD_DEMO_IDENTITY_DIR="$run_dir/msp"
 export PARASHIELD_DEMO_MASTER="$(openssl rand -hex 32)"
 export PARASHIELD_JWT_KEY="$(openssl rand -hex 32)"

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { browserHeaders, browserLogin } from './browser-client.mjs';
 import { randomUUID, createHmac } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -11,7 +12,7 @@ async function call(path, { token, method, body } = {}) {
   const response = await fetch(base + path, {
     method,
     headers: {
-      ...(token && { Authorization: 'Bearer ' + token }),
+      ...browserHeaders(token, body !== undefined),
       ...(body && { 'Content-Type': 'application/json' }),
     },
     ...(body && { body: JSON.stringify(body) }),
@@ -28,7 +29,7 @@ async function checked(path, options, status = 200) {
 
 async function login(username) {
   const accessCode = createHmac('sha256', master).update('login:' + username).digest('hex');
-  return (await checked('/v1/login', { method: 'POST', body: { username, accessCode } })).token;
+  return (await checked('/v1/service-token', { method: 'POST', body: { username, accessCode } })).token;
 }
 
 let ready = false;
@@ -40,7 +41,8 @@ for (let attempt = 0; attempt < 15; attempt++) {
 assert(ready, 'Fabric Gateway readiness did not pass.');
 
 const [platform, bank, insurer, regulator, oracle, secondOracle] = await Promise.all(
-  ['zomato', 'bank', 'insurer', 'regulator', 'oracle-1', 'oracle-2'].map(login),
+  [browserLogin(base, 'platform'), login('bank'), browserLogin(base, 'insurer'),
+    browserLogin(base, 'regulator'), login('oracle-1'), login('oracle-2')],
 );
 const policyId = 'integration-' + randomUUID();
 const create = {
@@ -71,7 +73,7 @@ const payouts = await checked('/v1/policies/' + policyId + '/payouts', { token: 
 assert.equal(payouts.records.length, 0);
 const eventPage = await checked('/v1/events/bangalore', { token: insurer });
 assert(Array.isArray(eventPage.records));
-const worker = await login('demo-worker');
+const worker = await browserLogin(base, 'worker');
 await checked('/v1/policies/' + policyId, { token: worker }, 403);
 await checked('/v1/config', {}, 401);
 const cfg = await checked('/v1/config', { token: insurer });

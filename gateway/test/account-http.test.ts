@@ -8,7 +8,7 @@ import { PasswordHasher } from '../src/accounts/password.js';
 import { SqliteAccounts } from '../src/accounts/repository.js';
 import { Sessions } from '../src/accounts/sessions.js';
 import { createApp } from '../src/app.js';
-import { DemoAuth } from '../src/auth.js';
+import { ServiceAuth } from '../src/auth.js';
 import type { Ledger } from '../src/ledger.js';
 
 function authenticatorCode(setupKey: string, now: number): string {
@@ -38,7 +38,7 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
     },
     async submit<T>() { return { result: {} as T, txId: 'test', blockNumber: '2' }; },
   };
-  const auth = new DemoAuth([{ role: 'insurer', username: 'legacy-insurer', actor: 'insurer', accessCode }], Buffer.alloc(32));
+  const auth = new ServiceAuth([], Buffer.alloc(32));
   const server = createApp({ accounts, auth, ledger, corsOrigin: origin, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
     settlementEnabled: false }).listen(0, '127.0.0.1');
   t.after(() => { server.closeAllConnections(); server.close(); });
@@ -74,7 +74,7 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal((await staff.send('/auth/login', staffCredentials, false)).status, 403);
   assert.equal((await staff.send('/auth/csrf', undefined, true, 'https://other.example')).status, 403);
   assert.equal((await staff.send('/auth/csrf')).status, 200);
-  assert.equal((await staff.send('/login', { username: 'legacy-insurer', accessCode })).status, 401);
+  assert.equal((await staff.send('/login', { username: 'legacy-insurer', accessCode })).status, 404);
   const enroll = await staff.send('/auth/login', staffCredentials);
   assert.equal(enroll.status, 202);
   assert.equal((await staff.send('/auth/session')).status, 401);

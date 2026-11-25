@@ -37,3 +37,17 @@ scripts/smoke-test.sh
 scripts/gateway-integration.sh
 scripts/services-integration.sh
 ```
+
+## Run a surge measurement
+
+Provision separate insurer, platform and regulator accounts. Complete their MFA
+enrolment in the browser. Set `PARASHIELD_SURGE_ACCOUNTS` to a user-owned,
+mode-0600 JSON file outside the repository. Its `insurer`, `platform` and
+`regulator` entries each contain `username`, `accessCode` and the current
+authenticator `code` as strings. An optional prepared worker run also uses a
+`worker` entry with `username` and `accessCode`. Use freshly generated
+authenticator codes for each invocation. Keep the file private and remove the
+codes once the run starts.
+
+Set `PARASHIELD_BENCHMARK_REPORT` and `PARASHIELD_BENCHMARK_TABLE` to new paths
+to preserve recorded benchmark artefacts.

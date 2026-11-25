@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, rename, stat, writeFile } from 'node:fs/promises';
 import { cpus, release, totalmem } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const n = Number(process.argv[2]);
@@ -11,6 +12,7 @@ const state = process.env.PARASHIELD_DEMO_STATE;
 const preparedWorker = process.env.PARASHIELD_PREPARE_WORKER;
 const runtime = process.env.DRUNIX_RUNTIME;
 const gateway = 'http://127.0.0.1:' + (process.env.PARASHIELD_GATEWAY_PORT ?? '8080');
+const origin = process.env.PARASHIELD_ORIGIN ?? 'http://127.0.0.1:5173';
 const upi = 'http://127.0.0.1:' + (process.env.PARASHIELD_UPI_PORT ?? '8082');
 const resultPath = resolve(process.env.PARASHIELD_BENCHMARK_REPORT ?? 'docs/benchmark-latest.json');
 const tablePath = resolve(process.env.PARASHIELD_BENCHMARK_TABLE ?? 'docs/BENCHMARKS.md');
@@ -30,20 +32,84 @@ function weekOf(seconds) {
   return day.toISOString().slice(0, 10);
 }
 
-async function request(path, { token, body, method, base = gateway, authorization, missingOK } = {}) {
+async function request(path, { token, body, method, base = gateway, authorization, missingOK } = {}, retry = true) {
+  const generation = token?.generation;
   const response = await fetch(base + path, {
     method: method ?? (body === undefined ? 'GET' : 'POST'),
     headers: {
-      ...(authorization ? { Authorization: authorization } : token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(authorization ? { Authorization: authorization } : token?.headers(body !== undefined)),
       ...(body !== undefined && { 'Content-Type': 'application/json' }),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(100_000),
   });
+  if (response.status === 401 && token && retry) {
+    await response.body?.cancel();
+    await token.renew(generation);
+    return request(path, { token, body, method, base, authorization, missingOK }, false);
+  }
   const value = await response.json();
   if (missingOK && response.status === 404) return null;
   if (!response.ok) throw new Error(path.split('?')[0] + ' returned HTTP ' + response.status + ' ' + (value?.code ?? ''));
   return value;
+}
+
+async function loadAccounts() {
+  if (!process.env.PARASHIELD_SURGE_ACCOUNTS) throw new Error('Set PARASHIELD_SURGE_ACCOUNTS to an external account credentials file.');
+  const path = await realpath(process.env.PARASHIELD_SURGE_ACCOUNTS);
+  const repository = fileURLToPath(new URL('../', import.meta.url));
+  const file = await stat(path);
+  if (path.startsWith(repository) || !file.isFile() || (file.mode & 0o077) || file.uid !== process.getuid()) {
+    throw new Error('The account credentials file must be private, owned by the current user and outside the repository.');
+  }
+  try { return JSON.parse(await readFile(path, 'utf8')); }
+  catch { throw new Error('The account credentials file could not be read.'); }
+}
+
+async function loginAccount(role, credentials) {
+  if (typeof credentials?.username !== 'string' || typeof credentials?.accessCode !== 'string' ||
+      (role !== 'worker' && (typeof credentials.code !== 'string' || !/^\d{6}$/.test(credentials.code)))) {
+    throw new Error('The benchmark needs credentials for a provisioned ' + role + ' account.');
+  }
+  const jar = new Map();
+  let csrf;
+  let renewing;
+  const session = {
+    generation: 0,
+    headers(mutate) {
+      return { Origin: origin, Cookie: [...jar].map(([name, value]) => name + '=' + value).join('; '),
+        ...(mutate && { 'X-CSRF-Token': csrf }) };
+    },
+    async renew(generation) {
+      if (generation !== session.generation) return;
+      renewing ??= send('refresh', {}).then(() => { session.generation++; })
+        .finally(() => { renewing = undefined; });
+      await renewing;
+    },
+  };
+  async function send(route, body) {
+    const response = await fetch(gateway + '/v1/auth/' + route, {
+      method: body === undefined ? 'GET' : 'POST',
+      headers: { ...session.headers(body !== undefined), ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (response.status === 202) throw new Error('Complete MFA enrolment in the browser before running the benchmark.');
+    if (!response.ok) throw new Error('Benchmark account ' + route + ' failed with HTTP ' + response.status + '.');
+    for (const cookie of response.headers.getSetCookie()) {
+      const [name, value] = cookie.split(';', 1)[0].split('=');
+      jar.set(name, value);
+    }
+    if (response.status !== 204) return response.json();
+  }
+  csrf = (await send('csrf')).csrfToken;
+  const account = await send('login', {
+    username: credentials.username, accessCode: credentials.accessCode,
+    ...(role !== 'worker' && { mfa: { code: credentials.code, recovery: false } }),
+  });
+  if (account.role !== role) throw new Error('The benchmark account has an unexpected role.');
+  csrf = account.csrfToken;
+  return { ...session, account, get generation() { return session.generation; } };
 }
 
 async function mapLimit(items, size, callback) {
@@ -112,18 +178,15 @@ async function main() {
     throw new Error('Preparing a demo worker requires one policy and a valid local username.');
   }
   const environment = readEnvironment();
-  const { principals } = JSON.parse(await readFile(join(state, 'msp/gateway-config.json'), 'utf8'));
-  if (preparedWorker && !principals.some(({ username, role, policyId, workerId, platformId }) =>
-    username === preparedWorker && role === 'worker' && platformId === 'zomato' && policyId === workerId && policyId === preparedWorker)) {
-    throw new Error('The prepared user must be the generated Zomato worker.');
-  }
+  const credentials = await loadAccounts();
   const keys = JSON.parse(await readFile(join(state, 'ledger-data/runtime-keys.json'), 'utf8'));
-  const login = async (username) => {
-    const principal = principals.find((entry) => entry.username === username);
-    if (!principal) throw new Error('A required simulated identity is unavailable.');
-    return (await request('/v1/login', { body: { username, accessCode: principal.accessCode } })).token;
-  };
-  const [insurer, platform, regulator] = await Promise.all(['insurer', 'zomato', 'regulator'].map(login));
+  const [insurer, platform, regulator, worker] = await Promise.all([
+    loginAccount('insurer', credentials?.insurer), loginAccount('platform', credentials?.platform),
+    loginAccount('regulator', credentials?.regulator), preparedWorker ? loginAccount('worker', credentials?.worker) : null,
+  ]);
+  if (worker && (worker.account.username !== preparedWorker || worker.account.platformId !== platform.account.platformId)) {
+    throw new Error('The worker must match the requested username and the benchmark platform.');
+  }
   const oldConfig = await request('/v1/config', { token: insurer });
   const report = { environment, policies: n, passed: false, metrics: {} };
   let appliedVersion;
@@ -145,7 +208,7 @@ async function main() {
       }
     }
     assert(report.zone, 'No clean zone is available in the current demo hour and week.');
-    const ids = preparedWorker ? [preparedWorker] : Array.from({ length: n }, (_, index) => 'surge-' + run + '-' + (index + 1));
+    const ids = worker ? [worker.account.policyId] : Array.from({ length: n }, (_, index) => 'surge-' + run + '-' + (index + 1));
     const before = await request('/v1/metrics', { token: insurer });
     await mapLimit(ids, concurrency, async (id) => {
       const policy = await request('/v1/policies', { token: platform, body: {
@@ -164,7 +227,7 @@ async function main() {
     await mapLimit(ids, concurrency, async (id) => {
       const end = epoch() - 1;
       await request('/v1/activity', { token: platform, body: {
-        workerId: id, platformId: 'zomato', windowStart: end - 600, windowEnd: end, requestId: id,
+        workerId: id, platformId: platform.account.platformId, windowStart: end - 600, windowEnd: end, requestId: id,
       } });
     });
 

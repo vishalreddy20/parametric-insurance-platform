@@ -63,7 +63,7 @@ async function main() {
     if (error.code !== 'ENOENT') throw error;
     const command = spawnSync(process.execPath, ['scripts/demo-identities.mjs'], {
       cwd: repo, stdio: 'inherit',
-      env: { ...process.env, PARASHIELD_DEMO_IDENTITY_DIR: identityDir, PARASHIELD_DEMO_MASTER: keys.master, PARASHIELD_SERVICE_IDENTITIES_ONLY: '1' },
+      env: { ...process.env, PARASHIELD_DEMO_IDENTITY_DIR: identityDir, PARASHIELD_DEMO_MASTER: keys.master },
     });
     if (command.status !== 0) throw new Error('Simulated identity provisioning failed.');
   }

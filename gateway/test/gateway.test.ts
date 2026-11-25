@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { CommitError, StatusCode } from '@hyperledger/fabric-gateway';
 import { createApp } from '../src/app.js';
-import { DemoAuth } from '../src/auth.js';
+import type { Principal, ServiceAuthentication } from '../src/auth.js';
 import { ApiError, ledgerFailure, retry } from '../src/errors.js';
 import { retryableLedgerError, type Ledger, type Options } from '../src/ledger.js';
 import { Checkpoints, Fanout } from '../src/worker.js';
@@ -46,11 +46,21 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
     },
   };
   const accessCode = 'test-only-access-code';
-  const auth = new DemoAuth([{ username: 'worker-a', role: 'worker', actor: 'platform-a', workerId: 'worker-a',
-    policyId: 'worker-a', platformId: 'zomato', accessCode },
-    { username: 'platform-a', role: 'platform', actor: 'platform-a', platformId: 'zomato', accessCode }], Buffer.alloc(32, 1));
+  const principals = new Map<string, Principal>([
+    ['worker-a', { username: 'worker-a', role: 'worker', actor: 'platform-a', workerId: 'worker-a',
+      policyId: 'worker-a', platformId: 'zomato' }],
+    ['platform-a', { username: 'platform-a', role: 'platform', actor: 'platform-a', platformId: 'zomato' }],
+  ]);
+  const auth: ServiceAuthentication = {
+    async authenticate(authorization) {
+      const principal = principals.get(authorization?.slice(7) ?? '');
+      if (!principal) throw new ApiError('ERR_AUTHENTICATION', 401, 'Sign in required.');
+      return principal;
+    },
+    async login() { throw new Error('The fixture injects authenticated principals directly.'); },
+  };
   const logs: Record<string, unknown>[] = [];
-  const server = createApp({ ledger, auth, testFixtureAuth: true, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
+  const server = createApp({ ledger, auth, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
     settlementEnabled: false, simulatePremium: async (payment) => payment, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
   context.after(() => { server.close(); });
   await once(server, 'listening');
@@ -62,9 +72,7 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
     headers: { 'Content-Type': 'application/json', ...(token && { Authorization: 'Bearer ' + token }) },
     body: JSON.stringify(payload ?? {}),
   });
-  const login = await fetch(base + '/v1/login', post(undefined, { username: 'worker-a', accessCode }));
-  assert.equal(login.status, 200);
-  const { token } = await login.json();
+  const token = 'worker-a';
   assert.equal((await fetch(base + '/v1/readings', post(token))).status, 403);
   assert.equal((await fetch(base + '/v1/policies/other', { headers: { Authorization: 'Bearer ' + token } })).status, 403);
   const invalid = await fetch(base + '/v1/policies', post(token, { policyId: 'other' }));
@@ -79,9 +87,7 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   }));
   assert.equal(response.status, 201);
   assert.deepEqual(calls, [{ actor: 'platform-a', name: 'PolicyContract:CreatePolicy' }]);
-  const platformLogin = await fetch(base + '/v1/login', post(undefined, { username: 'platform-a', accessCode }));
-  assert.equal(platformLogin.status, 200);
-  const { token: platformToken } = await platformLogin.json();
+  const platformToken = 'platform-a';
   const get = (path: string, credential: string) => fetch(base + path, { headers: { Authorization: 'Bearer ' + credential } });
   assert.equal((await get('/v1/policies/worker-a', token)).status, 200);
   assert.equal((await get('/v1/policies/worker-a/payouts', platformToken)).status, 200);

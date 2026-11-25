@@ -94,7 +94,7 @@ app.post('/v1/simulations', async (request, response) => {
   const sources = [];
   for (const index of sequence) {
     const username = 'oracle-' + (index + 1);
-    const source = await gateway('/v1/login', undefined, { username, accessCode: codes[index] });
+    const source = await gateway('/v1/service-token', undefined, { username, accessCode: codes[index] });
     sources.push('Bearer ' + source.token);
     const seed = createHash('sha256').update([username, input.zone, windowStart, given.triggerType].join('|')).digest();
     const noise = seed[0] % 3;

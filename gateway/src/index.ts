@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { createApp } from './app.js';
 import { ApiError } from './errors.js';
-import { DemoAuth, principalSchema } from './auth.js';
+import { ServiceAuth, serviceCredentialSchema } from './auth.js';
 import { FabricLedger, LedgerIdentityValidationError } from './ledger.js';
 import { callMockUPI, Checkpoints, consumeEvents, Fanout, mockSettlement } from './worker.js';
 import { id } from './schema.js';
@@ -19,7 +19,7 @@ const configSchema = z.strictObject({
     mspId: id, certificate: z.string().min(1), privateKey: z.string().min(1),
     tlsCertificate: z.string().min(1), endpoint: z.string().min(1), tlsHost: z.string().min(1),
   })),
-  principals: z.array(principalSchema).min(1),
+  principals: z.array(serviceCredentialSchema).min(1),
   insurer: id,
   eventActor: id,
 });
@@ -36,7 +36,6 @@ const envSchema = z.object({
   PARASHIELD_GATEWAY_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   PARASHIELD_GATEWAY_HOST: z.string().default('127.0.0.1'),
   PARASHIELD_ORIGIN: z.url().optional(),
-  PARASHIELD_TEST_FIXTURE_AUTH: z.literal('1').optional(),
   PARASHIELD_ACCOUNT_DB: z.string().min(1).optional(),
   PARASHIELD_PASSWORD_PEPPER: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
   PARASHIELD_ORACLE_URL: z.url().optional(),
@@ -55,7 +54,7 @@ async function main() {
   }
   const settings = env.data;
   const config = configSchema.parse(JSON.parse(await readFile(settings.PARASHIELD_GATEWAY_CONFIG, 'utf8')));
-  const auth = new DemoAuth(config.principals, Buffer.from(settings.PARASHIELD_JWT_KEY, 'hex'));
+  const auth = new ServiceAuth(config.principals, Buffer.from(settings.PARASHIELD_JWT_KEY, 'hex'));
   if (!Object.hasOwn(config.identities, config.insurer) || !Object.hasOwn(config.identities, config.eventActor) || config.principals.some(({ actor }) => !Object.hasOwn(config.identities, actor))) {
     throw new Error('Missing role identity.');
   }
@@ -88,7 +87,6 @@ async function main() {
     throw error;
   }
   const app = createApp({ ledger, auth, accounts,
-    testFixtureAuth: !accounts && settings.PARASHIELD_TEST_FIXTURE_AUTH === '1',
     saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
     readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
     simulatePremium: upiURL && upiAuth ? (payment) => callMockUPI(upiURL, upiAuth, '/v1/premiums', payment) : undefined,

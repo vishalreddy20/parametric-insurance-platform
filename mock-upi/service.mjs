@@ -150,7 +150,7 @@ export function gatewayCallback(url, accessCode) {
       }
       return response.json();
     };
-    const { token } = await send('/v1/login', { username: 'bank', accessCode });
+    const { token } = await send('/v1/service-token', { username: 'bank', accessCode });
     const base = { reference: event.reference, requestId: event.reference };
     if (event.kind === 'premium') {
       await send('/v1/callbacks/premium', { ...base, policyId: event.policyId, amountPaise: event.amountPaise, term: event.term }, token);

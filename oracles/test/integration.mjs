@@ -1,27 +1,23 @@
 import assert from 'node:assert/strict';
-import { createHmac, randomUUID } from 'node:crypto';
+import { browserHeaders, browserLogin } from '../../gateway/test/browser-client.mjs';
+import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const gateway = process.env.PARASHIELD_GATEWAY_URL;
 const oracle = 'http://127.0.0.1:' + process.env.PARASHIELD_ORACLE_PORT;
 const upi = process.env.PARASHIELD_UPI_URL;
-const seed = Buffer.from(process.env.PARASHIELD_DEMO_MASTER, 'hex');
 const zones = ['mumbai', 'chennai', 'hyderabad', 'delhi', 'pune', 'lucknow', 'ahmedabad', 'jaipur', 'kolkata', 'bangalore'];
 
 async function call(base, endpoint, body, token, status = 200) {
   const response = await fetch(base + endpoint, {
     method: body === undefined ? 'GET' : 'POST',
-    headers: { ...(token && { Authorization: 'Bearer ' + token }), ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+    headers: { ...browserHeaders(token, body !== undefined), ...(body !== undefined && { 'Content-Type': 'application/json' }) },
     ...(body !== undefined && { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(100_000),
   });
   const result = await response.json();
   assert.equal(response.status, status, endpoint + ': ' + (result.code ?? 'wrong status'));
   return result;
-}
-async function login(username) {
-  const accessCode = createHmac('sha256', seed).update('login:' + username).digest('hex');
-  return (await call(gateway, '/v1/login', { username, accessCode })).token;
 }
 
 for (const [base, endpoint] of [[upi, '/health'], [oracle, '/health'], [gateway, '/ready']]) {
@@ -33,7 +29,7 @@ for (const [base, endpoint] of [[upi, '/health'], [oracle, '/health'], [gateway,
   assert(ok, 'Service did not become ready: ' + endpoint);
 }
 
-const [admin, platform] = await Promise.all([login('insurer'), login('zomato')]);
+const [admin, platform] = await Promise.all([browserLogin(gateway, 'insurer'), browserLogin(gateway, 'platform')]);
 await call(oracle, '/v1/simulations', { zone: 'mumbai' }, platform, 403);
 const start = Math.floor(Date.now() / 3_600_000) * 3600;
 const availableZones = [];
@@ -45,7 +41,7 @@ for (const zone of zones) {
 assert.equal(availableZones.length, 3, 'The current hour needs three unused demo zones.');
 for (const [index, mode] of ['normal', 'offline', 'disagree'].entries()) {
   const zone = availableZones[index];
-  const result = await call(oracle, '/v1/simulations', { zone, scenario: 'storm', mode }, admin);
+  const result = await call(gateway, '/v1/simulations', { zone, scenario: 'storm', mode }, admin);
   assert.equal(result.simulated, true);
   assert.equal(result.event.status, 'DECLARED');
   assert.equal(result.readings.length, mode === 'offline' ? 2 : 3);

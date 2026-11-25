@@ -19,9 +19,9 @@ for credentialed CORS.
 
 The gateway maps signed-in accounts to the existing Fabric role identities.
 Workers never receive ledger credentials. Simulated UPI and oracle clients
-retain separate bearer credentials. Integration scripts that predate the browser
-auth API explicitly enable temporary fixture sign-in on their isolated gateway
-processes. The development launcher does not enable fixture sign-in.
+retain separate bearer credentials issued by `/v1/service-token`. The old
+human sign-in endpoint has been removed. The live integration scripts exercise
+staff MFA and cookie sessions against temporary account databases.
 
 ## Current limitations
 

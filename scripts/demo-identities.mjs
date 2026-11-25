@@ -55,19 +55,11 @@ async function run() {
       tlsCertificate: join(directory, 'tlsca', 'tlsca.' + domain + '-cert.pem'),
       endpoint: org === 1 ? 'localhost:7051' : 'localhost:9051', tlsHost: 'peer0.' + domain,
     };
-    if (process.env.PARASHIELD_SERVICE_IDENTITIES_ONLY !== '1' || role === 'bank' || role === 'oracle') {
+    if (role === 'bank' || role === 'oracle') {
       principals.push({ username: actor, role, actor, accessCode: accessCode(actor), ...(platformId && { platformId }) });
     }
   }
   identities['event-insurer'] = { ...identities.insurer, endpoint: 'localhost:7061', tlsHost: 'peer1.org1.example.com' };
-  if (process.env.PARASHIELD_SERVICE_IDENTITIES_ONLY !== '1') {
-    const worker = process.env.PARASHIELD_DEMO_WORKER ?? 'demo-worker';
-    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(worker) || sets.some(({ actor }) => actor === worker)) {
-      throw new Error('Invalid demo worker username.');
-    }
-    principals.push({ username: worker, role: 'worker', actor: 'zomato', accessCode: accessCode(worker),
-      policyId: worker, workerId: worker, platformId: 'zomato' });
-  }
   await writeFile(join(root, 'gateway-config.json'), JSON.stringify({ identities, principals, insurer: 'insurer', eventActor: 'event-insurer' }),
     { flag: 'wx', mode: 0o600 });
   console.log('SIMULATED identities created in the external runtime directory.');

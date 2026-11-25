@@ -2,8 +2,7 @@ import { createHash, createHmac, randomUUID } from 'node:crypto';
 import express from 'express';
 import type { ErrorRequestHandler, Request, RequestHandler, Response } from 'express';
 import type { ZodType } from 'zod';
-import { DemoAuth, requireRole } from './auth.js';
-import type { Principal } from './auth.js';
+import { requireRole, type Principal, type ServiceAuthentication } from './auth.js';
 import type { AccountHttp } from './accounts/http.js';
 import { ApiError } from './errors.js';
 import type { Ledger } from './ledger.js';
@@ -12,9 +11,8 @@ import * as schema from './schema.js';
 
 type Context = {
   ledger: Ledger;
-  auth: DemoAuth;
+  auth: ServiceAuthentication;
   accounts?: AccountHttp;
-  testFixtureAuth?: boolean;
   saltKey: Uint8Array;
   readinessActor: string;
   settlementEnabled: boolean;
@@ -33,19 +31,19 @@ function parse<T>(validator: ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-function protect(auth: DemoAuth, accounts: AccountHttp | undefined, allowFixture: boolean, roles: schema.Role[],
+function protect(auth: ServiceAuthentication, accounts: AccountHttp | undefined, roles: schema.Role[],
   handler: (request: Request, response: Response, user: Principal) => Promise<unknown>): RequestHandler {
   return async (request, response) => {
-    const principal = await accounts?.principal(request) ?? await auth.authenticate(request.get('authorization'), !allowFixture);
+    const principal = await accounts?.principal(request) ?? await auth.authenticate(request.get('authorization'));
     requireRole(principal, roles);
     await handler(request, response, principal);
   };
 }
 
-export function createApp({ ledger, auth, accounts, testFixtureAuth = false, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
+export function createApp({ ledger, auth, accounts, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
   const app = express();
-  const allow = (roles: schema.Role[], handler: Parameters<typeof protect>[4]) =>
-    protect(auth, accounts, testFixtureAuth, roles, handler);
+  const allow = (roles: schema.Role[], handler: Parameters<typeof protect>[3]) =>
+    protect(auth, accounts, roles, handler);
   app.disable('x-powered-by');
   app.use((request, response, next) => {
     const requestId = randomUUID();
@@ -82,9 +80,9 @@ export function createApp({ ledger, auth, accounts, testFixtureAuth = false, sal
     await ledger.evaluate(readinessActor, 'ConfigContract:GetConfig');
     response.json({ status: 'ready', settlementEnabled });
   });
-  app.post('/v1/login', async (request, response) => {
+  app.post('/v1/service-token', async (request, response) => {
     const body = parse(schema.login, request.body);
-    response.json(await auth.login(body.username, body.accessCode, !testFixtureAuth));
+    response.json(await auth.login(body.username, body.accessCode));
   });
 
   app.get('/v1/session', allow([...schema.roles], async (_request, response, user) => {
