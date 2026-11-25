@@ -1,0 +1,11 @@
+[
+  {"name":"basic replacement","income":500000,"minutes":2400,"lostHours":3,"tier":"basic","amount":30000},
+  {"name":"standard replacement","income":500000,"minutes":2400,"lostHours":3,"tier":"standard","amount":37500},
+  {"name":"premium replacement","income":500000,"minutes":2400,"lostHours":3,"tier":"premium","amount":45000},
+  {"name":"50 rupee floor","income":200000,"minutes":6000,"lostHours":1,"tier":"basic","amount":5000},
+  {"name":"income based floor","income":1000000,"minutes":10080,"lostHours":1,"tier":"standard","amount":10000},
+  {"name":"standard cap","income":1000000,"minutes":2400,"lostHours":6,"tier":"standard","amount":100000},
+  {"name":"premium cap","income":1000000,"minutes":2400,"lostHours":6,"tier":"premium","amount":150000},
+  {"name":"paise rounding","income":499999,"minutes":2820,"lostHours":3,"tier":"basic","amount":25532},
+  {"name":"exact half paisa","income":500005,"minutes":2400,"lostHours":4,"tier":"standard","amount":50001}
+]

@@ -229,7 +229,7 @@ func (c *PolicyContract) RecordPremiumPaid(ctx tx, id string, term, amount int64
 		if previous.Fingerprint != fp {
 			return nil, failure(conflict, "premium reference already used")
 		}
-		return &previous.Result, nil
+		return &previous.Result, saveReceipt(ctx, key, fp, &previous.Result)
 	}
 	p, err := loadPolicy(ctx, id)
 	if err != nil {
@@ -328,10 +328,15 @@ func (c *PolicyContract) ListPoliciesByZone(ctx tx, zone, status string, size in
 		return nil, err
 	}
 	if !validZone(zone) || size < 1 || size > 100 || len(bookmark) > 4096 ||
-		(status != active && status != pendingPremium && status != paused && status != cancelled) {
+		(status != active && status != pendingPremium && status != paused && status != cancelled && status != expired) {
 		return nil, failure(validation, "invalid policy page")
 	}
-	iter, meta, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination("zone~status~policyId", []string{zone, status}, size, bookmark)
+	prefix := []string{zone, status}
+	if status == expired {
+		// Expiry is derived from the transaction timestamp so a read never writes state.
+		prefix = []string{zone}
+	}
+	iter, meta, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination("zone~status~policyId", prefix, size, bookmark)
 	if err != nil {
 		return nil, failure(stateError, "could not query policy index")
 	}

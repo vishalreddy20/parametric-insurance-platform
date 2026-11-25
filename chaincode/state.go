@@ -165,3 +165,36 @@ func weekStartIST(epoch int64) string {
 }
 
 func epochKey(epoch int64) string { return fmt.Sprintf("%012d", epoch) }
+
+type ledgerPage[T any] struct {
+	Records  []T    `json:"records"`
+	Bookmark string `json:"bookmark"`
+}
+
+func indexedPage[T any](ctx tx, index string, prefix []string, size int32, bookmark, keyPrefix string) (*ledgerPage[T], error) {
+	if size < 1 || size > 100 || len(bookmark) > 4096 {
+		return nil, failure(validation, "invalid page options")
+	}
+	iter, meta, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination(index, prefix, size, bookmark)
+	if err != nil {
+		return nil, failure(stateError, "could not query ledger index")
+	}
+	defer iter.Close()
+	result := &ledgerPage[T]{Records: []T{}, Bookmark: meta.Bookmark}
+	for iter.HasNext() {
+		row, err := iter.Next()
+		if err != nil {
+			return nil, failure(stateError, "could not iterate ledger index")
+		}
+		var id string
+		if json.Unmarshal(row.Value, &id) != nil {
+			return nil, failure(stateError, "invalid ledger index")
+		}
+		record, err := required[T](ctx, keyPrefix+id)
+		if err != nil {
+			return nil, err
+		}
+		result.Records = append(result.Records, *record)
+	}
+	return result, nil
+}

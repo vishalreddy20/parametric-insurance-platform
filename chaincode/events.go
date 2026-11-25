@@ -178,6 +178,13 @@ func (c *OracleQuorumContract) SubmitReading(ctx tx, observation Observation) (*
 				return nil, err
 			}
 		}
+		index, err := composite(ctx, "event~zone~start~trigger", event.Zone, epochKey(event.Start), event.Trigger)
+		if err != nil {
+			return nil, err
+		}
+		if err := write(ctx, index, key); err != nil {
+			return nil, err
+		}
 		if err := write(ctx, "event:"+key, event); err != nil {
 			return nil, err
 		}
@@ -192,9 +199,22 @@ func loadEvent(ctx tx, key string) (*Event, error) {
 	return required[Event](ctx, "event:"+key)
 }
 
+type EventPage ledgerPage[Event]
+
 func (c *OracleQuorumContract) GetEvent(ctx tx, key string) (*Event, error) {
 	if err := authorize(ctx, "oracle", "bank", "insurer", "platform", "regulator"); err != nil {
 		return nil, err
 	}
 	return loadEvent(ctx, key)
+}
+
+func (c *OracleQuorumContract) ListEvents(ctx tx, zone string, size int32, bookmark string) (*EventPage, error) {
+	if err := authorize(ctx, "oracle", "bank", "insurer", "platform", "regulator"); err != nil {
+		return nil, err
+	}
+	if !validZone(zone) {
+		return nil, failure(validation, "invalid event zone")
+	}
+	page, err := indexedPage[Event](ctx, "event~zone~start~trigger", []string{zone}, size, bookmark, "event:")
+	return (*EventPage)(page), err
 }
