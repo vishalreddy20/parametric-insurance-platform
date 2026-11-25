@@ -137,6 +137,9 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, che
   app.post('/v1/activity', allow(['platform'], async (request, response, user) => {
     const { requestId, ...activity } = parse(schema.activity, request.body);
     if (activity.platformId !== user.platformId) throw new ApiError('ERR_UNAUTHORIZED', 403, 'Platform identity mismatch.');
+    const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [activity.workerId]);
+    checkPolicyOwner(user, activity.workerId, policy);
+    if (policy.terms?.workerId !== activity.workerId) throw new ApiError('ERR_UNAUTHORIZED', 403, 'Worker identity mismatch.');
     response.json(await ledger.submit(user.actor, 'ActivityContract:RecordActivityAttestation', {
       arguments: [JSON.stringify(activity), requestId],
     }));

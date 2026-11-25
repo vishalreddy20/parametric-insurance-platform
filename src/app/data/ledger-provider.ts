@@ -73,7 +73,9 @@ export function ledgerProvider(base: string): DataProvider {
 
   return {
     authAudit: (session, before) => request('/auth/audit' + (before ? '?before=' + before : ''), session),
+    recordActivity: (session, activity) => request('/activity', session, activity),
     directory: (session, after) => request('/auth/directory' + (after ? '?after=' + encodeURIComponent(after) : ''), session),
+    changeStaffRole: (session, accountId, role, platformId) => request('/auth/admin/role', session, { accountId, role, platformId }),
     provisionStaff: (session, account) => request('/auth/admin/provision', session, account),
     issuePasswordReset: (session, accountId) => request('/auth/admin/reset-code', session, { accountId }),
     async resetPassword(code, newPassword) {
@@ -95,6 +97,7 @@ export function ledgerProvider(base: string): DataProvider {
       finally { csrfToken = undefined; }
     },
     security: (session) => request('/auth/security', session),
+    manageAuthenticator: (session, change) => request('/auth/security/authenticator', session, change),
     async changePassword(session, currentPassword, newPassword) {
       await request('/auth/security/password', session, { currentPassword, newPassword });
       csrfToken = undefined;

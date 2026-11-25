@@ -2,6 +2,8 @@ import { Component, lazy, Suspense, useCallback, useEffect, useState, type React
 import { BrowserRouter, Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ArrowRight, BarChart3, KeyRound, LayoutGrid, Moon, Shield, Sun, UserRound } from 'lucide-react';
 import { Button } from './components/ui/button';
+import { AuthPage } from './pages/AuthPage';
+import { LandingPage } from './pages/LandingPage';
 import { AccountSecurity } from './pages/AccountSecurity';
 import { ResetPassword } from './pages/ResetPassword';
 import { AccountNotice } from './pages/AccountNotice';
@@ -10,8 +12,6 @@ import { ledgerProvider } from './data/ledger-provider';
 import { readableError } from './data/use-resource';
 import './account.css';
 
-const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
-const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
 const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow').then((module) => ({ default: module.OnboardingFlow })));
 const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((module) => ({ default: module.WorkerDashboard })));
 const InsurerConsole = lazy(() => import('./pages/InsurerConsole').then((module) => ({ default: module.InsurerConsole })));
@@ -116,7 +116,7 @@ function AppViews() {
   const accountPage = pathname === '/account' || pathname === '/account/security';
   const protectedPage = accountPage || Boolean(targetRole);
   const returnPath = typeof state?.returnPath === 'string' &&
-    ['/account', '/account/security', '/worker/onboarding', '/insurer/surge', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
+    ['/account', '/account/security', '/worker/onboarding', '/insurer/surge', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : undefined;
 
   const sessionEnded = useCallback(() => {
     setSession(null);
@@ -161,7 +161,7 @@ function AppViews() {
     setSession(confirmed);
   }
 
-  if (initializing) return <AccountFrame><p role="status">Checking your session…</p></AccountFrame>;
+  if (initializing && protectedPage) return <AccountFrame><p role="status">Checking your session…</p></AccountFrame>;
   if (protectedPage && sessionFailure) return <AccountFrame>
     <AccountNotice kind={sessionFailure.code === 'ERR_OFFLINE' ? 'offline' : 500} message={sessionFailure.message}
       requestId={sessionFailure.requestId} back="/" backLabel="Back to home" retry={() => {
@@ -231,7 +231,7 @@ function AppViews() {
   if (pathname === '/forgot-password') return <AccountFrame variant="auth"><ResetPassword provider={provider} /></AccountFrame>;
 
   if (pathname === '/sign-in' || pathname === '/sign-up') {
-    if (session) return <Navigate to={returnPath} replace />;
+    if (session) return <Navigate to={returnPath ?? workspaces[session.role].path} replace />;
     return <AccountFrame variant={pathname === '/sign-up' ? 'register' : 'auth'}>
       <AuthPage key={pathname} provider={provider} message={message} createAccount={pathname === '/sign-up'}
         onSuccess={signIn} onRegistered={(username) => navigate('/sign-in', { replace: true, state: { returnPath, registered: true, username } })}

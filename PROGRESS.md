@@ -81,3 +81,6 @@
 - Account security now changes passwords and revokes all sessions. The admin console issues hashed, expiring single-use reset codes. Chromium verified issue and redemption, staff sign-in with the new password and MFA, and axe. The gateway suite verified CSRF, replay denial and session revocation.
 
 - Authentication audit is persisted in SQLite and exposed only to admins and regulators. Entries carry event type, time, role and request ID. Gateway tests verified the privacy shape, role denial and logged MFA and reset events.
+
+- Release pass adds scoped platform activity, admin staff-role changes with session revocation, optional worker authenticator management, and browser regression checks. Playwright verified worker onboarding, a platform attestation, a live signed insurer storm, settlement, the committed worker proof drawer, and the regulator summary with individual policy access denied.
+- Lighthouse mobile reported 100 accessibility and 0.000 CLS for Home, Sign in and Sign up. Screenshots, browser procedures, size budgets and the fresh checkout verification are in docs/QUALITY.md. SMTP reset remains open.

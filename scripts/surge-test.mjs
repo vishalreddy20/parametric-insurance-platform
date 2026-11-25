@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const n = Number(process.argv[2]);
-const state = process.env.PARASHIELD_DEMO_STATE;
+const state = process.env.PARASHIELD_RUNTIME_STATE ?? process.env.PARASHIELD_DEMO_STATE;
 const preparedWorker = process.env.PARASHIELD_PREPARE_WORKER;
 const runtime = process.env.DRUNIX_RUNTIME;
 const gateway = 'http://127.0.0.1:' + (process.env.PARASHIELD_GATEWAY_PORT ?? '8080');
@@ -152,7 +152,7 @@ async function writeReport(report) {
     '| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :--- |\n| ' + row + ' |\n\n' +
     '- Network ' + env.network + ' `' + env.revision + '` with ' + env.stateDB + '. Chaincode ' + env.chaincode + '.\n' +
     '- Machine ' + env.cpu + ', ' + env.logicalCPUs + ' logical CPUs, ' + env.memoryGiB + ' GiB RAM, Linux ' + env.kernel + '. Docker ' + env.docker + ', Node ' + env.node + '.\n' +
-    '- Payout rate and percentiles use the elapsed time from storm submission to observed terminal ledger state. This includes signed demo-window closure, fan-out, simulated settlement and polling. End-to-end also includes policy setup.\n' +
+    '- Payout rate and percentiles use the elapsed time from storm submission to observed terminal ledger state. This includes signed test-window closure, fan-out, simulated settlement and polling. End-to-end also includes policy setup.\n' +
     '- The documented sample has fixed two-org Lite Peer endpoints and no four-Lite-Peer scaling procedure. Four Lite Peers were not benchmarked.\n' +
     '- The oracle inputs, identities and UPI were simulated. Ledger writes, commit, reconciliation and the stated timings were measured.\n' +
     (report.error ? '\nRun failure: ' + report.error + '\n' : '');
@@ -172,10 +172,10 @@ async function writeReport(report) {
 
 async function main() {
   if (!state || !runtime || !Number.isSafeInteger(n) || n < 1 || n > 10000 || !Number.isFinite(timeout) || timeout < 10000 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 32) {
-    throw new Error('Set PARASHIELD_DEMO_STATE and DRUNIX_RUNTIME. Choose 1–10000 policies and a timeout of at least 10 seconds.');
+    throw new Error('Set PARASHIELD_RUNTIME_STATE and DRUNIX_RUNTIME. Choose 1–10000 policies and a timeout of at least 10 seconds.');
   }
   if (preparedWorker && (n !== 1 || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(preparedWorker))) {
-    throw new Error('Preparing a demo worker requires one policy and a valid local username.');
+    throw new Error('Preparing an evaluation worker requires one policy and a valid local username.');
   }
   const environment = readEnvironment();
   const credentials = await loadAccounts();
@@ -207,7 +207,7 @@ async function main() {
         break;
       }
     }
-    assert(report.zone, 'No clean zone is available in the current demo hour and week.');
+    assert(report.zone, 'No clean zone is available in the current hour and week.');
     const ids = worker ? [worker.account.policyId] : Array.from({ length: n }, (_, index) => 'surge-' + run + '-' + (index + 1));
     const before = await request('/v1/metrics', { token: insurer });
     await mapLimit(ids, concurrency, async (id) => {
@@ -299,7 +299,7 @@ async function main() {
     if (appliedVersion !== undefined) {
       try {
         const current = await request('/v1/config', { token: insurer });
-        assert.equal(current.version, appliedVersion, 'Configuration changed during the run; restore the demo configuration separately.');
+        assert.equal(current.version, appliedVersion, 'Configuration changed during the run; restore the original configuration separately.');
         await request('/v1/config', { token: insurer, method: 'PUT', body: {
           requestId: 'surge-restore-' + run, config: { ...oldConfig, version: appliedVersion },
         } });

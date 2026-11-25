@@ -2,7 +2,7 @@
 
 | Behavior | Implementation |
 | --- | --- |
-| Worker, platform, insurer, bank, oracle and regulator identities | **SIMULATED** demo identities. The sample CAs issue real role certificates. Workers use policy-scoped gateway sessions backed by a platform certificate. |
+| Worker, platform, insurer, bank, oracle and regulator identities | Sample-network identities. The sample CAs issue real role certificates. Workers use policy-scoped gateway sessions backed by a platform certificate. |
 | Weather, traffic, social and platform observations | **SIMULATED** scenario inputs. The oracle service uses distinct signing identities and deterministic variation. |
 | Premium collection and payout transfer | **SIMULATED** UPI. No money moves. The service persists its outcomes and delivers authenticated callbacks. |
 | Policy, activity, quorum, payout and audit state | Real chaincode state and transactions on DRUNIX. |
@@ -10,7 +10,6 @@
 | Private enrollment inputs | Real transient and private collection writes. Every walkthrough uses synthetic details. |
 | Duplicate handling and caps | Real ledger idempotency, worker-hour locks and weekly cap accounting. |
 | Surge results | Measured on the documented WSL2 sample using simulated inputs. No production throughput estimate is made. |
-| Local fixture mode | **SIMULATED** browser records. It displays no ledger proof and runs no payout decision. |
-| Falcon deployment | **UNVERIFIED**. The demo uses the upstream Docker sample. |
+| Falcon deployment | **UNVERIFIED**. The evaluation environment uses the upstream Docker sample. |
 | 4-Lite-Peer scaling | **UNVERIFIED**. The surge measurements use two Lite Peers. |
-| Production insurance, live feeds and payment rails | Outside this demo. |
+| Production insurance, live feeds and payment rails | Outside the local evaluation environment. |

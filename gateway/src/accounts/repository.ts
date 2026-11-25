@@ -16,7 +16,7 @@ export interface Account {
 export type AccountSummary = Pick<Account, 'id' | 'username' | 'role' | 'platformId'>;
 
 export type AuditAction = 'LOGIN_SUCCESS' | 'LOGIN_FAILURE' | 'LOGIN_LOCKED' | 'MFA_ENROLLED' | 'MFA_FAILURE' |
-  'MFA_VERIFIED' | 'STAFF_PROVISIONED' | 'SESSIONS_REVOKED' | 'PASSWORD_CHANGED' | 'RESET_ISSUED' | 'PASSWORD_RESET';
+  'MFA_VERIFIED' | 'MFA_DISABLED' | 'STAFF_PROVISIONED' | 'STAFF_ROLE_CHANGED' | 'SESSIONS_REVOKED' | 'PASSWORD_CHANGED' | 'RESET_ISSUED' | 'PASSWORD_RESET';
 export interface AuthAuditEntry {
   id: number;
   at: number;
@@ -26,6 +26,7 @@ export interface AuthAuditEntry {
 }
 
 export interface AccountRepository {
+  changeStaffRole(accountId: string, role: Exclude<AccountRole, 'worker'>, platformId: Account['platformId'], now: number): Promise<boolean>;
   appendAudit(entry: Omit<AuthAuditEntry, 'id'>): Promise<void>;
   auditPage(before?: number): Promise<AuthAuditEntry[]>;
   issuePasswordReset(accountId: string, hash: string, expiry: number): Promise<boolean>;
@@ -139,6 +140,7 @@ export interface MfaRepository {
   getMfa(accountId: string): Promise<{ secret: string; lastCounter: number } | undefined>;
   prepareMfa(accountId: string, secret: string): Promise<void>;
   acceptTotp(accountId: string, secret: string, counter: number, recoveryHashes: string[]): Promise<boolean>;
+  removeMfa(accountId: string): Promise<void>;
   consumeRecovery(accountId: string, hash: string): Promise<boolean>;
 }
 
@@ -180,6 +182,16 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
   private invalidateCredentials(accountId: string, now: number): void {
     this.database.prepare('UPDATE sessions SET revokedAt = ? WHERE accountId = ? AND revokedAt IS NULL').run(now, accountId);
     this.database.prepare('DELETE FROM password_resets WHERE accountId = ?').run(accountId);
+  }
+
+  async changeStaffRole(accountId: string, role: Exclude<AccountRole, 'worker'>, platformId: Account['platformId'], now: number): Promise<boolean> {
+    return this.database.transaction(() => {
+      const update = this.database.prepare("UPDATE accounts SET role = ?, platformId = ? WHERE id = ? AND role != 'worker'")
+        .run(role, platformId, accountId);
+      if (!update.changes) return false;
+      this.invalidateCredentials(accountId, now);
+      return true;
+    }).immediate();
   }
 
   async appendAudit(entry: Omit<AuthAuditEntry, 'id'>): Promise<void> {
@@ -299,6 +311,13 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
       const insert = this.database.prepare('INSERT INTO recovery_codes VALUES (?, ?)');
       for (const hash of recoveryHashes) insert.run(accountId, hash);
       return true;
+    }).immediate();
+  }
+
+  async removeMfa(accountId: string): Promise<void> {
+    this.database.transaction(() => {
+      this.database.prepare('DELETE FROM recovery_codes WHERE accountId = ?').run(accountId);
+      this.database.prepare('DELETE FROM account_mfa WHERE accountId = ?').run(accountId);
     }).immediate();
   }
 

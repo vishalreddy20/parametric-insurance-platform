@@ -161,7 +161,7 @@ runs can show about the effect of concurrency alone.
 ### Reproduce
 
 On the verified sample, stop any other gateway using the same chain and
-checkpoint directory. Set `DRUNIX_RUNTIME` and `PARASHIELD_DEMO_STATE`, then run:
+checkpoint directory. Set `DRUNIX_RUNTIME` and `PARASHIELD_RUNTIME_STATE`, then run:
 
 ```bash
 scripts/orderer-cut.sh 0.25

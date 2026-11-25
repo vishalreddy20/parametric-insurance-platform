@@ -30,7 +30,7 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
     passwordHash: await hasher.hash(password), createdAt: Date.now() });
   const origin = 'http://127.0.0.1:5173';
   const now = Date.now();
-  const accounts = new AccountHttp({ store, hasher, origin, requestKey: Buffer.alloc(32, 2), mfa: new Mfa(store, Buffer.alloc(32, 1), () => now),
+  const createAccounts = () => new AccountHttp({ store, hasher, origin, requestKey: Buffer.alloc(32, 2), mfa: new Mfa(store, Buffer.alloc(32, 1), () => now),
     sessions: new Sessions(store) });
   const ledger: Ledger = {
     async evaluate<T>(actor: string, _operation: string, ids?: string[]) {
@@ -39,13 +39,13 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
     async submit<T>() { return { result: {} as T, txId: 'test', blockNumber: '2' }; },
   };
   const auth = new ServiceAuth([], Buffer.alloc(32));
-  const server = createApp({ accounts, auth, ledger, corsOrigin: origin, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
+  const server = createApp({ accounts: createAccounts(), auth, ledger, corsOrigin: origin, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
     settlementEnabled: false }).listen(0, '127.0.0.1');
   t.after(() => { server.closeAllConnections(); server.close(); });
   await once(server, 'listening');
   const address = server.address();
   assert(address && typeof address !== 'string');
-  const base = 'http://127.0.0.1:' + address.port + '/v1';
+  let base = 'http://127.0.0.1:' + address.port + '/v1';
   function browser() {
     const jar = new Map<string, string>();
     let csrf = '';
@@ -224,14 +224,52 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal((await resetter.send('/auth/reset-password', resetBody)).status, 400);
   assert.equal((await resetter.send('/auth/login', { username: credentials.username, password })).status, 200);
 
+  const mfaRoute = '/auth/security/authenticator';
+  assert.equal((await recover.send(mfaRoute, { action: 'start', password })).status, 403);
+  assert.equal((await resetter.send(mfaRoute, { action: 'start', password }, false)).status, 403);
+  assert.equal((await resetter.send(mfaRoute, { action: 'start', password: 'wrong' })).status, 400);
+  const workerSetupResponse = await resetter.send(mfaRoute, { action: 'start', password });
+  assert.equal(workerSetupResponse.status, 200);
+  const workerSetup = await workerSetupResponse.json();
+  const workerCode = authenticatorCode(workerSetup.setupKey, now);
+  assert.equal((await resetter.send(mfaRoute, { action: 'enable', password, code: workerCode === '000000' ? '000001' : '000000' })).status, 400);
+  const workerEnabled = await resetter.send(mfaRoute, { action: 'enable', password, code: workerCode });
+  assert.equal(workerEnabled.status, 200);
+  const workerCodes: string[] = (await workerEnabled.json()).recoveryCodes;
+  assert.equal(workerCodes.length, 10);
+  assert.equal((await resetter.send('/auth/logout', {})).status, 204);
+  await resetter.send('/auth/csrf');
+  const loginWorker = { username: credentials.username, password };
+  assert.equal((await resetter.send('/auth/login', loginWorker)).status, 202);
+  assert.equal((await resetter.send('/auth/login', { ...loginWorker, mfa: { code: workerCode, recovery: false } })).status, 401);
+  assert.equal((await resetter.send('/auth/login', { ...loginWorker, mfa: { code: workerCodes[0], recovery: true } })).status, 200);
+  assert.equal((await resetter.send(mfaRoute, { action: 'disable', password, code: workerCodes[0] })).status, 400);
+  assert.equal((await resetter.send(mfaRoute, { action: 'disable', password, code: workerCodes[1] })).status, 200);
+  assert.equal((await resetter.send('/auth/security')).status, 200);
+  assert.equal((await (await resetter.send('/auth/security')).json()).authenticatorEnrolled, false);
   assert.equal((await platform.send('/auth/audit')).status, 403);
   assert.equal((await worker.send('/auth/audit')).status, 401);
+  const platformAccount = await store.findByUsername('platform-z');
+  assert(platformAccount);
+  const roleChange = { accountId: platformAccount.id, role: 'regulator', platformId: null };
+  assert.equal((await platform.send('/auth/admin/role', roleChange)).status, 403);
+  assert.equal((await admin.send('/auth/admin/role', { ...roleChange, accountId: session.workerId })).status, 403);
+  assert.equal((await admin.send('/auth/admin/role', roleChange)).status, 204);
+  assert.equal((await platform.send('/auth/session')).status, 401);
+  assert.equal((await store.findById(platformAccount.id))?.role, 'regulator');
   const audit = await (await admin.send('/auth/audit')).json();
   assert(audit.records.some((entry: { action: string }) => entry.action === 'PASSWORD_RESET'));
   assert(audit.records.some((entry: { action: string }) => entry.action === 'MFA_ENROLLED'));
   for (const record of audit.records) {
     assert.deepEqual(Object.keys(record).sort(), ['action', 'at', 'id', 'requestId', 'role']);
   }
+  const throttleServer = createApp({ accounts: createAccounts(), auth, ledger, corsOrigin: origin,
+    saltKey: Buffer.alloc(32), readinessActor: 'insurer', settlementEnabled: false }).listen(0, '127.0.0.1');
+  t.after(() => { throttleServer.closeAllConnections(); throttleServer.close(); });
+  await once(throttleServer, 'listening');
+  const throttleAddress = throttleServer.address();
+  assert(throttleAddress && typeof throttleAddress !== 'string');
+  base = 'http://127.0.0.1:' + throttleAddress.port + '/v1';
   const throttled = browser();
   await throttled.send('/auth/csrf');
   const attempt = (username: string) => throttled.send('/auth/login', { username, password: 'wrong' });

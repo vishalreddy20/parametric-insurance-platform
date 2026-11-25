@@ -16,10 +16,10 @@ const openssl = (...args) => execFileSync('openssl', args, { stdio: ['ignore', '
 
 async function run() {
   const runtime = process.env.DRUNIX_RUNTIME;
-  const output = process.env.PARASHIELD_DEMO_IDENTITY_DIR;
-  const seed = process.env.PARASHIELD_DEMO_MASTER;
+  const output = process.env.PARASHIELD_RUNTIME_IDENTITY_DIR;
+  const seed = process.env.PARASHIELD_RUNTIME_MASTER;
   if (!runtime || !output || !seed || !/^[a-fA-F0-9]{64}$/.test(seed)) {
-    throw new Error('Set DRUNIX_RUNTIME, PARASHIELD_DEMO_IDENTITY_DIR and PARASHIELD_DEMO_MASTER.');
+    throw new Error('Set DRUNIX_RUNTIME, PARASHIELD_RUNTIME_IDENTITY_DIR and PARASHIELD_RUNTIME_MASTER.');
   }
   const root = resolve(output);
   const organizations = resolve(runtime, 'drunix-network/test-network/organizations/peerOrganizations');

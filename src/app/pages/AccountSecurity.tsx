@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react';
+import { WorkerAuthenticator } from './WorkerAuthenticator';
 import { KeyRound, LogOut, Monitor, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -76,6 +77,8 @@ export function AccountSecurity({ provider, session, onExpired, onSignedOut }: {
           <strong>Authenticator app</strong>
           <p>{value ? value.authenticatorEnrolled ? 'Enabled for this account.' : 'No authenticator enrolled.' : 'Checking authenticator status…'}</p>
         </div></div>
+        {value && session.role === 'worker' && <WorkerAuthenticator enrolled={value.authenticatorEnrolled} provider={provider}
+          session={session} onExpired={onExpired} onUpdated={refresh} />}
       </div>
     </section>
     <section className="account-panel security-sessions" aria-labelledby="security-sessions-title">

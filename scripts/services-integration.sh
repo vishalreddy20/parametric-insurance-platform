@@ -25,12 +25,12 @@ npm --prefix oracles run build
 export PARASHIELD_ORIGIN=http://127.0.0.1:15173
 export PARASHIELD_ACCOUNT_DB="$run_dir/accounts.sqlite"
 unset PARASHIELD_PASSWORD_PEPPER
-export PARASHIELD_DEMO_IDENTITY_DIR="$run_dir/msp"
-export PARASHIELD_DEMO_MASTER="$(openssl rand -hex 32)"
+export PARASHIELD_RUNTIME_IDENTITY_DIR="$run_dir/msp"
+export PARASHIELD_RUNTIME_MASTER="$(openssl rand -hex 32)"
 export PARASHIELD_JWT_KEY="$(openssl rand -hex 32)"
 export PARASHIELD_PII_SALT_KEY="$(openssl rand -hex 32)"
 export PARASHIELD_UPI_AUTHORIZATION="Bearer $(openssl rand -hex 32)"
-export PARASHIELD_GATEWAY_CONFIG="$PARASHIELD_DEMO_IDENTITY_DIR/gateway-config.json"
+export PARASHIELD_GATEWAY_CONFIG="$PARASHIELD_RUNTIME_IDENTITY_DIR/gateway-config.json"
 export PARASHIELD_GATEWAY_STATE_DIR="$run_dir/ledger-data/gateway"
 export PARASHIELD_UPI_STATE_DIR="$run_dir/ledger-data/mock-upi"
 export PARASHIELD_GATEWAY_PORT="${PARASHIELD_GATEWAY_TEST_PORT:-18080}"
@@ -43,7 +43,7 @@ export PARASHIELD_UPI_URL="http://127.0.0.1:$PARASHIELD_UPI_PORT"
 export PARASHIELD_UPI_FAILURE_BPS=0 PARASHIELD_UPI_LATENCY_MS=20
 
 code_for() {
-  node --input-type=module -e "import {createHmac} from 'node:crypto';process.stdout.write(createHmac('sha256',Buffer.from(process.env.PARASHIELD_DEMO_MASTER,'hex')).update('login:'+process.argv[1]).digest('hex'))" "$1"
+  node --input-type=module -e "import {createHmac} from 'node:crypto';process.stdout.write(createHmac('sha256',Buffer.from(process.env.PARASHIELD_RUNTIME_MASTER,'hex')).update('login:'+process.argv[1]).digest('hex'))" "$1"
 }
 export PARASHIELD_BANK_ACCESS_CODE="$(code_for bank)"
 export PARASHIELD_ORACLE_1_ACCESS_CODE="$(code_for oracle-1)"

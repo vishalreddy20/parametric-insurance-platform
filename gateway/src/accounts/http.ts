@@ -206,6 +206,20 @@ export class AccountHttp {
       await this.audit(response, 'STAFF_PROVISIONED', role);
       response.sendStatus(201);
     });
+    app.post('/v1/auth/admin/role', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      if (account.role !== 'admin') throw forbidden();
+      const { accountId, role, platformId } = parse(z.strictObject({
+        accountId: z.uuid(), role: z.enum(['platform', 'insurer', 'regulator', 'admin']),
+        platformId: z.enum(['zomato', 'swiggy']).nullable(),
+      }).refine(({ role, platformId }) => (role === 'platform') === (platformId !== null)), request.body);
+      if (accountId === account.id) throw forbidden();
+      if (!await this.options.store.changeStaffRole(accountId, role, platformId, Date.now())) throw forbidden();
+      await this.audit(response, 'STAFF_ROLE_CHANGED', role);
+      response.sendStatus(204);
+    });
     app.post('/v1/auth/admin/revoke', async (request, response) => {
       const csrf = this.csrf(request);
       const { account, session } = await this.current(request);
@@ -362,6 +376,43 @@ export class AccountHttp {
         this.options.sessions.list(account.id, session.id), this.options.mfa.isEnrolled(account.id),
       ]);
       response.json({ sessions, authenticatorEnrolled });
+    });
+    app.post('/v1/auth/security/authenticator', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      if (account.role !== 'worker') throw forbidden();
+      this.attempts.hit('manage-mfa:' + account.id, 8, 15 * 60_000, response);
+      const password = z.string().min(1).max(256);
+      const body = parse(z.discriminatedUnion('action', [
+        z.strictObject({ action: z.literal('start'), password }),
+        z.strictObject({ action: z.literal('enable'), password, code: z.string().regex(/^\d{6}$/) }),
+        z.strictObject({ action: z.literal('disable'), password, code: z.string().regex(/^(\d{6}|[A-Za-z0-9_-]{20})$/) }),
+      ]), request.body);
+      if (!await this.options.hasher.verify(body.password, account.passwordHash)) {
+        throw new ApiError('ERR_PASSWORD_MISMATCH', 400, 'The current password could not be verified.');
+      }
+      const enrolled = await this.options.mfa.isEnrolled(account.id);
+      if (body.action === 'start') {
+        const setupKey = await this.options.mfa.begin(account.id);
+        if (!setupKey) throw new ApiError('ERR_STATE', 409, 'An authenticator is already enabled.');
+        response.json({ setupKey });
+        return;
+      }
+      if (enrolled !== (body.action === 'disable')) throw new ApiError('ERR_STATE', 409, 'Authenticator state has changed. Reload and retry.');
+      const verified = await this.options.mfa.verify(account, { code: body.code, recovery: body.code.length !== 6 });
+      if (verified.status !== 'verified' || (body.action === 'enable' && !verified.recoveryCodes?.length)) {
+        await this.audit(response, 'MFA_FAILURE', account.role);
+        throw new ApiError('ERR_MFA', 400, 'The authenticator or recovery code could not be verified.');
+      }
+      if (body.action === 'disable') {
+        await this.options.mfa.disable(account.id);
+        await this.audit(response, 'MFA_DISABLED', account.role);
+        response.json({ recoveryCodes: [] });
+        return;
+      }
+      await this.audit(response, 'MFA_ENROLLED', account.role);
+      response.json({ recoveryCodes: verified.recoveryCodes });
     });
     app.post('/v1/auth/security/password', async (request, response) => {
       const csrf = this.csrf(request);

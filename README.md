@@ -47,7 +47,7 @@ From a fresh ParaShield checkout, run this command in the repository root.
 scripts/dev-up.sh
 ```
 
-`scripts/demo-up.sh` forwards to the same launcher for compatibility. See the [runbook](docs/RUNBOOK.md) for startup and network reset recovery.
+`scripts/demo-up.sh` forwards to the same launcher for compatibility. The previous state variable remains accepted as an alias for `PARASHIELD_RUNTIME_STATE`. See the [runbook](docs/RUNBOOK.md) for startup and network reset recovery.
 
 
 The command builds the DRUNIX binaries, installs pinned application
@@ -85,7 +85,7 @@ Open [ParaShield](http://127.0.0.1:5173) in three separate browser profiles to k
 
 A signed event declaration alone does not make a worker eligible for payment. The ledger also requires an active policy, an eligible platform activity attestation, the configured waiting period, and a closed event window. For a timed evaluation on a dedicated sample, use the signed one-policy verification run in the [evaluation walkthrough](docs/EVALUATION.md#prepare-a-settled-evaluation-record) and inspect its recorded payout in the worker workspace. The run uses synthetic readings and simulated payment.
 
-Platform staff can open **Platform workspace** to confirm the directory contains only accounts from their platform. Admin staff can open **Admin workspace** to provision staff accounts, revoke another account's sessions, or issue a single-use password reset code.
+Platform staff can open **Platform workspace** to confirm the directory contains only accounts from their platform and record a completed work interval in IST. Admin staff can open **Admin workspace** to provision staff accounts, change staff roles, revoke another account's sessions, or issue a single-use password reset code.
 
 ## Configuration
 
@@ -96,7 +96,7 @@ and document the stand-alone service interfaces.
 | Variable | Purpose and default |
 | --- | --- |
 | `DRUNIX_RUNTIME` | Writable checkout outside ParaShield. The quickstart makes one in `/tmp` when omitted. |
-| `PARASHIELD_DEMO_STATE` | External directory for sample identities, local keys and durable job/UPI state. The launcher makes one in `/tmp` when omitted. Reuse it with the same ledger. |
+| `PARASHIELD_RUNTIME_STATE` | External directory for sample identities, local keys and durable job/UPI state. The launcher makes one in `/tmp` when omitted. Reuse it with the same ledger. |
 | `PARASHIELD_WEB_PORT`, `PARASHIELD_GATEWAY_PORT` | Loopback ports 5173 and 8080. |
 | `PARASHIELD_ORACLE_PORT`, `PARASHIELD_UPI_PORT` | Loopback ports 8081 and 8082. |
 | `PARASHIELD_UPI_LATENCY_MS`, `PARASHIELD_UPI_FAILURE_BPS` | Simulated delay and failure probability in basis points. Defaults are 100 ms and zero. |
@@ -110,6 +110,8 @@ the running `DRUNIX_RUNTIME` for the network and integration commands.
 
 ```bash
 npm test
+npm run lint
+npm run typecheck
 npm run build
 (cd chaincode && go vet ./... && go test ./... -cover)
 npm --prefix gateway test
@@ -120,7 +122,7 @@ scripts/services-integration.sh
 ```
 
 To benchmark the same running sample, export `DRUNIX_RUNTIME` and
-`PARASHIELD_DEMO_STATE` from the launcher and run `scripts/surge-test 32`.
+`PARASHIELD_RUNTIME_STATE` from the launcher and run `scripts/surge-test 32`.
 Without an argument the script requests 1,000 policies. Use a dedicated
 sample with simulated payment failures disabled. The runner temporarily
 enables the signed test-window closure, creates synthetic policy records,
@@ -150,6 +152,7 @@ Peers, YugabyteDB, KeyDB, stateless validation services and a Raft orderer.
 Independent bank and oracle MSPs and Falcon were not exercised.
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Quality checks and screenshots](docs/QUALITY.md)
 - [Real and simulated behavior](docs/REAL_VS_SIMULATED.md)
 - [Threat model](docs/THREAT_MODEL.md) and [edge-case verification](docs/EDGE_CASES.md)
 - [Progress](PROGRESS.md), [decisions](DECISIONS.md), and [attributions](ATTRIBUTIONS.md)

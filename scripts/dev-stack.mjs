@@ -40,9 +40,10 @@ function start(label, executable, args, env) {
 
 async function main() {
   if (!process.env.DRUNIX_RUNTIME) throw new Error('Set DRUNIX_RUNTIME to the writable running sample checkout.');
-  const dir = process.env.PARASHIELD_DEMO_STATE ? resolve(process.env.PARASHIELD_DEMO_STATE) : await mkdtemp(join(tmpdir(), 'parashield-stack-'));
+  const statePath = process.env.PARASHIELD_RUNTIME_STATE ?? process.env.PARASHIELD_DEMO_STATE;
+  const dir = statePath ? resolve(statePath) : await mkdtemp(join(tmpdir(), 'parashield-stack-'));
   if (dir.startsWith(resolve(repo) + '/') || dir === resolve(repo)) {
-    throw new Error('Use a demo state directory outside the repository.');
+    throw new Error('Use a runtime state directory outside the repository.');
   }
   const state = join(dir, 'ledger-data');
   const identityDir = join(dir, 'msp');
@@ -54,7 +55,7 @@ async function main() {
     keys = JSON.parse(await readFile(keysPath, 'utf8'));
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    keys = { master: process.env.PARASHIELD_DEMO_MASTER ?? hex(), jwt: hex(), salt: hex(), upi: hex() };
+    keys = { master: process.env.PARASHIELD_RUNTIME_MASTER ?? hex(), jwt: hex(), salt: hex(), upi: hex() };
     await writeFile(keysPath, JSON.stringify(keys), { flag: 'wx', mode: 0o600 });
   }
   try {
@@ -63,7 +64,7 @@ async function main() {
     if (error.code !== 'ENOENT') throw error;
     const command = spawnSync(process.execPath, ['scripts/runtime-identities.mjs'], {
       cwd: repo, stdio: 'inherit',
-      env: { ...process.env, PARASHIELD_DEMO_IDENTITY_DIR: identityDir, PARASHIELD_DEMO_MASTER: keys.master },
+      env: { ...process.env, PARASHIELD_RUNTIME_IDENTITY_DIR: identityDir, PARASHIELD_RUNTIME_MASTER: keys.master },
     });
     if (command.status !== 0) throw new Error('Simulated identity provisioning failed.');
   }
@@ -114,15 +115,15 @@ async function main() {
     log('ParaShield frontend: http://127.0.0.1:' + browserPort);
   }
   log('SIMULATED credentials manifest: ' + configPath);
-  log('Demo state: ' + dir);
+  log('Runtime state: ' + dir);
 }
 
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, stop);
 try {
   await main();
 } catch (error) {
-  console.error(error instanceof Error && /^(Set DRUNIX|Use a demo|Simulated identity)/.test(error.message)
-    ? error.message : 'The demo stack could not start. Check external state and the running sample.');
+  console.error(error instanceof Error && /^(Set DRUNIX|Use a runtime|Simulated identity)/.test(error.message)
+    ? error.message : 'The application stack could not start. Check external state and the running sample.');
   process.exitCode = 1;
   stop();
 }

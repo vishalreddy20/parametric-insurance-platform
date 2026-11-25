@@ -16,7 +16,7 @@ complete MFA enrolment for the platform, insurer and regulator. Follow the
 [runbook](RUNBOOK.md) to prepare the private credentials file.
 
 Use the external paths printed by the launcher for `DRUNIX_RUNTIME` and
-`PARASHIELD_DEMO_STATE`. Use your registered worker's username in the command.
+`PARASHIELD_RUNTIME_STATE`. Use your registered worker's username in the command.
 
 ```bash
 report_dir=$(mktemp -d)

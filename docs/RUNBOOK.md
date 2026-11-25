@@ -24,7 +24,7 @@ network without writing to the ledger.
 | `ERR_LEDGER_IDENTITY_CHECK` | Verify peer reachability, channel membership and TLS trust. |
 
 After an authorised ledger reset, use a fresh external
-`PARASHIELD_DEMO_STATE` directory so credentials, event cursors and jobs
+`PARASHIELD_RUNTIME_STATE` directory so credentials, event cursors and jobs
 belong to the new ledger. Leave manifests and key files outside the repo and
 keep their contents out of logs. If the original ledger still exists, recover
 the corresponding original sample crypto before reusing that ledger.

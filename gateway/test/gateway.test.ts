@@ -113,6 +113,10 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   }
   assert.equal((await fetch(base + '/v1/policies/worker-b/premium-simulation', post(platformToken))).status, 403);
   assert.equal((await fetch(base + '/v1/policies/worker-a/premium-simulation', post(platformToken))).status, 200);
+  const activity = { workerId: 'worker-b', platformId: 'zomato', windowStart: 1763985600,
+    windowEnd: 1763985650, requestId: 'sample-activity' };
+  assert.equal((await fetch(base + '/v1/activity', post(platformToken, activity))).status, 403);
+  assert.equal((await fetch(base + '/v1/activity', post(token, { ...activity, workerId: 'worker-a' }))).status, 403);
   const proof = '/v1/ledger-proof/' + txId;
   assert.equal((await get(proof, token)).status, 403);
   assert.equal((await get(proof + '?payoutId=' + payoutId, token)).status, 200);

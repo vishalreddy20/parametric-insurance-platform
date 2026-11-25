@@ -7,7 +7,8 @@ sample lifecycle. [DRUNIX architecture](https://github.com/npci/drunix/blob/8090
 
 ```mermaid
 flowchart LR
-  UI[React worker and organization views] --> API[Node REST and Fabric Gateway SDK]
+  UI[React worker and staff views] -->|HTTPS and session cookies| API[Node REST and Fabric Gateway SDK]
+  API <--> AUTH[SQLite accounts, sessions and auth audit]
   SIM[Three simulated oracle sources] --> API
   API <--> UPI[Simulated UPI and durable callbacks]
   API --> LP[Two Lite Peers]
@@ -44,6 +45,12 @@ chaincode and private collection endorsement require **both sample MSPs**.
 Independent bank and oracle MSP endorsements remain an integration gap.
 
 ## Data and processing
+
+- The gateway owns the external SQLite account database. It stores Argon2id
+  password hashes, hashed session tokens, encrypted TOTP secrets, encrypted
+  onboarding drafts and authentication audit records. Browser requests carry
+  an HttpOnly session cookie and a CSRF token for mutations. The gateway
+  confirms the account role before choosing a Fabric identity.
 
 - Private worker inputs are sent as transient proposal data into
   `workerPII`. Public state stores a salted hash, an opaque worker ID and

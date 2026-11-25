@@ -34,7 +34,9 @@ Codes expire after 15 minutes and the database stores only a keyed digest.
 Changing or resetting a password revokes all sessions. Staff MFA remains
 enrolled after a reset. The admin and regulator workspaces display an
 authentication audit with event type, time, role and request ID. It omits
-usernames and credentials. SMTP reset and worker MFA management remain pending.
+usernames and credentials. Workers may enable or disable an authenticator in Account security. Disabling
+requires the password and an unused authenticator or recovery code. Staff MFA
+is mandatory. SMTP reset remains pending.
 Workers and platforms must prove ownership of the payout before reading its
 indexed ledger proof. Regulators have event, audit and reconciliation access.
 Individual policies, claims, and payouts are excluded from their API access.

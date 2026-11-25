@@ -135,7 +135,11 @@ export interface AuthAuditEntry {
 
 export interface DataProvider {
   authAudit(session: Session, before?: number): Promise<{ records: AuthAuditEntry[]; next: number | null }>;
+  recordActivity(session: Session, activity: {
+    workerId: string; platformId: 'zomato' | 'swiggy'; windowStart: number; windowEnd: number; requestId: string;
+  }): Promise<EnrollmentConfirmation>;
   directory(session: Session, after?: string): Promise<{ records: DirectoryAccount[]; next: string | null }>;
+  changeStaffRole(session: Session, accountId: string, role: StaffAccount['role'], platformId: StaffAccount['platformId']): Promise<void>;
   provisionStaff(session: Session, account: StaffAccount): Promise<void>;
   issuePasswordReset(session: Session, accountId: string): Promise<{ code: string; expiresAt: number }>;
   resetPassword(code: string, newPassword: string): Promise<void>;
@@ -144,6 +148,9 @@ export interface DataProvider {
   currentSession(): Promise<Session>;
   signOut(session: Session, everywhere?: boolean): Promise<void>;
   security(session: Session): Promise<AccountSecurity>;
+  manageAuthenticator(session: Session, change: {
+    action: 'start' | 'enable' | 'disable'; password: string; code?: string;
+  }): Promise<{ setupKey?: string; recoveryCodes?: string[] }>;
   changePassword(session: Session, currentPassword: string, newPassword: string): Promise<void>;
   revokeSession(session: Session, sessionId: string): Promise<void>;
   register(username: string, password: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;

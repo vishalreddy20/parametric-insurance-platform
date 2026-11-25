@@ -47,9 +47,21 @@ export class Mfa {
     return record !== undefined && record.lastCounter >= 0;
   }
 
+  async begin(accountId: string): Promise<string | undefined> {
+    await this.store.prepareMfa(accountId, this.seal(accountId));
+    const record = await this.store.getMfa(accountId);
+    if (record && record.lastCounter < 0) return base32(this.open(accountId, record.secret));
+  }
+
+  disable(accountId: string): Promise<void> {
+    return this.store.removeMfa(accountId);
+  }
+
   async verify(account: Account, supplied?: { code: string; recovery: boolean }) {
     let record = await this.store.getMfa(account.id);
-    if (!record && account.role === 'worker') return { status: 'verified' } as const;
+    if (account.role === 'worker' && (!record || (record.lastCounter < 0 && !supplied))) {
+      return { status: 'verified' } as const;
+    }
     if (!record) {
       await this.store.prepareMfa(account.id, this.seal(account.id));
       record = await this.store.getMfa(account.id);

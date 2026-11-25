@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const base = 'http://127.0.0.1:' + process.env.PARASHIELD_GATEWAY_PORT;
-const master = Buffer.from(process.env.PARASHIELD_DEMO_MASTER, 'hex');
+const master = Buffer.from(process.env.PARASHIELD_RUNTIME_MASTER, 'hex');
 
 async function call(path, { token, method, body } = {}) {
   const response = await fetch(base + path, {

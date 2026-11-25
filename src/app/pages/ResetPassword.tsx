@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { KeyRound } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { Button } from '../components/ui/button';
 import type { DataProvider } from '../data/provider';
 import { readableError } from '../data/use-resource';
 
 export function ResetPassword({ provider }: { provider: DataProvider }) {
+  const { state } = useLocation();
   const [active, setActive] = useState(false);
   const [pending, setPending] = useState(false);
   const [complete, setComplete] = useState(false);
@@ -38,6 +39,6 @@ export function ResetPassword({ provider }: { provider: DataProvider }) {
         <Button className="account-button" disabled={pending}>{pending ? 'Saving…' : 'Reset password'}</Button>
         {error && <p role="alert" className="account-message account-error">{error}</p>}
       </form> : <Button variant="outline" className="account-quiet" onClick={() => setActive(true)}>I have a reset code</Button>}
-    <Button asChild className="account-button"><Link to="/sign-in">Back to sign in</Link></Button>
+    <Button asChild className="account-button"><Link to="/sign-in" state={state}>Back to sign in</Link></Button>
   </section>;
 }

@@ -66,3 +66,23 @@ Target WCAG AA contrast, visible keyboard focus, trapped dialog focus with
 restoration, and reduced-motion support. Use gateway or ledger values for live
 figures and published benchmark reports for surge results. Apply plain labels
 where simulated payment or synthetic oracle inputs appear.
+
+
+## Evaluation build
+
+The public entry screens render while session verification runs. Protected
+workspaces show a session check until the gateway confirms the role. Sign-in
+returns to the requested protected route or opens the user's role workspace.
+
+The platform directory reads registered worker accounts for that platform. An
+activity dialog records an elapsed IST work interval and returns its committed
+transaction and block. The admin directory exposes staff provisioning, staff
+role changes, session revocation and expiring password reset codes. The
+regulator and admin audit panels display request references and role without
+account identifiers.
+
+The Stitch exports remain the visual reference. The implementation omits
+insurer solvency and credit statistics because the gateway cannot substantiate
+them. The staff workspaces use the shared shell and live account or ledger
+data. They use simpler lists and panels than the reference when an exported
+control has no supported operation.
