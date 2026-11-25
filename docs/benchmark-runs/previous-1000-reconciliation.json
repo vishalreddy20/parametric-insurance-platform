@@ -1,0 +1,12 @@
+{
+  "eventKey": "delhi|severe_storm|1795597200",
+  "settled": 1000,
+  "pages": 10,
+  "reserved": 0,
+  "failed": 0,
+  "duplicates": 0,
+  "ledgerPaise": 60000000,
+  "upiPaise": 60000000,
+  "auditedPaise": 60000000,
+  "auditElapsedMs": 49477
+}

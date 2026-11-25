@@ -1,0 +1,42 @@
+{
+  "environment": {
+    "network": "NPCI DRUNIX",
+    "revision": "8090e0ce58802c8a0f13d23a6abe5a2d35456cc5",
+    "chaincode": "3.1",
+    "litePeers": 2,
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logicalCPUs": 16,
+    "memoryGiB": 7.6,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "docker": "29.9.3",
+    "node": "v20.20.2",
+    "stateDB": "YugabyteDB"
+  },
+  "policies": 200,
+  "passed": true,
+  "metrics": {
+    "totalMs": 78798.61,
+    "stormToTerminalMs": 29258.65,
+    "settled": 200,
+    "failures": 0,
+    "tps": 6.84,
+    "p50Ms": 18771.26,
+    "p95Ms": 28526.06,
+    "mvccRetries": 0
+  },
+  "zone": "chennai",
+  "eventKey": "chennai|severe_storm|1795600800",
+  "receiptVerification": {
+    "payoutCount": 200,
+    "ledgerPaise": 12000000,
+    "mockUPIPaise": 12000000
+  },
+  "reconciliation": {
+    "ledgerPaise": 12000000,
+    "mockUPIPaise": 12000000,
+    "paidPolicies": 200,
+    "duplicates": 0,
+    "capPaise": 20000000
+  },
+  "completedAt": "2026-11-25T10:01:51.862Z"
+}

@@ -1,0 +1,37 @@
+{
+  "environment": {
+    "network": "NPCI DRUNIX",
+    "revision": "8090e0ce58802c8a0f13d23a6abe5a2d35456cc5",
+    "chaincode": "3.1",
+    "litePeers": 2,
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logicalCPUs": 16,
+    "memoryGiB": 7.6,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "docker": "29.9.3",
+    "node": "v20.20.2",
+    "stateDB": "YugabyteDB"
+  },
+  "policies": 32,
+  "passed": true,
+  "metrics": {
+    "totalMs": 15395.08,
+    "stormToTerminalMs": 6411.73,
+    "settled": 32,
+    "failures": 0,
+    "tps": 4.99,
+    "p50Ms": 6016.62,
+    "p95Ms": 6411.51,
+    "mvccRetries": 0
+  },
+  "zone": "pune",
+  "eventKey": "pune|severe_storm|1795597200",
+  "reconciliation": {
+    "ledgerPaise": 1920000,
+    "mockUPIPaise": 1920000,
+    "paidPolicies": 32,
+    "duplicates": 0,
+    "capPaise": 3200000
+  },
+  "completedAt": "2026-11-25T09:53:09.660Z"
+}

@@ -1,0 +1,48 @@
+{
+  "reservation": {
+    "invalidCommitAttempts": 0,
+    "endorsement": {
+      "samples": 200,
+      "p50Ms": 212.11,
+      "p95Ms": 368.9
+    },
+    "ordererSubmitRpc": {
+      "samples": 200,
+      "p50Ms": 33.58,
+      "p95Ms": 97.4
+    },
+    "commitWait": {
+      "samples": 200,
+      "p50Ms": 1248.78,
+      "p95Ms": 1627.05
+    }
+  },
+  "settlement": {
+    "invalidCommitAttempts": 0,
+    "endorsement": {
+      "samples": 200,
+      "p50Ms": 45.01,
+      "p95Ms": 79.65
+    },
+    "ordererSubmitRpc": {
+      "samples": 200,
+      "p50Ms": 19.9,
+      "p95Ms": 48.11
+    },
+    "commitWait": {
+      "samples": 200,
+      "p50Ms": 989.96,
+      "p95Ms": 1294.61
+    }
+  },
+  "simulatedUPIDelay": {
+    "samples": 200,
+    "p50Ms": 100.75,
+    "p95Ms": 102.09
+  },
+  "mockUPIHttpIncludingCallback": {
+    "samples": 200,
+    "p50Ms": 1289.61,
+    "p95Ms": 1583.3
+  }
+}

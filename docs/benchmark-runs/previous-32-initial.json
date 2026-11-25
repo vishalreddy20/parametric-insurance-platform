@@ -1,0 +1,37 @@
+{
+  "environment": {
+    "network": "NPCI DRUNIX",
+    "revision": "8090e0ce58802c8a0f13d23a6abe5a2d35456cc5",
+    "chaincode": "3.1",
+    "litePeers": 2,
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logicalCPUs": 16,
+    "memoryGiB": 7.6,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "docker": "29.9.3",
+    "node": "v20.20.2",
+    "stateDB": "YugabyteDB"
+  },
+  "policies": 32,
+  "passed": true,
+  "metrics": {
+    "totalMs": 53218.32,
+    "stormToTerminalMs": 22684.29,
+    "settled": 32,
+    "failures": 0,
+    "tps": 1.41,
+    "p50Ms": 22352.22,
+    "p95Ms": 22667.76,
+    "mvccRetries": 0
+  },
+  "zone": "ahmedabad",
+  "eventKey": "ahmedabad|severe_storm|1795597200",
+  "reconciliation": {
+    "ledgerPaise": 1920000,
+    "mockUPIPaise": 1920000,
+    "paidPolicies": 32,
+    "duplicates": 0,
+    "capPaise": 3200000
+  },
+  "completedAt": "2026-11-25T09:48:47.299Z"
+}

@@ -19,6 +19,21 @@ DRUNIX revision `8090e0ce58802c8a0f13d23a6abe5a2d35456cc5`, chaincode 3.1,
 YugabyteDB, Docker 29.9.3, and Node v20.20.2. The mock UPI delay was 100 ms
 and its configured failure rate was zero.
 
+### Earlier follow-up runs
+
+| Effective block cut | Policies | Settled | Payouts/s | p95 (ms) | Result |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 2 s | 32 | 32 | 1.41 | 22667.76 | [Pass, initial profile](benchmark-runs/previous-32-initial.json) |
+| 2 s | 32 | 32 | 1.37 | 23399.39 | [Pass, tuned](benchmark-runs/previous-32-two-second.json) |
+| 2 s | 200 | 200 | 4.00 | 50033.25 | [Pass, tuned](benchmark-runs/previous-200-two-second.json) |
+| 250 ms | 32 | 32 | 4.99 | 6411.51 | [Pass](benchmark-runs/previous-32.json) |
+| 250 ms | 200 | 200 | 6.84 | 28526.06 | [Pass](benchmark-runs/previous-200.json) |
+| 250 ms | 1000 | 1000 | 6.83 | 144312.86 | [Failed reconciliation deadline](benchmark-runs/previous-1000-failed.json) |
+
+The two-second 32-policy comparison had a second gateway and does not isolate
+the effect of concurrency. The tuned 32-policy run at that interval was slower
+from storm submission to terminal state than the initial profile.
+
 ### What consumed the time
 
 The original worker used 25-policy pages, five concurrent reservations, five
@@ -98,12 +113,50 @@ recovered. A read-only recheck at the 30 s deadline confirmed all 1,000
 settlements across ten pages, with zero duplicates, and matched the ledger,
 audit and simulated UPI totals at 60,000,000 paise. The audit sweep lasted
 49.477 s. The initial attempt remains a failed benchmark run. The deadline
-change applies to evaluation only.
+change applies to evaluation only. [Read-only reconciliation](benchmark-runs/previous-1000-reconciliation.json)
 
 The application continues to confirm each transaction's valid commit before
 advancing the corresponding work. The change overlaps independent waits.
 Ledger rules, idempotency keys, caps, and the MVCC retry policy are unchanged.
 [DRUNIX Raft implementation](https://github.com/npci/drunix/blob/8090e0ce58802c8a0f13d23a6abe5a2d35456cc5/orderer/consensus/etcdraft/chain.go)
+
+### Fresh-channel reruns
+
+The restored `parashield` ledger had no clean zone. The reruns used the new
+`parashield-bench` channel and separate service state with the same peers,
+orderer, chaincode and endorsement policy. Both channels passed the smoke
+test before their benchmark attempts. The restored demo gateway remained
+active on the original channel.
+
+The reruns used the existing 250 ms orderer block cut, 100-policy pages,
+24 concurrent reservations, 24 concurrent settlements, and 24 concurrent
+benchmark client requests. Worker polling was 100 ms, the simulated UPI delay
+was 100 ms, and the existing 30 s evaluation deadline applied. The reported
+end-to-end time ends at the last observed terminal payout. The receipt checks,
+audit sweep, proof lookup, and configuration restore happen afterward.
+
+| Policies | Settled | Payouts/s | p50 (ms) | p95 (ms) | End-to-end (ms) | Audit (ms) | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 32 | 32 | 4.00 | 7599.59 | 8000.53 | 14427.17 | 675.27 | [Pass](benchmark-runs/rerun-32.json) |
+| 200 | 200 | 8.42 | 16476.73 | 23020.46 | 51265.94 | 2333.98 | [Pass](benchmark-runs/rerun-200.json) |
+| 1000 | 1000 | 6.38 | 89816.61 | 153989.12 | 284604.62 | 52160.30 | [Pass](benchmark-runs/rerun-1000.json) |
+
+All three reruns had zero payout failures, duplicate payouts and MVCC
+retries. The 1,000-policy run reconciled 60,000,000 paise across ledger,
+audit and simulated UPI records.
+
+| Policies | Median reservation commit (ms) | Median settlement commit (ms) | Median injected UPI delay (ms) | Stage profile |
+| ---: | ---: | ---: | ---: | --- |
+| 32 | 1212.47 | 668.78 | 100.56 | [32-policy profile](benchmark-runs/rerun-32-profile.json) |
+| 200 | 1248.78 | 989.96 | 100.75 | [200-policy profile](benchmark-runs/rerun-200-profile.json) |
+| 1000 | 1225.00 | 842.93 | 100.85 | [1,000-policy profile](benchmark-runs/rerun-1000-profile.json) |
+
+Commit confirmation was the largest measured transaction stage for reservation
+and settlement. At 1,000 policies, the ten fan-out page reads took 57.35 s
+of the 129.70 s spent processing those pages. Settlement overlapped fan-out.
+The 32-policy rerun was slower than the earlier 250 ms run, while the
+200-policy rerun was faster. Differences in ledger state limit what these
+runs can show about the effect of concurrency alone.
 
 ### Reproduce
 
@@ -119,8 +172,20 @@ PARASHIELD_UPI_LATENCY_MS=100 PARASHIELD_EVALUATE_TIMEOUT_MS=30000 PARASHIELD_SE
 node scripts/demo-stack.mjs > /tmp/parashield-payout-profile.log 2>&1
 ```
 
-From another terminal sharing those runtime paths, run
-`PARASHIELD_SURGE_CONCURRENCY=24 scripts/surge-test 32`, then repeat with 200
-and 1000 on eligible clean zones. The latest JSON supplies the `eventKey`.
+From another terminal sharing those runtime paths, use a separate output
+directory to preserve the original report. The runner selects a clean zone
+for each size.
+
+```bash
+report_dir=$(mktemp -d)
+for size in 32 200 1000; do
+  PARASHIELD_SURGE_CONCURRENCY=24 \
+  PARASHIELD_BENCHMARK_REPORT="$report_dir/$size.json" \
+  PARASHIELD_BENCHMARK_TABLE="$report_dir/$size.md" \
+  scripts/surge-test "$size"
+done
+```
+
+Each JSON report supplies the `eventKey`.
 Run `node scripts/profile-payouts.mjs /tmp/parashield-payout-profile.log EVENT_KEY`
 to summarize successful transaction phase samples and count invalid commits.

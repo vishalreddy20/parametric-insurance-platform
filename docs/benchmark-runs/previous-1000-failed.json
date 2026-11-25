@@ -1,0 +1,31 @@
+{
+  "environment": {
+    "network": "NPCI DRUNIX",
+    "revision": "8090e0ce58802c8a0f13d23a6abe5a2d35456cc5",
+    "chaincode": "3.1",
+    "litePeers": 2,
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logicalCPUs": 16,
+    "memoryGiB": 7.6,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "docker": "29.9.3",
+    "node": "v20.20.2",
+    "stateDB": "YugabyteDB"
+  },
+  "policies": 1000,
+  "passed": false,
+  "metrics": {
+    "totalMs": 266881.38,
+    "stormToTerminalMs": 146395.75,
+    "settled": 1000,
+    "failures": 0,
+    "tps": 6.83,
+    "p50Ms": 77907.05,
+    "p95Ms": 144312.86,
+    "mvccRetries": 0
+  },
+  "zone": "delhi",
+  "eventKey": "delhi|severe_storm|1795597200",
+  "error": "/v1/reconciliation/delhi returned HTTP 503 ERR_LEDGER_UNAVAILABLE",
+  "completedAt": "2026-11-25T09:57:52.683Z"
+}

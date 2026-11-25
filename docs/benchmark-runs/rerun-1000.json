@@ -1,0 +1,43 @@
+{
+  "environment": {
+    "network": "NPCI DRUNIX",
+    "revision": "8090e0ce58802c8a0f13d23a6abe5a2d35456cc5",
+    "chaincode": "3.1",
+    "litePeers": 2,
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logicalCPUs": 16,
+    "memoryGiB": 7.6,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "docker": "29.9.3",
+    "node": "v20.20.2",
+    "stateDB": "YugabyteDB"
+  },
+  "policies": 1000,
+  "passed": true,
+  "metrics": {
+    "totalMs": 284604.62,
+    "stormToTerminalMs": 156813.63,
+    "settled": 1000,
+    "failures": 0,
+    "tps": 6.38,
+    "p50Ms": 89816.61,
+    "p95Ms": 153989.12,
+    "mvccRetries": 0
+  },
+  "zone": "lucknow",
+  "eventKey": "lucknow|severe_storm|1795600800",
+  "receiptVerification": {
+    "payoutCount": 1000,
+    "ledgerPaise": 60000000,
+    "mockUPIPaise": 60000000
+  },
+  "auditMs": 52160.3,
+  "reconciliation": {
+    "ledgerPaise": 60000000,
+    "mockUPIPaise": 60000000,
+    "paidPolicies": 1000,
+    "duplicates": 0,
+    "capPaise": 100000000
+  },
+  "completedAt": "2026-11-25T10:34:20.840Z"
+}
