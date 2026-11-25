@@ -106,7 +106,7 @@ export interface DataProvider {
 }
 
 export class DataError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: string, message: string, public status?: number, public requestId?: string, public retryAfter?: number) {
     super(message);
   }
 }

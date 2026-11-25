@@ -1,46 +1,90 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { ArrowRight, CircleAlert, Eye, EyeOff, FileCheck2, KeyRound, ShieldCheck } from 'lucide-react';
+import { Link, useLocation } from 'react-router';
+import { Alert } from '../components/ui/alert';
+import { Button } from '../components/ui/button';
+import { Checkbox } from '../components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '../components/ui/input-otp';
+import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { DataError, type DataProvider, type SignInResult } from '../data/provider';
 import { readableError } from '../data/use-resource';
+
+function InformationPanel({ register, verification }: { register: boolean; verification: boolean }) {
+  return <aside className="auth-context">
+    <p className="account-kicker"><ShieldCheck size={16} aria-hidden="true" /> {verification ? 'Staff authentication' : 'Parametric income protection'}</p>
+    <h2>{verification ? 'Confirm your identity' : register ? 'Before you enrol' : 'Income protection for delivery partners'}</h2>
+    <p>{verification ? 'Use your authenticator app or one of your saved recovery codes to continue.' :
+      'Signed observations establish when a disruption meets the policy threshold and quorum. You can trace payout decisions on the ledger.'}</p>
+    <div className="account-panel auth-protocol">
+      <h3><FileCheck2 size={18} aria-hidden="true" /> {register ? 'After account creation' : 'Coverage and proof'}</h3>
+      <ul><li>Choose a plan and review its terms before activation.</li><li>Review qualifying events and their signed observations.</li><li>Open payout details to find the transaction and block proof.</li></ul>
+      <div className="account-disclosures"><span>Payment rail: simulated</span><span>Oracle inputs: synthetic</span></div>
+    </div>
+    {verification && <p className="auth-note"><KeyRound size={18} aria-hidden="true" /> Password resets are handled by an administrator.</p>}
+  </aside>;
+}
+
+function AccountTerms() {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  return <Dialog onOpenChange={(open) => { if (open) setContainer(document.querySelector('.account-shell')); }}>
+    <DialogTrigger asChild><button type="button" className="account-text-button">Terms and Privacy Notice</button></DialogTrigger>
+    <DialogContent className="account-dialog" container={container}>
+      <DialogHeader><DialogTitle>Terms and Privacy Notice</DialogTitle>
+        <DialogDescription>How your account information is used and how coverage works.</DialogDescription>
+      </DialogHeader>
+      <h3>Coverage</h3><p>Creating an account does not activate coverage. Review the applicable plan terms before enrolling. Payout eligibility depends on the policy, declared event and qualifying work activity.</p>
+      <h3>Account information</h3><p>Your username and selected platform are used to create a worker account and route requests. Your password is stored as a hash. Keep your password and recovery codes private.</p>
+      <p>Payment rail: simulated. Oracle inputs: synthetic.</p>
+    </DialogContent>
+  </Dialog>;
+}
 
 export function AuthPage({ provider, onSuccess, onRegistered, message, createAccount: register, registered, initialUsername }: {
   provider: DataProvider; onSuccess: () => Promise<void>; onRegistered: (username: string) => void;
   message: string; createAccount: boolean; registered: boolean; initialUsername: string;
 }) {
+  const { state: routeState } = useLocation();
   const [username, setUsername] = useState(initialUsername);
   const [platform, setPlatform] = useState<'zomato' | 'swiggy'>('zomato');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [challenge, setChallenge] = useState<Exclude<SignInResult, { status: 'signed-in' }>>();
   const [mfaCode, setMfaCode] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
-  const [pendingSession, setPendingSession] = useState<Extract<SignInResult, { status: 'signed-in' }>>();
-  const [error, setError] = useState<{ heading: string; message: string }>();
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [savedCodes, setSavedCodes] = useState(false);
+  const [error, setError] = useState<{ heading: string; message: string; requestId?: string }>();
   const [notice, setNotice] = useState(registered ? 'Account created. Sign in to continue.' : message);
-  const errorRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
   const [loading, setLoading] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
   const registrationKey = useRef<string>();
   const resetKey = () => { registrationKey.current = undefined; };
 
+  useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
+
   function showError(failure: unknown) {
-    const titles: Record<string, string> = {
-      ERR_ACCOUNT_LOCKED: 'Sign-in temporarily locked',
-      ERR_RATE_LIMIT: 'Too many requests',
-      ERR_OFFLINE: 'Gateway unreachable',
-      ERR_SESSION_EXPIRED: 'Session expired',
-      ERR_AUTHENTICATION: challenge ? 'Verification failed' : 'Sign-in failed',
+    const code = failure instanceof DataError ? failure.code : '';
+    const headings: Record<string, string> = {
+      ERR_ACCOUNT_LOCKED: 'Sign-in temporarily locked', ERR_RATE_LIMIT: 'Too many requests', ERR_OFFLINE: 'Gateway unreachable',
+      ERR_SESSION_EXPIRED: 'Session expired', ERR_AUTHENTICATION: challenge ? 'Verification failed' : 'Sign-in failed',
     };
-    const heading = failure instanceof DataError ? titles[failure.code] : undefined;
-    setError({ heading: heading ?? (register ? 'Account creation failed' : 'Sign-in failed'),
-      message: failure instanceof DataError && failure.code === 'ERR_AUTHENTICATION' && !challenge
-        ? 'Check your username and password, then try again.' : readableError(failure) });
+    const rateLimited = code === 'ERR_ACCOUNT_LOCKED' || code === 'ERR_RATE_LIMIT';
+    const seconds = failure instanceof DataError ? failure.retryAfter : undefined;
+    setError({
+      heading: headings[code] ?? (register ? 'Account creation failed' : 'Sign-in failed'),
+      message: rateLimited && seconds ? 'Too many attempts. Try again in ' + Math.ceil(seconds / 60) + (seconds <= 60 ? ' minute.' : ' minutes.')
+        : code === 'ERR_AUTHENTICATION' && !challenge ? 'Check your username and password, then try again.' : readableError(failure),
+      requestId: failure instanceof DataError ? failure.requestId : undefined,
+    });
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (busy.current) return;
+    if (busy.current || (register && !consent)) return;
     busy.current = true;
     setLoading(true);
     setError(undefined);
@@ -59,7 +103,7 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
       }
       setPassword('');
       setMfaCode('');
-      if (result.recoveryCodes.length) setPendingSession(result);
+      if (result.recoveryCodes.length) setRecoveryCodes(result.recoveryCodes);
       else await onSuccess();
     } catch (failure) {
       showError(failure);
@@ -69,50 +113,85 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
     }
   }
 
-  return (
-    <section className="account-card" aria-labelledby="sign-in-title">
-      <Link className="account-back" to="/">← Home</Link>
-      <h1 id="sign-in-title">{pendingSession ? 'Save your recovery codes' : challenge ? 'Two-factor authentication' : register ? 'Create a worker account' : 'Sign in'}</h1>
-      {error && <div ref={errorRef} className="account-message account-error" role="alert" tabIndex={-1}>
-        <strong>{error.heading}</strong><p>{error.message}</p>
+  const title = recoveryCodes.length ? 'Save one-time recovery codes' : challenge?.status === 'enrol' ? 'Set up your authenticator'
+    : challenge ? useRecovery ? 'Enter recovery code' : 'Enter authenticator code'
+      : register ? 'Create a worker account' : 'Sign in to ParaShield';
+
+  return <div className={'auth-layout' + (register ? ' auth-layout-register' : '')}>
+    <section className="auth-primary" aria-labelledby="sign-in-title">
+      {register && <p className="account-kicker">Worker registration</p>}
+      <h1 id="sign-in-title">{title}</h1>
+      {!challenge && <p className="auth-intro">{register ? 'Create an account to choose coverage and follow payout decisions.' : 'Enter your credentials to access your workspace.'}</p>}
+      {error && <div ref={errorRef} tabIndex={-1}>
+        <Alert className="account-alert account-error"><CircleAlert aria-hidden="true" /><div>
+          <strong>{error.heading}</strong><p>{error.message}</p>
+          {error.requestId && <small>Support request ID <code>{error.requestId}</code></small>}
+        </div></Alert>
       </div>}
       {notice && <p className="account-message" role="status">{notice}</p>}
-      {pendingSession ? <>
-        <p>Store these one-time codes somewhere safe. They are shown once.</p>
-        <ul>{pendingSession.recoveryCodes.map((value) => <li key={value}><code>{value}</code></li>)}</ul>
-        <button type="button" className="account-button" onClick={() => { void onSuccess().catch(showError); }}>Continue</button>
-      </> : <form onSubmit={submit} className="account-form">
+      {recoveryCodes.length ? <div className="account-form">
+        <p>Store these codes somewhere safe. Each code works once and is only shown here.</p>
+        <ul className="auth-code-grid">{recoveryCodes.map((value) => <li key={value}><code>{value}</code></li>)}</ul>
+        <div className="auth-consent"><Checkbox className="account-checkbox" id="saved-codes" checked={savedCodes} onCheckedChange={(value) => setSavedCodes(value === true)} />
+          <label htmlFor="saved-codes">I have saved my recovery codes.</label></div>
+        <Button type="button" className="account-button" disabled={!savedCodes} onClick={() => { void onSuccess().catch(showError); }}>Continue <ArrowRight aria-hidden="true" /></Button>
+      </div> : <form onSubmit={submit} className="account-form">
         {challenge ? <>
-          {challenge.status === 'enrol' && <p>Enter this setup key in your authenticator app, then enter the six-digit code it displays. <code>{challenge.setupKey}</code></p>}
-          <label className="account-field">{useRecovery ? 'Recovery code' : 'Authenticator code'}
-            <input key={String(useRecovery)} autoComplete="one-time-code" inputMode={useRecovery ? 'text' : 'numeric'} className="account-input"
-              value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} required maxLength={useRecovery ? 20 : 6} />
-          </label>
-          {challenge.status === 'challenge' && <button type="button" className="account-quiet" disabled={loading}
+          {challenge.status === 'enrol' && <div className="auth-note auth-key">
+            <p>Add ParaShield in your authenticator app using this setup key.</p><code>{challenge.setupKey}</code>
+          </div>}
+          <label className="account-field" htmlFor="mfa-code">{useRecovery ? 'Recovery code' : 'Authenticator code'}</label>
+          {useRecovery
+            ? <Input id="mfa-code" className="account-input" autoComplete="one-time-code" value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} required maxLength={20} />
+            : <InputOTP id="mfa-code" aria-label="Authenticator code" autoComplete="one-time-code" inputMode="numeric" value={mfaCode}
+                onChange={(value) => setMfaCode(value.replace(/\D/g, ''))} required maxLength={6}>
+                <InputOTPGroup className="auth-otp">{Array.from({ length: 6 }, (_, index) => <InputOTPSlot key={index} index={index} />)}</InputOTPGroup>
+              </InputOTP>}
+          {challenge.status === 'challenge' && <button type="button" className="account-text-button" disabled={loading}
             onClick={() => { setUseRecovery(!useRecovery); setMfaCode(''); }}>{useRecovery ? 'Use an authenticator code' : 'Use a recovery code'}</button>}
         </> : <>
+          {register && <div className="account-field">
+            <span id="platform-label">Delivery platform</span>
+            <RadioGroup className="auth-platforms" aria-labelledby="platform-label" value={platform}
+              onValueChange={(value) => { resetKey(); setPlatform(value === 'swiggy' ? 'swiggy' : 'zomato'); }}>
+              {['swiggy', 'zomato'].map((value) => <label className="auth-platform" key={value}>
+                <RadioGroupItem value={value} /><span>{value === 'swiggy' ? 'Swiggy' : 'Zomato'}</span>
+              </label>)}
+            </RadioGroup>
+          </div>}
           <label className="account-field">Username
-            <input autoComplete="username" className="account-input" value={username} onChange={(event) => { resetKey(); setUsername(event.target.value); }} required minLength={3} maxLength={64} />
+            <Input name="username" autoComplete="username" placeholder={register ? 'Choose a username' : 'Enter your username'} className="account-input"
+              value={username} onChange={(event) => { resetKey(); setUsername(event.target.value); }} required minLength={3} maxLength={64} />
           </label>
-          {register && <label className="account-field">Platform
-            <select className="account-input" value={platform} onChange={(event) => { resetKey(); setPlatform(event.target.value === 'swiggy' ? 'swiggy' : 'zomato'); }}>
-              <option value="zomato">Zomato</option><option value="swiggy">Swiggy</option>
-            </select>
-          </label>}
-          <label className="account-field">Password
-            <input autoComplete={register ? 'new-password' : 'current-password'} type={showPassword ? 'text' : 'password'} className="account-input"
-              value={password} onChange={(event) => { resetKey(); setPassword(event.target.value); }} required minLength={register ? 12 : undefined} maxLength={128}
-              aria-describedby={register ? 'password-rules' : undefined} />
-          </label>
-          {register && <p id="password-rules">Use 12 or more characters. Choose a unique, hard-to-guess passphrase.</p>}
-          <button type="button" className="account-quiet" onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show password'}</button>
+          <div className="account-field">
+            <label htmlFor="account-password">Password</label>
+            <div className="auth-password">
+              <Input id="account-password" name="password" autoComplete={register ? 'new-password' : 'current-password'} type={showPassword ? 'text' : 'password'}
+                className="account-input" value={password} placeholder={register ? 'Minimum 12 characters' : 'Enter your password'}
+                onChange={(event) => { resetKey(); setPassword(event.target.value); }} required minLength={register ? 12 : undefined} maxLength={128}
+                aria-describedby={register ? 'password-rules' : undefined} />
+              <Button type="button" variant="ghost" className="auth-password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'}
+                onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</Button>
+            </div>
+          </div>
+          {register ? <>
+            <p id="password-rules" className="auth-password-rules">Use 12 or more characters and a unique, hard-to-guess passphrase.</p>
+            <div className="auth-consent"><Checkbox className="account-checkbox" id="registration-consent" checked={consent}
+              required onCheckedChange={(value) => setConsent(value === true)} />
+              <div><label htmlFor="registration-consent">I agree to the Terms and Privacy Notice.</label><br /><AccountTerms /></div></div>
+          </> : <Link className="account-back" to="/forgot-password" state={routeState}>Forgot password?</Link>}
         </>}
-        <button className="account-button" type="submit" disabled={loading}>
-          {loading ? 'Submitting…' : challenge ? 'Verify' : register ? 'Create account' : 'Sign in'}
-        </button>
+        <Button className="account-button auth-submit" type="submit"
+          disabled={loading || (register && !consent) || Boolean(challenge && (!mfaCode || (!useRecovery && mfaCode.length !== 6)))}>
+          {loading ? 'Submitting…' : challenge ? 'Verify and continue' : register ? 'Create account' : 'Sign in'} <ArrowRight aria-hidden="true" />
+        </Button>
       </form>}
-      {!challenge && !pendingSession && <Link className="account-back" to={register ? '/sign-in' : '/sign-up'}>
-        {register ? 'Already have an account? Sign in' : 'Create a worker account'}</Link>}
+      {!challenge && <p className="auth-switch">
+        {register ? 'Already registered? ' : 'Don’t have an account? '}
+        <Link className="account-back" to={register ? '/sign-in' : '/sign-up'} state={routeState}>{register ? 'Sign in' : 'Create account'}</Link>
+      </p>}
+      {!challenge && <p className="auth-note"><ShieldCheck size={18} aria-hidden="true" /> Staff accounts are issued by an administrator.</p>}
     </section>
-  );
+    <InformationPanel register={register} verification={Boolean(challenge)} />
+  </div>;
 }

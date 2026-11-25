@@ -39,7 +39,8 @@ export function ledgerProvider(base: string): DataProvider {
     if (response.ok && (response.status === 201 || response.status === 204) && path.startsWith('/auth/')) return undefined as T;
     if (!response.ok) {
       if (response.status === 401 && session) throw new DataError('ERR_SESSION_EXPIRED', 'Your session expired. Sign in again.');
-      throw new DataError(value?.code ?? 'ERR_GATEWAY', value?.message ?? 'The gateway could not complete the request.');
+      throw new DataError(value?.code ?? 'ERR_GATEWAY', value?.message ?? 'The gateway could not complete the request.',
+        response.status, response.headers.get('X-Request-Id') ?? undefined, Number(response.headers.get('Retry-After')) || undefined);
     }
     if (value === null) throw new DataError('ERR_GATEWAY', 'The gateway returned an invalid response.');
     return value as T;
