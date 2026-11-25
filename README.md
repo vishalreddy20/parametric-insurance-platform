@@ -4,6 +4,8 @@ ParaShield is a parametric income-protection demo for Zomato and Swiggy
 delivery partners in India. It uses React, a Node Fabric Gateway service,
 and Go smart contracts on NPCI's DRUNIX sample network.
 
+ParaShield builds on the [earlier ZyroSafe prototype](ZYROSAFE_DEPLOYMENT.md).
+
 **SIMULATED** demo identities, oracle data, and UPI transfers. DRUNIX commits
 coverage, signed oracle readings, eligibility decisions, weekly caps and
 settlement transitions.
