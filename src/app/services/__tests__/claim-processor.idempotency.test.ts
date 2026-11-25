@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { processClaim } from '../../legacy/claim-processor';
-import { ClaimLocks, Policies, Users } from '../mock-db';
-import type { Policy, UserProfile } from '../mock-db';
+import { processClaim } from './fixtures/claim-processor';
+import { ClaimLocks, Policies, Users } from './fixtures/mock-db';
+import type { Policy, UserProfile } from './fixtures/mock-db';
 
 describe('claim-processor idempotency', () => {
   beforeEach(() => {

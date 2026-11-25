@@ -32,7 +32,7 @@ export PARASHIELD_GATEWAY_PORT="${PARASHIELD_GATEWAY_TEST_PORT:-18080}"
 export PARASHIELD_GATEWAY_HOST=127.0.0.1
 unset PARASHIELD_UPI_URL PARASHIELD_UPI_AUTHORIZATION
 
-node scripts/demo-identities.mjs
+node scripts/runtime-identities.mjs
 node gateway/dist/src/index.js > "$run_dir/gateway.log" 2>&1 &
 gateway_pid=$!
 node gateway/test/integration.mjs

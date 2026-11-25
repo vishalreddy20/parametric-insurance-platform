@@ -63,7 +63,7 @@ function Proof({ provider, session, payout, onExpired, close, restoreFocus }: {
   }
 
   return <Sheet open onOpenChange={(open) => { if (!open) close(); }}>
-    <SheetContent className="worker-proof-drawer" container={document.querySelector('.account-shell')}
+    <SheetContent className="worker-proof-drawer" container={document.querySelector<HTMLElement>('.account-shell')}
       onCloseAutoFocus={(event) => { event.preventDefault(); restoreFocus(); }}>
       <SheetHeader className="worker-proof-header">
         <SheetTitle><FileCheck2 aria-hidden="true" />Ledger proof</SheetTitle>

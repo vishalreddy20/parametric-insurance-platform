@@ -4,14 +4,14 @@
  * Blueprint: "System Workflow and State Machine Orchestration"
  */
 
-import { generateId, Users, Policies, Claims, Payouts, Flagged, ClaimLocks } from '../services/mock-db';
-import type { Claim, ClaimStateEntry, Payout, FlaggedClaim, UserProfile, Policy, ClaimLock } from '../services/mock-db';
-import { checkWeatherDisruption, simulateDisruption, type DisruptionResult } from '../services/weather-oracle';
-import { checkSocialDisruption, simulateSocialDisruption, type SocialDisruptionResult } from '../services/social-oracle';
-import { checkTrafficDisruption, simulateTrafficDisruption, type TrafficDisruptionResult } from '../services/traffic-oracle';
-import { checkPlatformDisruption, simulatePlatformDisruption, type PlatformDisruptionResult } from '../services/platform-oracle';
-import { evaluateFraud, type FraudEvaluationResult } from '../services/fraud-engine';
-import { calculatePayout } from '../services/ai-premium-engine';
+import { generateId, Users, Policies, Claims, Payouts, Flagged, ClaimLocks } from './mock-db';
+import type { Claim, ClaimStateEntry, Payout, FlaggedClaim, UserProfile, Policy, ClaimLock } from './mock-db';
+import { checkWeatherDisruption, simulateDisruption, type DisruptionResult } from '../../weather-oracle';
+import { checkSocialDisruption, simulateSocialDisruption, type SocialDisruptionResult } from '../../social-oracle';
+import { checkTrafficDisruption, simulateTrafficDisruption, type TrafficDisruptionResult } from '../../traffic-oracle';
+import { checkPlatformDisruption, simulatePlatformDisruption, type PlatformDisruptionResult } from '../../platform-oracle';
+import { evaluateFraud, type FraudEvaluationResult } from './fraud-engine';
+import { calculatePayout } from '../../ai-premium-engine';
 import { executeInstantPayout } from './mock-payment';
 
 // ============= Types =============

@@ -76,7 +76,7 @@ export function AccountSecurity({ provider, session, onExpired, onSignedOut }: {
       {value && value.sessions.every((entry) => entry.current) && !error && <p className="security-panel-body">You have no other active sessions.</p>}
     </section>
     <Dialog open={Boolean(selection)} onOpenChange={(open) => { if (!open && !pending) setSelection(undefined); }}>
-      <DialogContent className="account-dialog" container={document.querySelector('.account-shell')}>
+      <DialogContent className="account-dialog" container={document.querySelector<HTMLElement>('.account-shell')}>
         <DialogHeader>
           <DialogTitle>{selection?.sessionId ? 'Revoke this session?' : 'Sign out everywhere?'}</DialogTitle>
           <DialogDescription>{selection?.sessionId ? 'This ends access from the selected browser.' : 'This ends all sessions, including this browser.'}</DialogDescription>

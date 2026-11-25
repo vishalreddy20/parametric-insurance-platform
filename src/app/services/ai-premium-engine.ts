@@ -4,7 +4,25 @@
  * Blueprint: "Actuarial Engineering and Dynamic Income-Based Payout Models"
  */
 
-import type { UserProfile, PremiumBreakdown } from './mock-db';
+interface PremiumProfile {
+  weeklyIncome?: number;
+  city?: string;
+  platform?: string;
+  yearsExperience?: number;
+  weeklyHours?: number;
+  claimCount?: number;
+}
+
+interface PremiumBreakdown {
+  basePremium: number;
+  cityRiskMultiplier: number;
+  seasonalMultiplier: number;
+  platformMultiplier: number;
+  experienceDiscount: number;
+  hoursMultiplier: number;
+  claimHistoryMultiplier: number;
+  finalPremium: number;
+}
 
 // ============= City Risk Zones =============
 const CITY_RISK_SCORES: Record<string, number> = {
@@ -73,7 +91,7 @@ export const TIER_CONFIG = {
 
 // ============= Core Premium Calculation =============
 
-export function calculateDynamicPremium(profile: Partial<UserProfile>, tier: 'basic' | 'standard' | 'premium'): PremiumBreakdown {
+export function calculateDynamicPremium(profile: PremiumProfile, tier: 'basic' | 'standard' | 'premium'): PremiumBreakdown {
   const config = TIER_CONFIG[tier];
   const weeklyIncome = profile.weeklyIncome || 5000;
   
@@ -152,7 +170,7 @@ export function calculatePayout(
 
 // ============= Premium Comparison =============
 
-export function compareTiers(profile: Partial<UserProfile>): Record<string, PremiumBreakdown & { tier: string }> {
+export function compareTiers(profile: PremiumProfile): Record<string, PremiumBreakdown & { tier: string }> {
   return {
     basic: { ...calculateDynamicPremium(profile, 'basic'), tier: 'basic' },
     standard: { ...calculateDynamicPremium(profile, 'standard'), tier: 'standard' },

@@ -169,7 +169,7 @@ npm --prefix gateway run build
 PARASHIELD_PROFILE=1 PARASHIELD_PAGE_SIZE=100 PARASHIELD_FANOUT_CONCURRENCY=24 \
 PARASHIELD_SETTLEMENT_CONCURRENCY=24 PARASHIELD_WORKER_POLL_MS=100 \
 PARASHIELD_UPI_LATENCY_MS=100 PARASHIELD_EVALUATE_TIMEOUT_MS=30000 PARASHIELD_SERVICES_ONLY=1 \
-node scripts/demo-stack.mjs > /tmp/parashield-payout-profile.log 2>&1
+node scripts/dev-stack.mjs > /tmp/parashield-payout-profile.log 2>&1
 ```
 
 From another terminal sharing those runtime paths, use a separate output

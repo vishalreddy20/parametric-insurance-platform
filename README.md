@@ -1,12 +1,12 @@
 # ParaShield
 
-ParaShield is a parametric income-protection demo for Zomato and Swiggy
+ParaShield is a parametric income-protection application for Zomato and Swiggy
 delivery partners in India. It uses React, a Node Fabric Gateway service,
 and Go smart contracts on NPCI's DRUNIX sample network.
 
 ParaShield builds on the [earlier ZyroSafe prototype](ZYROSAFE_DEPLOYMENT.md).
 
-**SIMULATED** demo identities, oracle data, and UPI transfers. DRUNIX commits
+The local network uses sample Fabric identities, synthetic oracle inputs and simulated UPI transfers. DRUNIX commits
 coverage, signed oracle readings, eligibility decisions, weekly caps and
 settlement transitions.
 
@@ -63,12 +63,29 @@ external application state directory printed by the launcher.
 
 ```bash
 export PARASHIELD_ACCOUNT_DB=/path/to/external-state/ledger-data/gateway/accounts.sqlite
-scripts/provision-user.sh insurer your-insurer-username
+scripts/provision-user.sh insurer evaluation-insurer
+scripts/provision-user.sh regulator evaluation-regulator
+scripts/provision-user.sh platform evaluation-platform zomato
+scripts/provision-user.sh admin evaluation-admin
 ```
 
 Staff set up an authenticator on first sign-in. Keep recovery codes private.
 Set the same `PARASHIELD_PASSWORD_PEPPER` for the launcher and provisioning
 command if you configure a pepper. See [authentication details](docs/SECURITY.md).
+
+## Evaluation walkthrough
+
+Open [ParaShield](http://127.0.0.1:5173) in three separate browser profiles to keep the sessions independent. Each staff evaluator signs in using an account provisioned above and sets up an authenticator on first use. Send the passwords and recovery instructions privately.
+
+| Profile | Steps | Evidence |
+| --- | --- | --- |
+| Worker | Choose **Create account**, choose Zomato, then sign in. Open **Set up coverage**, select the zone and plan, and activate with the simulated premium. | The activation receipt includes the policy ID, ledger transaction ID and block. The worker workspace lists payouts and opens **Ledger proof** on a recorded payout. |
+| Insurer | Sign in and open **Insurer console**. Choose an unused zone for the current hour and select **One oracle offline**. Click **Run storm simulation**. | A declared event requires two signed readings. **Surge results** displays recorded 32-, 200- and 1,000-policy measurements. |
+| Regulator | Sign in and open **Ledger audit**. Select the insurer's zone and the current IST week. | Inspect the event, quorum and weekly payout aggregates. Open `/insurer` to verify role denial. |
+
+A signed event declaration alone does not make a worker eligible for payment. The ledger also requires an active policy, an eligible platform activity attestation, the configured waiting period, and a closed event window. For a timed evaluation on a dedicated sample, use the signed one-policy verification run in the [evaluation walkthrough](docs/EVALUATION.md#prepare-a-settled-evaluation-record) and inspect its recorded payout in the worker workspace. The run uses synthetic readings and simulated payment.
+
+Platform staff can open **Platform workspace** to confirm the directory contains only accounts from their platform. Admin staff can open **Admin workspace** to provision staff accounts and revoke another account's sessions.
 
 ## Configuration
 
@@ -79,12 +96,12 @@ and document the stand-alone service interfaces.
 | Variable | Purpose and default |
 | --- | --- |
 | `DRUNIX_RUNTIME` | Writable checkout outside ParaShield. The quickstart makes one in `/tmp` when omitted. |
-| `PARASHIELD_DEMO_STATE` | External directory for demo identities, local keys and durable job/UPI state. The launcher makes one in `/tmp` when omitted. Reuse it with the same ledger. |
+| `PARASHIELD_DEMO_STATE` | External directory for sample identities, local keys and durable job/UPI state. The launcher makes one in `/tmp` when omitted. Reuse it with the same ledger. |
 | `PARASHIELD_WEB_PORT`, `PARASHIELD_GATEWAY_PORT` | Loopback ports 5173 and 8080. |
 | `PARASHIELD_ORACLE_PORT`, `PARASHIELD_UPI_PORT` | Loopback ports 8081 and 8082. |
 | `PARASHIELD_UPI_LATENCY_MS`, `PARASHIELD_UPI_FAILURE_BPS` | Simulated delay and failure probability in basis points. Defaults are 100 ms and zero. |
 | `PARASHIELD_BENCHMARK_REPORT` | JSON read by the benchmark API. The quickstart uses the measured report in `docs/`. |
-| `VITE_DATA_MODE`, `VITE_GATEWAY_URL` | Browser mode and API base URL. Defaults are `ledger` and `http://127.0.0.1:8080`. |
+| `VITE_GATEWAY_URL` | Browser API base URL. Defaults to `http://127.0.0.1:8080`. |
 
 ## Verify
 
@@ -106,7 +123,7 @@ To benchmark the same running sample, export `DRUNIX_RUNTIME` and
 `PARASHIELD_DEMO_STATE` from the launcher and run `scripts/surge-test 32`.
 Without an argument the script requests 1,000 policies. Use a dedicated
 sample with simulated payment failures disabled. The runner temporarily
-enables the signed demo-window close, creates synthetic policy records,
+enables the signed test-window closure, creates synthetic policy records,
 and writes measured reports. See [benchmark results](docs/BENCHMARKS.md).
 
 ## Troubleshooting
@@ -120,7 +137,7 @@ and writes measured reports. See [benchmark results](docs/BENCHMARKS.md).
 - For a failed chaincode package install, check Docker access to
   `npcioss/drunix-ccenv:1.0` and `npcioss/drunix-baseos:1.0`. The deploy
   wrapper pulls those images if absent.
-- Use a new demo state directory after recreating the sample's MSPs and
+- Use a new runtime state directory after recreating the sample's MSPs and
   ledger. Old certificates and event cursors belong to the previous network.
 - For an empty claim timeline, confirm premium, waiting period, the
   platform activity window, quorum and window closure. The browser

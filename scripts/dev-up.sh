@@ -56,4 +56,4 @@ scripts/deploy-chaincode.sh
 scripts/smoke-test.sh
 
 export PARASHIELD_BENCHMARK_REPORT="${PARASHIELD_BENCHMARK_REPORT:-$repo_root/docs/benchmark-latest.json}"
-exec node scripts/demo-stack.mjs
+exec node scripts/dev-stack.mjs

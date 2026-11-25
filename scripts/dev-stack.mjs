@@ -61,7 +61,7 @@ async function main() {
     await readFile(configPath);
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    const command = spawnSync(process.execPath, ['scripts/demo-identities.mjs'], {
+    const command = spawnSync(process.execPath, ['scripts/runtime-identities.mjs'], {
       cwd: repo, stdio: 'inherit',
       env: { ...process.env, PARASHIELD_DEMO_IDENTITY_DIR: identityDir, PARASHIELD_DEMO_MASTER: keys.master },
     });

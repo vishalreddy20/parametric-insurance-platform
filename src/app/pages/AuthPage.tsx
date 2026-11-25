@@ -32,7 +32,7 @@ function InformationPanel({ register, verification }: { register: boolean; verif
 
 function AccountTerms() {
   const [container, setContainer] = useState<HTMLElement | null>(null);
-  return <Dialog onOpenChange={(open) => { if (open) setContainer(document.querySelector('.account-shell')); }}>
+  return <Dialog onOpenChange={(open) => { if (open) setContainer(document.querySelector<HTMLElement>('.account-shell')); }}>
     <DialogTrigger asChild><button type="button" className="account-text-button">Terms and Privacy Notice</button></DialogTrigger>
     <DialogContent className="account-dialog" container={container}>
       <DialogHeader><DialogTitle>Terms and Privacy Notice</DialogTitle>
@@ -65,7 +65,7 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
   const [loading, setLoading] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
-  const registrationKey = useRef<string>();
+  const registrationKey = useRef<string | undefined>(undefined);
   const resetKey = () => { registrationKey.current = undefined; };
 
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);

@@ -49,7 +49,7 @@ export PARASHIELD_BANK_ACCESS_CODE="$(code_for bank)"
 export PARASHIELD_ORACLE_1_ACCESS_CODE="$(code_for oracle-1)"
 export PARASHIELD_ORACLE_2_ACCESS_CODE="$(code_for oracle-2)"
 export PARASHIELD_ORACLE_3_ACCESS_CODE="$(code_for oracle-3)"
-node scripts/demo-identities.mjs
+node scripts/runtime-identities.mjs
 node gateway/dist/src/index.js > "$run_dir/gateway.log" 2>&1 &
 pids+=("$!")
 node oracles/dist/index.js > "$run_dir/oracles.log" 2>&1 &
