@@ -1,0 +1,104 @@
+export const zones = ['mumbai', 'chennai', 'kolkata', 'delhi', 'hyderabad', 'bangalore', 'pune', 'ahmedabad', 'jaipur', 'lucknow'] as const;
+export type Zone = typeof zones[number];
+export type Tier = 'basic' | 'standard' | 'premium';
+export type PolicyStatus = 'PENDING_PREMIUM' | 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'EXPIRED';
+export type PayoutStatus = 'RESERVED' | 'SETTLED' | 'FAILED';
+export type SimulationMode = 'normal' | 'offline' | 'disagree';
+
+export interface Session {
+  token: string;
+  role: 'worker' | 'platform' | 'insurer' | 'bank' | 'oracle' | 'regulator';
+  policyId?: string;
+  workerId?: string;
+  platformId?: 'zomato' | 'swiggy';
+}
+
+export interface Policy {
+  id: string;
+  status: PolicyStatus;
+  terms: {
+    workerId: string;
+    zone: Zone;
+    platform: string;
+    tier: Tier;
+    weeklyIncomePaise: number;
+    weeklyMinutes: number;
+    premiumPaise: number;
+  };
+  term: number;
+  startsAt?: number;
+  endsAt?: number;
+  waitingUntil?: number;
+}
+
+export interface Reading {
+  oracleId: string;
+  value: number;
+  observedAt: number;
+  breach: boolean;
+}
+
+export interface DisruptionEvent {
+  eventKey: string;
+  triggerType: string;
+  windowStart: number;
+  windowEnd: number;
+  unit: string;
+  quorum: number;
+  status: 'PENDING' | 'DECLARED';
+  readings: Reading[];
+  txId: string;
+}
+
+export interface Payout {
+  id: string;
+  eventKey: string;
+  status: PayoutStatus;
+  amountPaise: number;
+  reservedAt: number;
+  finalizedAt?: number;
+  reference?: string;
+  txId?: string;
+}
+
+export interface Enroll {
+  zone: Zone;
+  tier: Tier;
+  weeklyIncomePaise: number;
+  weeklyMinutes: number;
+  premiumPaise: number;
+  worker: { identity: string; phone: string; bank: string };
+}
+
+export interface LedgerProof { blockNumber: string; transactionId: string }
+export interface Benchmark {
+  completedAt: string;
+  environment: { network: string };
+  metrics: { tps: number; p50Ms: number; p95Ms: number; failures: number; mvccRetries: number };
+}
+export interface Reconciliation {
+  reservedCount: number; settledCount: number; failedCount: number;
+  reservedPaise: number; settledPaise: number; failedPaise: number;
+}
+
+export interface DataProvider {
+  mode: 'demo' | 'ledger';
+  signIn(username: string, accessCode: string): Promise<Session>;
+  policy(session: Session): Promise<Policy | null>;
+  enroll(session: Session, terms: Enroll): Promise<Policy>;
+  payPremium(session: Session): Promise<{ status: 'PAID' | 'FAILED'; callbackStatus: string }>;
+  events(session: Session, zone: Zone): Promise<DisruptionEvent[]>;
+  payouts(session: Session): Promise<Payout[]>;
+  event(session: Session, key: string): Promise<DisruptionEvent | null>;
+  proof(session: Session, txId: string): Promise<LedgerProof | null>;
+  policies(session: Session, zone: Zone, status: PolicyStatus): Promise<Policy[]>;
+  benchmark(session: Session): Promise<Benchmark | null>;
+  reconciliation(session: Session, zone: Zone, week: string): Promise<Reconciliation | null>;
+  simulate(session: Session, zone: Zone, mode: SimulationMode): Promise<{ event: DisruptionEvent }>;
+}
+
+export class DataError extends Error {
+  constructor(public code: string, message: string) {
+    super(message);
+  }
+}

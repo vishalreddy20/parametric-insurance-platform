@@ -72,3 +72,9 @@ export const configUpdate = z.strictObject({
   }),
 });
 export const reconciliation = page.extend({ week: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) });
+
+export const simulation = z.strictObject({
+  zone,
+  scenario: z.enum(['storm', 'rainfall', 'heat', 'pollution', 'strike', 'curfew', 'protest', 'gridlock', 'outage', 'dispatch_freeze']).default('storm'),
+  mode: z.enum(['normal', 'disagree', 'offline']).default('normal'),
+});

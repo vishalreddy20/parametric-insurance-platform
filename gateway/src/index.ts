@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { createApp } from './app.js';
+import { ApiError } from './errors.js';
 import { DemoAuth, principalSchema } from './auth.js';
 import { FabricLedger } from './ledger.js';
 import { callMockUPI, Checkpoints, consumeEvents, Fanout, mockSettlement } from './worker.js';
@@ -23,6 +24,8 @@ const envSchema = z.object({
   PARASHIELD_GATEWAY_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   PARASHIELD_GATEWAY_HOST: z.string().default('127.0.0.1'),
   PARASHIELD_ORIGIN: z.url().optional(),
+  PARASHIELD_ORACLE_URL: z.url().optional(),
+  PARASHIELD_BENCHMARK_REPORT: z.string().min(1).optional(),
   PARASHIELD_UPI_URL: z.url().optional(),
   PARASHIELD_UPI_AUTHORIZATION: z.string().min(16).optional(),
 });
@@ -50,7 +53,31 @@ async function main() {
   const app = createApp({ ledger, auth, saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
     readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
     simulatePremium: upiURL && upiAuth ? (payment) => callMockUPI(upiURL, upiAuth, '/v1/premiums', payment) : undefined,
-    corsOrigin: settings.PARASHIELD_ORIGIN, log });
+    corsOrigin: settings.PARASHIELD_ORIGIN,
+    findProof: (id) => state.findProof(id),
+    loadBenchmark: async () => {
+      if (!settings.PARASHIELD_BENCHMARK_REPORT) return null;
+      try {
+        return JSON.parse(await readFile(settings.PARASHIELD_BENCHMARK_REPORT, 'utf8'));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+        throw error;
+      }
+    },
+    runSimulation: settings.PARASHIELD_ORACLE_URL ? async (authorization, body) => {
+      try {
+        const service = await fetch(new URL('/v1/simulations', settings.PARASHIELD_ORACLE_URL), {
+          method: 'POST', headers: { Authorization: authorization, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body), signal: AbortSignal.timeout(90_000),
+        });
+        if (service.ok) return await service.json();
+        await service.body?.cancel();
+      } catch {
+        // The same zone, hour and scenario are naturally idempotent on the ledger.
+      }
+      throw new ApiError('ERR_ORACLE_UNAVAILABLE', 503, 'The simulated oracle operation could not be completed.');
+    } : undefined,
+    log });
   const abort = new AbortController();
   const server = app.listen(settings.PARASHIELD_GATEWAY_PORT, settings.PARASHIELD_GATEWAY_HOST);
   try {

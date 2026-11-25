@@ -93,3 +93,16 @@ delivery after a process failure uses the same reference at the gateway
 and chaincode. The premium proxy assigns one reference per policy term,
 and failed simulated premiums leave that term unpaid. No payment rail is
 contacted.
+
+## Default the UI to ledger mode and leave prototype fixtures read-only for claims
+
+The frontend retains the prototype's layout, styles, sign-in entry, worker
+tabs and dashboard cards. A typed data provider is the only active frontend
+data connection. Worker and organization views come from the gateway.
+`VITE_DATA_MODE=demo` exposes the local fixture worker without any
+client-side payout execution or organization views. Retaining browser claim
+automation would allow a UI-only decision to appear as a ledger settlement.
+
+The gateway stores the transaction/block pair from committed DRUNIX events.
+The frontend displays a pending proof state when event indexing has not caught
+up. It shows a benchmark only when a measured report is available.

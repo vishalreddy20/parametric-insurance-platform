@@ -74,6 +74,8 @@ export class Checkpoints {
     await this.save(this.name(job), { job, done });
   }
 
+  findProof(txId: string) { return this.load<Cursor>('proof-' + txId + '.json'); }
+
   loadCursor() { return this.load<Cursor>('cursor.json'); }
 
   async recordEvent(event: ChaincodeEvent) {
@@ -86,7 +88,9 @@ export class Checkpoints {
       const value = payoutPayload.parse(parse());
       await this.enqueue({ kind: 'settlement', key: value.id, amountPaise: value.amountPaise });
     }
-    await this.save('cursor.json', { blockNumber: String(event.blockNumber), transactionId: event.transactionId });
+    const proof = { blockNumber: String(event.blockNumber), transactionId: event.transactionId };
+    if (/^[a-f0-9]{64}$/.test(event.transactionId)) await this.save('proof-' + event.transactionId + '.json', proof);
+    await this.save('cursor.json', proof);
   }
 }
 

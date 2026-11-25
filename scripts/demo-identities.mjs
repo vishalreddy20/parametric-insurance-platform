@@ -58,7 +58,10 @@ async function run() {
     principals.push({ username: actor, role, actor, accessCode: accessCode(actor), ...(platformId && { platformId }) });
   }
   identities['event-insurer'] = { ...identities.insurer, endpoint: 'localhost:7061', tlsHost: 'peer1.org1.example.com' };
-  const worker = 'demo-worker';
+  const worker = process.env.PARASHIELD_DEMO_WORKER ?? 'demo-worker';
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(worker) || sets.some(({ actor }) => actor === worker)) {
+    throw new Error('Invalid demo worker username.');
+  }
   principals.push({ username: worker, role: 'worker', actor: 'zomato', accessCode: accessCode(worker),
     policyId: worker, workerId: worker, platformId: 'zomato' });
   await writeFile(join(root, 'gateway-config.json'), JSON.stringify({ identities, principals, insurer: 'insurer', eventActor: 'event-insurer' }),

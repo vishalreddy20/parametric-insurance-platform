@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { processClaim } from '../claim-processor';
+import { processClaim } from '../../legacy/claim-processor';
 import { ClaimLocks, Policies, Users } from '../mock-db';
 import type { Policy, UserProfile } from '../mock-db';
 

@@ -1,157 +1,45 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { seedDemoData, Users } from './services/mock-db';
-import { supabase } from './components/supabase-client';
+import { lazy, Suspense, useCallback, useState } from 'react';
+import type { DataProvider, Session } from './data/provider';
+import { ledgerProvider } from './data/ledger-provider';
 
-const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })));
-const AuthPage = lazy(() => import('./pages/AuthPage').then((m) => ({ default: m.AuthPage })));
-const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
-const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((m) => ({ default: m.WorkerDashboard })));
-const AdminPanel = lazy(() => import('./pages/AdminPanel').then((m) => ({ default: m.AdminPanel })));
+const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
+const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
+const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((module) => ({ default: module.WorkerDashboard })));
+const AdminPanel = lazy(() => import('./pages/AdminPanel').then((module) => ({ default: module.AdminPanel })));
+const demoEnabled = import.meta.env.VITE_DATA_MODE === 'demo';
 
-type AppView = 'landing' | 'auth' | 'onboarding' | 'worker' | 'admin';
+function AppViews({ provider }: { provider: DataProvider }) {
+  const [view, setView] = useState<'landing' | 'sign-in'>('landing');
+  const [session, setSession] = useState<Session | null>(null);
+  const [message, setMessage] = useState('');
+  const logout = useCallback(() => { setSession(null); setMessage(''); setView('landing'); }, []);
+  const expired = useCallback(() => { setSession(null); setMessage('Your session expired. Sign in again.'); setView('sign-in'); }, []);
+
+  if (session?.role === 'worker' && session.policyId && session.workerId) {
+    return <WorkerDashboard provider={provider} session={session} onExpired={expired} logout={logout} />;
+  }
+  if (session?.role === 'insurer' || session?.role === 'regulator') {
+    return <AdminPanel provider={provider} session={session} onExpired={expired} logout={logout} />;
+  }
+  if (view === 'landing') return <LandingPage demo={provider.mode === 'demo'} onGetStarted={() => setView('sign-in')} />;
+  return <AuthPage provider={provider} message={message} onBack={logout} onSuccess={(signedIn) => {
+    if (!['worker', 'insurer', 'regulator'].includes(signedIn.role)) {
+      setMessage('This simulated service role uses the API.');
+      return;
+    }
+    setMessage('');
+    setSession(signedIn);
+  }} />;
+}
+
+const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
+const DemoApp = lazy(async () => {
+  const { demoProvider } = await import('./data/demo-provider');
+  return { default: () => <AppViews provider={demoProvider} /> };
+});
 
 export default function App() {
-  const [view, setView] = useState<AppView>('landing');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState('');
-  const [userName, setUserName] = useState('');
-  const [userPhone, setUserPhone] = useState('');
-
-  useEffect(() => {
-    // Seed demo data on first load
-    seedDemoData();
-
-    // Check for existing Supabase session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const user = Users.get(session.user.id);
-        if (user && user.onboardingComplete) {
-          setUserId(session.user.id);
-          setView('worker');
-        } else if (session.user.id) {
-          setUserId(session.user.id);
-          setUserEmail(session.user.email || '');
-          setUserName(session.user.user_metadata?.name || '');
-          setUserPhone(session.user.user_metadata?.phone || '');
-          setView('onboarding');
-        }
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        // Don't auto-redirect to landing on logout if we're handling it
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleAuthSuccess = (id: string, _token: string) => {
-    setUserId(id);
-    const user = Users.get(id);
-    if (user && user.onboardingComplete) {
-      setView('worker');
-    } else {
-      setView('onboarding');
-    }
-  };
-
-  const handleStartOnboarding = (id: string) => {
-    setUserId(id);
-    setView('onboarding');
-  };
-
-  const handleOnboardingComplete = (id: string, _token: string) => {
-    setUserId(id);
-    setView('worker');
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUserId(null);
-    setUserEmail('');
-    setUserName('');
-    setUserPhone('');
-    setView('landing');
-  };
-
-  const renderView = () => {
-    if (view === 'landing') {
-      return (
-        <LandingPage
-          onGetStarted={() => setView('auth')}
-          onAdminLogin={() => setView('admin')}
-        />
-      );
-    }
-
-    if (view === 'auth') {
-      return (
-        <AuthPage
-          onAuthSuccess={handleAuthSuccess}
-          onStartOnboarding={(id) => {
-            handleStartOnboarding(id);
-            // Get user metadata from Supabase
-            supabase.auth.getUser().then(({ data }) => {
-              if (data.user) {
-                setUserEmail(data.user.email || '');
-                setUserName(data.user.user_metadata?.name || '');
-                setUserPhone(data.user.user_metadata?.phone || '');
-              }
-            });
-          }}
-        />
-      );
-    }
-
-    if (view === 'onboarding' && userId) {
-      return (
-        <OnboardingFlow
-          userId={userId}
-          userEmail={userEmail}
-          userName={userName}
-          userPhone={userPhone}
-          onComplete={handleOnboardingComplete}
-        />
-      );
-    }
-
-    if (view === 'worker' && userId) {
-      return (
-        <WorkerDashboard
-          userId={userId}
-          onLogout={handleLogout}
-        />
-      );
-    }
-
-    if (view === 'admin') {
-      return (
-        <AdminPanel
-          onBack={() => setView('landing')}
-        />
-      );
-    }
-
-    return null;
-  };
-
-  return (
-    <div style={{ minHeight: '100vh' }}>
-      <Suspense
-        fallback={
-          <div className="zs-page-loader">
-            <div className="zs-page-loader-spinner" />
-            <p>Loading interface...</p>
-          </div>
-        }
-      >
-        <div key={view} className="zs-view-transition">
-          {renderView()}
-        </div>
-      </Suspense>
-    </div>
-  );
+  return <Suspense fallback={<div className="zs-page-loader" role="status"><div className="zs-page-loader-spinner" /><p>Loading ParaShield…</p></div>}>
+    {demoEnabled ? <DemoApp /> : <AppViews provider={provider} />}
+  </Suspense>;
 }

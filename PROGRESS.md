@@ -35,3 +35,9 @@
 - Added the insurer-only oracle simulation service and persistent mock UPI service. The oracle adapters reuse the prototype's weather, social, traffic and platform scenario logic, and each submits with a distinct signed identity. All service responses mark simulation explicitly.
 - `npm --prefix mock-upi test` passed both tests, covering concurrent duplicate requests, conflicting data, stored failed outcomes and callback recovery across restart. The gateway's 3 tests passed and the oracle build succeeded.
 - `DRUNIX_RUNTIME=... scripts/services-integration.sh` passed against the running sample. Normal and disagreement storms each submitted 3 authenticated readings. The offline scenario declared with 2. The simulated premium callback moved the policy to ACTIVE on DRUNIX and returned the same result on replay. Payout settlement callbacks were tested against a fake receiver in this phase; live payout settlement still awaits an eligible closed event.
+
+## Phase 5 — Browser and build verification passed
+
+- The active frontend now defaults to the ledger provider. It includes worker onboarding, simulated premium collection, policy and payout state, quorum and block proof, insurer and read-only regulator views, and a measured benchmark panel. Prototype-local claim automation is isolated under `src/app/legacy`.
+- `npm test` passed all 13 frontend tests; `npm run build` and the gateway's 3 tests passed. The root test runner only collects frontend tests; gateway and UPI tests remain in their packages.
+- Chromium against DRUNIX verified login routing, enrollment, premium confirmation, empty claims, gateway offline/retry, insurer simulation, regulator reconciliation, and session expiry. Chromium also verified local fixture mode without gateway requests. The walkthrough is in `docs/DEMO.md`. This run did not include a settled payout proof.

@@ -16,6 +16,9 @@ type Context = {
   settlementEnabled: boolean;
   simulatePremium?: (payment: { reference: string; policyId: string; term: number; amountPaise: number }) => Promise<unknown>;
   corsOrigin?: string;
+  findProof?: (txId: string) => Promise<unknown>;
+  loadBenchmark?: () => Promise<unknown>;
+  runSimulation?: (authorization: string, body: unknown) => Promise<unknown>;
   log?: (fields: Record<string, unknown>) => void;
 };
 type PolicyOwner = { terms?: { workerId: string; premiumPaise: number }; term?: number; status?: string };
@@ -41,7 +44,7 @@ function enforceWorker(user: Principal, policyId: string, workerId?: string) {
   }
 }
 
-export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, log = () => {} }: Context) {
+export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, runSimulation, log = () => {} }: Context) {
   const app = express();
   app.disable('x-powered-by');
   app.use((request, response, next) => {
@@ -151,6 +154,24 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   });
   app.get('/v1/policies/:id/payouts', policyPayouts);
   app.get('/v1/policies/:id/claims', policyPayouts);
+  app.get('/v1/events/detail', protect(auth, [...policyReaders, 'oracle'], async (request, response, user) => {
+    const key = parse(schema.eventKey, request.query.key);
+    response.json(await ledger.evaluate(user.actor, 'OracleQuorumContract:GetEvent', [key]));
+  }));
+  app.get('/v1/ledger-proof/:id', protect(auth, policyReaders, async (request, response) => {
+    const txId = parse(schema.payoutID, request.params.id);
+    const proof = await findProof?.(txId);
+    if (!proof) throw new ApiError('ERR_NOT_FOUND', 404, 'Ledger proof has not reached the event index.');
+    response.json(proof);
+  }));
+  app.get('/v1/benchmarks/latest', protect(auth, ['insurer', 'regulator'], async (_request, response) => {
+    response.json({ run: await loadBenchmark?.() ?? null });
+  }));
+  app.post('/v1/simulations', protect(auth, ['insurer'], async (request, response) => {
+    if (!runSimulation) throw new ApiError('ERR_ORACLE_UNAVAILABLE', 503, 'The simulated oracle service is unavailable.');
+    const input = parse(schema.simulation, request.body);
+    response.json(await runSimulation(request.get('authorization')!, input));
+  }));
   app.get('/v1/events/:zone', protect(auth, [...policyReaders, 'oracle'], async (request, response, user) => {
     const zone = parse(schema.zone, request.params.zone);
     const page = parse(schema.page, request.query);

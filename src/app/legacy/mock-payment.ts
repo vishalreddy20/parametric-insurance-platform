@@ -4,8 +4,8 @@
  * Blueprint: "Financial Orchestration, Payout Automation, and Payment Gateways"
  */
 
-import { generateId } from './mock-db';
-import type { Payout } from './mock-db';
+import { generateId } from '../services/mock-db';
+import type { Payout } from '../services/mock-db';
 
 // ============= Types =============
 
