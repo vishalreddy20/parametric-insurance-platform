@@ -20,7 +20,7 @@ const parameters = {
 export function passwordError(password: string, personalTerms: string[] = []): string | undefined {
   const length = [...password].length;
   if (length < 12 || length > 128) return 'Use between 12 and 128 characters.';
-  if (strength.check(password, personalTerms).score < 3) return 'Choose a less predictable access code.';
+  if (strength.check(password, personalTerms).score < 3) return 'Choose a less predictable password.';
 }
 
 export class PasswordHasher {

@@ -9,8 +9,8 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
 }) {
   const [username, setUsername] = useState(initialUsername);
   const [platform, setPlatform] = useState<'zomato' | 'swiggy'>('zomato');
-  const [code, setCode] = useState('');
-  const [showCode, setShowCode] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [challenge, setChallenge] = useState<Exclude<SignInResult, { status: 'signed-in' }>>();
   const [mfaCode, setMfaCode] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
@@ -35,7 +35,7 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
     const heading = failure instanceof DataError ? titles[failure.code] : undefined;
     setError({ heading: heading ?? (register ? 'Account creation failed' : 'Sign-in failed'),
       message: failure instanceof DataError && failure.code === 'ERR_AUTHENTICATION' && !challenge
-        ? 'Check your username and access code, then try again.' : readableError(failure) });
+        ? 'Check your username and password, then try again.' : readableError(failure) });
   }
 
   async function submit(event: FormEvent) {
@@ -48,16 +48,16 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
     try {
       if (register) {
         registrationKey.current ??= crypto.randomUUID();
-        await provider.register(username.trim(), code, platform, registrationKey.current);
+        await provider.register(username.trim(), password, platform, registrationKey.current);
         onRegistered(username.trim());
         return;
       }
-      const result = await provider.signIn(username.trim(), code, challenge ? { code: mfaCode.trim(), recovery: useRecovery } : undefined);
+      const result = await provider.signIn(username.trim(), password, challenge ? { code: mfaCode.trim(), recovery: useRecovery } : undefined);
       if (result.status !== 'signed-in') {
         setChallenge(result);
         return;
       }
-      setCode('');
+      setPassword('');
       setMfaCode('');
       if (result.recoveryCodes.length) setPendingSession(result);
       else await onSuccess();
@@ -99,13 +99,13 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
               <option value="zomato">Zomato</option><option value="swiggy">Swiggy</option>
             </select>
           </label>}
-          <label className="account-field">Access code
-            <input autoComplete={register ? 'new-password' : 'current-password'} type={showCode ? 'text' : 'password'} className="account-input"
-              value={code} onChange={(event) => { resetKey(); setCode(event.target.value); }} required minLength={register ? 12 : undefined} maxLength={128}
-              aria-describedby={register ? 'access-code-rules' : undefined} />
+          <label className="account-field">Password
+            <input autoComplete={register ? 'new-password' : 'current-password'} type={showPassword ? 'text' : 'password'} className="account-input"
+              value={password} onChange={(event) => { resetKey(); setPassword(event.target.value); }} required minLength={register ? 12 : undefined} maxLength={128}
+              aria-describedby={register ? 'password-rules' : undefined} />
           </label>
-          {register && <p id="access-code-rules">Use 12 or more characters. Choose a unique, hard-to-guess passphrase.</p>}
-          <button type="button" className="account-quiet" onClick={() => setShowCode(!showCode)}>{showCode ? 'Hide access code' : 'Show access code'}</button>
+          {register && <p id="password-rules">Use 12 or more characters. Choose a unique, hard-to-guess passphrase.</p>}
+          <button type="button" className="account-quiet" onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show password'}</button>
         </>}
         <button className="account-button" type="submit" disabled={loading}>
           {loading ? 'Submitting…' : challenge ? 'Verify' : register ? 'Create account' : 'Sign in'}

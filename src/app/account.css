@@ -102,7 +102,7 @@
 .account-shell h2 { font-size: 20px; font-weight: 650; }
 .account-card ol { list-style: decimal; padding-inline-start: var(--account-space-6); }
 .account-card li + li { margin-block-start: var(--account-space-2); }
-.account-card footer, .account-details dt, #access-code-rules { color: var(--account-muted); font-size: 14px; }
+.account-card footer, .account-details dt, #password-rules { color: var(--account-muted); font-size: 14px; }
 .account-form, .account-field { display: grid; gap: var(--account-space-3); }
 .account-field { gap: var(--account-space-1); font-weight: 550; }
 .account-input, .account-button, .account-quiet {

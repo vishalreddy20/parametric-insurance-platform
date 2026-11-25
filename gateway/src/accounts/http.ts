@@ -10,11 +10,11 @@ import { Sessions } from './sessions.js';
 
 const username = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$/);
 const loginBody = z.strictObject({
-  username, accessCode: z.string().min(1).max(256),
+  username, password: z.string().min(1).max(256),
   mfa: z.strictObject({ code: z.string().regex(/^(\d{6}|[A-Za-z0-9_-]{20})$/), recovery: z.boolean() }).optional(),
 });
 const registration = z.strictObject({
-  username, accessCode: z.string().min(1).max(256),
+  username, password: z.string().min(1).max(256),
   platformId: z.enum(['zomato', 'swiggy']),
 });
 const idempotencyKey = z.uuid();
@@ -150,7 +150,7 @@ export class AccountHttp {
         .digest('hex');
       const conflict = () => new ApiError('ERR_REGISTRATION', 409, 'Registration could not be completed.');
       const replay = async (existing: NonNullable<Awaited<ReturnType<AccountRepository['registration']>>>) => {
-        const matches = await this.options.hasher.verify(body.accessCode, existing.passwordHash);
+        const matches = await this.options.hasher.verify(body.password, existing.passwordHash);
         if (!matches || !timingSafeEqual(Buffer.from(existing.fingerprint), Buffer.from(fingerprint))) throw conflict();
       };
       const existing = await this.options.store.registration(key);
@@ -161,9 +161,9 @@ export class AccountHttp {
         return;
       }
       this.attempts.hit('register:' + request.ip, 5, 15 * 60_000, response);
-      const problem = passwordError(body.accessCode, [body.username]);
-      if (problem) throw new ApiError('ERR_ACCESS_CODE_POLICY', 400, problem);
-      const passwordHash = await this.options.hasher.hash(body.accessCode);
+      const problem = passwordError(body.password, [body.username]);
+      if (problem) throw new ApiError('ERR_PASSWORD_POLICY', 400, problem);
+      const passwordHash = await this.options.hasher.hash(body.password);
       const inserted = await this.options.store.register({
         id: randomUUID(), username: body.username, role: 'worker', platformId: body.platformId,
         passwordHash, createdAt: Date.now(),
@@ -188,7 +188,7 @@ export class AccountHttp {
         throw new ApiError('ERR_ACCOUNT_LOCKED', 423, 'Sign-in is temporarily locked. Try again in ' + seconds + ' seconds.');
       }
       const account = await this.options.store.findByUsername(body.username);
-      const matches = await this.options.hasher.verify(body.accessCode, account?.passwordHash);
+      const matches = await this.options.hasher.verify(body.password, account?.passwordHash);
       if (!matches || !account) throw invalid();
       const result = await this.options.mfa.verify(account, body.mfa);
       if (result.status === 'invalid') throw invalid();

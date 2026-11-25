@@ -22,12 +22,12 @@ function authenticatorCode(setupKey: string, now: number): string {
 }
 
 test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, role and ownership', async (t) => {
-  const accessCode = 'Copper paddles orbit zebra cliffs!';
+  const password = 'Copper paddles orbit zebra cliffs!';
   const store = new SqliteAccounts(':memory:');
   t.after(() => store.close());
   const hasher = await PasswordHasher.create();
   await store.insert({ id: 'insurer-account', username: 'insurer-a', role: 'insurer', platformId: null,
-    passwordHash: await hasher.hash(accessCode), createdAt: Date.now() });
+    passwordHash: await hasher.hash(password), createdAt: Date.now() });
   const origin = 'http://127.0.0.1:5173';
   const now = Date.now();
   const accounts = new AccountHttp({ store, hasher, origin, requestKey: Buffer.alloc(32, 2), mfa: new Mfa(store, Buffer.alloc(32, 1), () => now),
@@ -70,11 +70,11 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
     return { jar, send };
   }
   const staff = browser();
-  const staffCredentials = { username: 'insurer-a', accessCode };
+  const staffCredentials = { username: 'insurer-a', password };
   assert.equal((await staff.send('/auth/login', staffCredentials, false)).status, 403);
   assert.equal((await staff.send('/auth/csrf', undefined, true, 'https://other.example')).status, 403);
   assert.equal((await staff.send('/auth/csrf')).status, 200);
-  assert.equal((await staff.send('/login', { username: 'legacy-insurer', accessCode })).status, 404);
+  assert.equal((await staff.send('/login', { username: 'legacy-insurer', password })).status, 404);
   const enroll = await staff.send('/auth/login', staffCredentials);
   assert.equal(enroll.status, 202);
   assert.equal((await staff.send('/auth/session')).status, 401);
@@ -104,7 +104,7 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
 
   const worker = browser();
   await worker.send('/auth/csrf');
-  const credentials = { username: 'worker-a', accessCode, platformId: 'zomato' };
+  const credentials = { username: 'worker-a', password, platformId: 'zomato' };
   const registrationKey = randomUUID();
   assert.equal((await worker.send('/auth/register', credentials)).status, 400);
   assert.equal((await worker.send('/auth/register', { ...credentials, role: 'admin' }, true, origin, registrationKey)).status, 400);
@@ -114,9 +114,9 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.deepEqual(concurrent.map((response) => response.status), [201, 201]);
   assert.equal((await register()).status, 201);
   assert.equal((await register({ ...credentials, platformId: 'swiggy' })).status, 409);
-  assert.equal((await register({ ...credentials, accessCode: 'Unique alternative access code!' })).status, 409);
+  assert.equal((await register({ ...credentials, password: 'Unique alternative password!' })).status, 409);
   assert.equal((await register(credentials, randomUUID())).status, 409);
-  const workerLogin = await worker.send('/auth/login', { username: credentials.username, accessCode });
+  const workerLogin = await worker.send('/auth/login', { username: credentials.username, password });
   assert.equal(workerLogin.status, 200);
   const session = await workerLogin.json();
   assert.equal(session.role, 'worker');
@@ -129,7 +129,7 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
 
   const throttled = browser();
   await throttled.send('/auth/csrf');
-  const attempt = (username: string) => throttled.send('/auth/login', { username, accessCode: 'wrong' });
+  const attempt = (username: string) => throttled.send('/auth/login', { username, password: 'wrong' });
   const first = await attempt('worker-a');
   const unknown = await attempt('unknown-worker');
   assert.equal(first.status, 401);

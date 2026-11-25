@@ -71,9 +71,9 @@ export function ledgerProvider(base: string): DataProvider {
   }
 
   return {
-    async signIn(username, accessCode, mfa): Promise<SignInResult> {
+    async signIn(username, password, mfa): Promise<SignInResult> {
       const result = await request<Exclude<SignInResult, { status: 'signed-in' }> |
-        (Session & { csrfToken: string; recoveryCodes: string[] })>('/auth/login', undefined, { username, accessCode, mfa });
+        (Session & { csrfToken: string; recoveryCodes: string[] })>('/auth/login', undefined, { username, password, mfa });
       if ('status' in result) return result;
       const { csrfToken: nextCsrf, recoveryCodes, ...session } = result;
       csrfToken = nextCsrf;
@@ -84,7 +84,7 @@ export function ledgerProvider(base: string): DataProvider {
       try { await request('/auth/logout', session, {}); }
       finally { csrfToken = undefined; }
     },
-    register: (username, accessCode, platformId, key) => request('/auth/register', undefined, { username, accessCode, platformId }, true, key),
+    register: (username, password, platformId, key) => request('/auth/register', undefined, { username, password, platformId }, true, key),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),
     enroll: async (session, terms) => (await request<{ result: Policy }>('/policies', session,
       { ...terms, policyId: session.policyId, workerId: session.workerId })).result,

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { passwordError, PasswordHasher } from '../src/accounts/password.js';
 
-test('access code policy rejects short, common, and overlong values', () => {
+test('password policy rejects short, common, and overlong values', () => {
   assert.ok(passwordError('short'));
   assert.ok(passwordError('passwordpassword'));
   assert.ok(passwordError('a'.repeat(129)));

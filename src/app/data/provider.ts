@@ -88,10 +88,10 @@ export type SignInResult =
   | { status: 'signed-in'; session: Session; recoveryCodes: string[] };
 
 export interface DataProvider {
-  signIn(username: string, accessCode: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
+  signIn(username: string, password: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
   currentSession(): Promise<Session>;
   signOut(session: Session): Promise<void>;
-  register(username: string, accessCode: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
+  register(username: string, password: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
   policy(session: Session): Promise<Policy | null>;
   enroll(session: Session, terms: Enroll): Promise<Policy>;
   payPremium(session: Session): Promise<{ status: 'PAID' | 'FAILED'; callbackStatus: string }>;

@@ -67,7 +67,7 @@ async function loadAccounts() {
 }
 
 async function loginAccount(role, credentials) {
-  if (typeof credentials?.username !== 'string' || typeof credentials?.accessCode !== 'string' ||
+  if (typeof credentials?.username !== 'string' || typeof credentials?.password !== 'string' ||
       (role !== 'worker' && (typeof credentials.code !== 'string' || !/^\d{6}$/.test(credentials.code)))) {
     throw new Error('The benchmark needs credentials for a provisioned ' + role + ' account.');
   }
@@ -104,7 +104,7 @@ async function loginAccount(role, credentials) {
   }
   csrf = (await send('csrf')).csrfToken;
   const account = await send('login', {
-    username: credentials.username, accessCode: credentials.accessCode,
+    username: credentials.username, password: credentials.password,
     ...(role !== 'worker' && { mfa: { code: credentials.code, recovery: false } }),
   });
   if (account.role !== role) throw new Error('The benchmark account has an unexpected role.');
