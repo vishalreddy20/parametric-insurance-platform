@@ -84,3 +84,5 @@
 
 - Release pass adds scoped platform activity, admin staff-role changes with session revocation, optional worker authenticator management, and browser regression checks. Playwright verified worker onboarding, a platform attestation, a live signed insurer storm, settlement, the committed worker proof drawer, and the regulator summary with individual policy access denied.
 - Lighthouse mobile reported 100 accessibility and 0.000 CLS for Home, Sign in and Sign up. Screenshots, browser procedures, size budgets and the fresh checkout verification are in docs/QUALITY.md. SMTP reset remains open.
+
+- Added component tests for sign-in failure states, registration consent and retry idempotency, recovery-code challenge, and insurer loading, empty and retry states. The final application checkout passed startup, interactive provisioning and browser sign-in/session checks.
