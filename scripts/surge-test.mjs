@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { cpus, release, totalmem } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -15,6 +15,7 @@ const upi = 'http://127.0.0.1:' + (process.env.PARASHIELD_UPI_PORT ?? '8082');
 const resultPath = resolve(process.env.PARASHIELD_BENCHMARK_REPORT ?? 'docs/benchmark-latest.json');
 const tablePath = resolve(process.env.PARASHIELD_BENCHMARK_TABLE ?? 'docs/BENCHMARKS.md');
 const timeout = Number(process.env.PARASHIELD_SURGE_TIMEOUT_SECONDS ?? '1800') * 1000;
+const concurrency = Number(process.env.PARASHIELD_SURGE_CONCURRENCY ?? '8');
 const zones = ['jaipur', 'ahmedabad', 'lucknow', 'kolkata', 'pune', 'delhi', 'chennai', 'mumbai', 'hyderabad', 'bangalore'];
 const run = randomUUID().slice(0, 12);
 let interrupted = false;
@@ -29,7 +30,7 @@ function weekOf(seconds) {
   return day.toISOString().slice(0, 10);
 }
 
-async function request(path, { token, body, method, base = gateway, authorization } = {}) {
+async function request(path, { token, body, method, base = gateway, authorization, missingOK } = {}) {
   const response = await fetch(base + path, {
     method: method ?? (body === undefined ? 'GET' : 'POST'),
     headers: {
@@ -40,6 +41,7 @@ async function request(path, { token, body, method, base = gateway, authorizatio
     signal: AbortSignal.timeout(100_000),
   });
   const value = await response.json();
+  if (missingOK && response.status === 404) return null;
   if (!response.ok) throw new Error(path.split('?')[0] + ' returned HTTP ' + response.status + ' ' + (value?.code ?? ''));
   return value;
 }
@@ -88,7 +90,13 @@ async function writeReport(report) {
     '- The documented sample has fixed two-org Lite Peer endpoints and no four-Lite-Peer scaling procedure. Four Lite Peers were not benchmarked.\n' +
     '- The oracle inputs, identities and UPI were simulated. Ledger writes, commit, reconciliation and the stated timings were measured.\n' +
     (report.error ? '\nRun failure: ' + report.error + '\n' : '');
-  for (const [path, text] of [[resultPath, JSON.stringify(report, null, 2) + '\n'], [tablePath, table]]) {
+  let previous = '';
+  try { previous = await readFile(tablePath, 'utf8'); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  const history = previous.trimEnd()
+    ? previous.trimEnd() + '\n\n' + table.replace('# Surge benchmark', '## Benchmark run')
+    : table;
+  for (const [path, text] of [[resultPath, JSON.stringify(report, null, 2) + '\n'], [tablePath, history]]) {
     await mkdir(dirname(path), { recursive: true });
     const temporary = path + '.' + run + '.tmp';
     await writeFile(temporary, text);
@@ -97,7 +105,7 @@ async function writeReport(report) {
 }
 
 async function main() {
-  if (!state || !runtime || !Number.isSafeInteger(n) || n < 1 || n > 10000 || !Number.isFinite(timeout) || timeout < 10000) {
+  if (!state || !runtime || !Number.isSafeInteger(n) || n < 1 || n > 10000 || !Number.isFinite(timeout) || timeout < 10000 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 32) {
     throw new Error('Set PARASHIELD_DEMO_STATE and DRUNIX_RUNTIME. Choose 1–10000 policies and a timeout of at least 10 seconds.');
   }
   if (preparedWorker && (n !== 1 || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(preparedWorker))) {
@@ -139,7 +147,7 @@ async function main() {
     assert(report.zone, 'No clean zone is available in the current demo hour and week.');
     const ids = preparedWorker ? [preparedWorker] : Array.from({ length: n }, (_, index) => 'surge-' + run + '-' + (index + 1));
     const before = await request('/v1/metrics', { token: insurer });
-    await mapLimit(ids, 8, async (id) => {
+    await mapLimit(ids, concurrency, async (id) => {
       const policy = await request('/v1/policies', { token: platform, body: {
         policyId: id, workerId: id, zone: report.zone, tier: 'standard', weeklyIncomePaise: 400000, weeklyMinutes: 2400,
         premiumPaise: 20000, worker: { identity: 'SIMULATED worker', phone: 'SIMULATED phone', bank: 'SIMULATED bank' },
@@ -153,7 +161,7 @@ async function main() {
       }
       throw new Error('A simulated premium did not activate on the ledger.');
     });
-    await mapLimit(ids, 8, async (id) => {
+    await mapLimit(ids, concurrency, async (id) => {
       const end = epoch() - 1;
       await request('/v1/activity', { token: platform, body: {
         workerId: id, platformId: 'zomato', windowStart: end - 600, windowEnd: end, requestId: id,
@@ -172,11 +180,9 @@ async function main() {
     const firstTerminalMs = new Map();
     const deadline = stormStarted + timeout;
     while (!interrupted && observed.size < ids.length && performance.now() < deadline) {
-      await mapLimit(ids.filter((id) => !observed.has(id)), 8, async (id) => {
-        const page = await request('/v1/policies/' + id + '/payouts', { token: insurer });
-        const matching = page.records.filter(({ eventKey }) => eventKey === report.eventKey);
-        assert(matching.length <= 1, 'A duplicate payout exists.');
-        const payout = matching[0];
+      await mapLimit(ids.filter((id) => !observed.has(id)), concurrency, async (id) => {
+        const payoutId = createHash('sha256').update(id + '\0' + report.eventKey).digest('hex');
+        const payout = await request('/v1/payouts/' + payoutId, { token: insurer, missingOK: true });
         if (payout && payout.status !== 'RESERVED') {
           observed.set(id, payout);
           firstTerminalMs.set(id, performance.now() - stormStarted);
@@ -199,7 +205,7 @@ async function main() {
     const total = paid.reduce((sum, payout) => sum + payout.amountPaise, 0);
     assert(total <= n * oldConfig.standard.cap, 'Total payouts exceed the sum of policy caps.');
     let upiTotal = 0;
-    await mapLimit(paid, 8, async (payout) => {
+    await mapLimit(paid, concurrency, async (payout) => {
       const receipt = await request('/v1/receipts/' + payout.reference, { base: upi, authorization: 'Bearer ' + keys.upi });
       assert.equal(receipt.payoutId, payout.id, 'Mock UPI payout ID mismatch.');
       assert.equal(receipt.status, 'SETTLED', 'Mock UPI payout is not settled.');
@@ -208,6 +214,8 @@ async function main() {
       upiTotal += receipt.amountPaise;
     });
     assert.equal(upiTotal, total, 'Mock UPI and ledger totals differ.');
+    report.receiptVerification = { payoutCount: paid.length, ledgerPaise: total, mockUPIPaise: upiTotal };
+    const auditStarted = performance.now();
     let reserved = 0, settled = 0, failed = 0, ledger = 0, bookmark = '';
     do {
       const page = await request('/v1/reconciliation/' + report.zone + '?size=100&week=' + weekOf(simulation.event.windowStart) +
@@ -216,6 +224,7 @@ async function main() {
       assert(!page.bookmark || page.bookmark !== bookmark, 'The reconciliation bookmark did not advance.');
       bookmark = page.bookmark;
     } while (bookmark);
+    report.auditMs = round(performance.now() - auditStarted);
     assert(reserved === 0 && settled === n && failed === 0 && ledger === total, 'The audit totals did not reconcile.');
     const proof = await request('/v1/ledger-proof/' + paid[0].txId, { token: regulator });
     assert(/^\d+$/.test(proof.blockNumber), 'The committed payout block proof is missing.');

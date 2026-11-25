@@ -78,6 +78,9 @@ async function main() {
   start('Gateway', process.execPath, ['gateway/dist/src/index.js'], {
     ...common,
     PARASHIELD_GATEWAY_PORT: port,
+    ...Object.fromEntries(['PARASHIELD_PROFILE', 'PARASHIELD_EVALUATE_TIMEOUT_MS', 'PARASHIELD_PAGE_SIZE', 'PARASHIELD_FANOUT_CONCURRENCY',
+      'PARASHIELD_SETTLEMENT_CONCURRENCY', 'PARASHIELD_WORKER_POLL_MS'].filter((key) => process.env[key] !== undefined)
+      .map((key) => [key, process.env[key]])),
     PARASHIELD_GATEWAY_CONFIG: configPath,
     PARASHIELD_GATEWAY_STATE_DIR: join(state, 'gateway'),
     PARASHIELD_JWT_KEY: keys.jwt,
@@ -95,7 +98,7 @@ async function main() {
     PARASHIELD_ORACLE_3_ACCESS_CODE: accessCode('oracle-3'),
   });
   start('Mock UPI', process.execPath, ['mock-upi/index.mjs'], {
-    ...common, PARASHIELD_UPI_PORT: upiPort,
+    ...common, PARASHIELD_UPI_PORT: upiPort, PARASHIELD_PROFILE: process.env.PARASHIELD_PROFILE ?? '0',
     PARASHIELD_UPI_STATE_DIR: join(state, 'mock-upi'),
     PARASHIELD_UPI_AUTHORIZATION: 'Bearer ' + keys.upi,
     PARASHIELD_BANK_ACCESS_CODE: accessCode('bank'),

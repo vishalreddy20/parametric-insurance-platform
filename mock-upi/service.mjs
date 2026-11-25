@@ -20,7 +20,7 @@ class ServiceError extends Error {
   }
 }
 
-export async function mockUPI({ directory, authorization, callback, latencyMs, failureBps, log = () => {} }) {
+export async function mockUPI({ directory, authorization, callback, latencyMs, failureBps, profile = false, log = () => {} }) {
   const records = join(directory, 'records');
   const callbacks = join(directory, 'pending');
   await Promise.all([records, callbacks].map((path) => mkdir(path, { recursive: true, mode: 0o700 })));
@@ -70,7 +70,9 @@ export async function mockUPI({ directory, authorization, callback, latencyMs, f
       let record = await get(path);
       if (record && record.fingerprint !== fingerprint) throw new ServiceError(409, 'ERR_CONFLICT');
       if (!record) {
+        const timer = performance.now();
         await delay(latencyMs);
+        if (profile && kind === 'payout') log({ action: 'upi_delay', payoutId: input.payoutId, durationMs: performance.now() - timer });
         const sample = digest('SIMULATED-UPI:' + input.reference).readUInt32BE(0) % 10000;
         const status = sample < failureBps ? 'FAILED' : kind === 'premium' ? 'PAID' : 'SETTLED';
         record = { ...input, kind, status, simulated: true, fingerprint,

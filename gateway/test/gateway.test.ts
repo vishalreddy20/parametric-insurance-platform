@@ -120,3 +120,32 @@ test('restart replays unfinished fan-out and resumes the saved page', async (con
   assert.equal(finished.size, 10);
   assert.equal(peak, 5);
 });
+
+test('bounded settlement lane progresses while a reservation page awaits commit', { timeout: 3000 }, async (context) => {
+  const directory = await mkdtemp(join(tmpdir(), 'gateway-lanes-'));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const state = await Checkpoints.open(directory);
+  await state.enqueue({ kind: 'fanout', key: 'mumbai|severe_storm|1763985600', zone: 'mumbai', notBefore: 1, bookmark: '' });
+  await state.enqueue({ kind: 'settlement', key: 'a'.repeat(64), amountPaise: 100 });
+  let reserveStarted!: () => void;
+  let settlementFinished!: () => void;
+  const reserved = new Promise<void>((resolve) => { reserveStarted = resolve; });
+  const settled = new Promise<void>((resolve) => { settlementFinished = resolve; });
+  const abort = new AbortController();
+  context.after(() => abort.abort());
+  const ledger: Ledger = {
+    async evaluate<T>() { return { policies: [{ id: 'one' }], bookmark: '' } as T; },
+    async submit<T>() {
+      reserveStarted();
+      await settled;
+      abort.abort();
+      return { result: {} as T, txId: 'tx', blockNumber: '1' };
+    },
+  };
+  const worker = new Fanout(ledger, 'insurer', state, async () => {
+    await reserved;
+    settlementFinished();
+  }, () => {}, { pageSize: 10, fanout: 1, settlement: 1, pollMs: 50 });
+  await worker.run(abort.signal);
+  for await (const _job of state.pending()) assert.fail("unfinished job");
+});

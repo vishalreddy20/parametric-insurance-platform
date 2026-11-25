@@ -162,6 +162,10 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   });
   app.get('/v1/policies/:id/payouts', policyPayouts);
   app.get('/v1/policies/:id/claims', policyPayouts);
+  app.get('/v1/payouts/:id', protect(auth, ['insurer', 'regulator'], async (request, response, user) => {
+    const id = parse(schema.payoutID, request.params.id);
+    response.json(await ledger.evaluate(user.actor, 'PayoutContract:GetPayout', [id]));
+  }));
   app.get('/v1/events/detail', protect(auth, [...policyReaders, 'oracle'], async (request, response, user) => {
     const key = parse(schema.eventKey, request.query.key);
     response.json(await ledger.evaluate(user.actor, 'OracleQuorumContract:GetEvent', [key]));

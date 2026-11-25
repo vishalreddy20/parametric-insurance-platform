@@ -23,7 +23,7 @@ try {
   const { app, retryPending } = await mockUPI({
     directory: settings.PARASHIELD_UPI_STATE_DIR, authorization: settings.PARASHIELD_UPI_AUTHORIZATION,
     callback: gatewayCallback(settings.PARASHIELD_GATEWAY_URL, settings.PARASHIELD_BANK_ACCESS_CODE),
-    latencyMs: settings.PARASHIELD_UPI_LATENCY_MS, failureBps: settings.PARASHIELD_UPI_FAILURE_BPS, log,
+    latencyMs: settings.PARASHIELD_UPI_LATENCY_MS, failureBps: settings.PARASHIELD_UPI_FAILURE_BPS, profile: process.env.PARASHIELD_PROFILE === '1', log,
   });
   const server = app.listen(settings.PARASHIELD_UPI_PORT, '127.0.0.1');
   const abort = new AbortController();

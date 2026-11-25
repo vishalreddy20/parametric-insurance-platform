@@ -110,7 +110,8 @@ type Logger = (entry: Record<string, unknown>) => void;
 
 export class Fanout {
   constructor(private readonly ledger: Ledger, private readonly insurer: string,
-    private readonly state: Checkpoints, private readonly settle: Settlement | undefined, private readonly log: Logger) {}
+    private readonly state: Checkpoints, private readonly settle: Settlement | undefined, private readonly log: Logger,
+    private readonly tuning = { pageSize: 25, fanout: 5, settlement: 5, pollMs: 1000 }) {}
 
   async process(job: Job, now = Math.floor(Date.now() / 1000)) {
     if (job.kind === 'settlement') {
@@ -120,13 +121,15 @@ export class Fanout {
       return;
     }
     if (now < job.notBefore && !await this.state.windowClosed(job.zone, job.notBefore - 7200)) return;
+    const started = performance.now();
     const page = await this.ledger.evaluate<{ policies: { id: string }[]; bookmark: string }>(
-      this.insurer, 'PolicyContract:ListPoliciesByZone', [job.zone, 'ACTIVE', '25', job.bookmark],
+      this.insurer, 'PolicyContract:ListPoliciesByZone', [job.zone, 'ACTIVE', String(this.tuning.pageSize), job.bookmark],
     );
+    const pageReadMs = performance.now() - started;
     if (page.bookmark && page.bookmark === job.bookmark) throw new Error('Non-progressing policy bookmark.');
     const skips = new Map<string, number>();
-    for (let offset = 0; offset < page.policies.length; offset += 5) {
-      const outcomes = await Promise.allSettled(page.policies.slice(offset, offset + 5).map(async ({ id }) => {
+    for (let offset = 0; offset < page.policies.length; offset += this.tuning.fanout) {
+      const outcomes = await Promise.allSettled(page.policies.slice(offset, offset + this.tuning.fanout).map(async ({ id }) => {
         try {
           await this.ledger.submit(this.insurer, 'TriggerContract:ProcessEventForPolicy', { arguments: [job.key, id] });
         } catch (error) {
@@ -139,7 +142,7 @@ export class Fanout {
       if (failure?.status === 'rejected') throw failure.reason;
     }
     await this.state.progress({ ...job, bookmark: page.bookmark }, !page.bookmark);
-    this.log({ action: 'fanout_page', rows: page.policies.length, skipped: Object.fromEntries(skips) });
+    this.log({ action: 'fanout_page', rows: page.policies.length, pageReadMs, durationMs: performance.now() - started, skipped: Object.fromEntries(skips) });
   }
 
   private async attempt(job: Job) {
@@ -151,26 +154,27 @@ export class Fanout {
   }
 
   async run(signal: AbortSignal) {
+    await Promise.all([this.runLane('fanout', signal), this.runLane('settlement', signal)]);
+  }
+
+  private async runLane(kind: Job['kind'], signal: AbortSignal) {
+    if (kind === 'settlement' && !this.settle) return;
+    const concurrency = kind === 'fanout' ? 1 : this.tuning.settlement;
     while (!signal.aborted) {
-      const settlementBatch: SettlementJob[] = [];
-      const flushSettlements = async () => {
-        await Promise.all(settlementBatch.splice(0).map((job) => this.attempt(job)));
-      };
+      const batch: Job[] = [];
+      const flush = async () => { await Promise.all(batch.splice(0).map((job) => this.attempt(job))); };
       try {
         for await (const job of this.state.pending()) {
           if (signal.aborted) break;
-          if (job.kind === 'fanout') {
-            await this.attempt(job);
-          } else if (this.settle) {
-            settlementBatch.push(job);
-            if (settlementBatch.length === 5) await flushSettlements();
-          }
+          if (job.kind !== kind) continue;
+          batch.push(job);
+          if (batch.length === concurrency) await flush();
         }
-        if (!signal.aborted) await flushSettlements();
+        if (!signal.aborted) await flush();
       } catch {
         this.log({ action: 'checkpoint_retry', code: 'ERR_CHECKPOINT' });
       }
-      await delay(1000, undefined, { signal }).catch(() => {});
+      await delay(this.tuning.pollMs, undefined, { signal }).catch(() => {});
     }
   }
 
@@ -221,8 +225,12 @@ export async function callMockUPI(url: string, authorization: string, path: stri
 
 export function mockSettlement(url: string, authorization: string): Settlement {
   return async (job) => {
+    const started = performance.now();
     await callMockUPI(url, authorization, '/v1/payouts', {
       payoutId: job.key, reference: 'pay-' + job.key.slice(0, 60), amountPaise: job.amountPaise,
     });
+    if (process.env.PARASHIELD_PROFILE === '1') {
+      console.log(JSON.stringify({ action: 'upi_http', payoutId: job.key, durationMs: performance.now() - started }));
+    }
   };
 }

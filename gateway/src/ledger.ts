@@ -37,7 +37,7 @@ export class FabricLedger implements Ledger {
 
   private constructor(private readonly channel: string, readonly chaincode: string) {}
 
-  static async open(identities: Record<string, LedgerIdentity>, channel: string, chaincode: string) {
+  static async open(identities: Record<string, LedgerIdentity>, channel: string, chaincode: string, evaluateTimeoutMs = 6000) {
     const ledger = new FabricLedger(channel, chaincode);
     try {
       for (const [name, identity] of Object.entries(identities)) {
@@ -53,7 +53,7 @@ export class FabricLedger implements Ledger {
             client,
             identity: { mspId: identity.mspId, credentials: cert },
             signer: signers.newPrivateKeySigner(createPrivateKey(key)),
-            evaluateOptions: deadline(6000),
+            evaluateOptions: deadline(evaluateTimeoutMs),
             endorseOptions: deadline(12000),
             submitOptions: deadline(8000),
             commitStatusOptions: deadline(15000),
@@ -89,8 +89,27 @@ export class FabricLedger implements Ledger {
   async submit<T>(actor: string, name: string, options?: Options): Promise<TxResult<T>> {
     try {
       return await retry(async () => {
-        const submitted = await this.network(actor).getContract(this.chaincode).submitAsync(name, options);
+        const proposal = this.network(actor).getContract(this.chaincode).newProposal(name, options);
+        const started = performance.now();
+        const endorsed = await proposal.endorse();
+        const endorsementMs = performance.now() - started;
+        const submitted = await endorsed.submit();
+        const submitMs = performance.now() - started - endorsementMs;
+        const commitStarted = performance.now();
         const commit = await submitted.getStatus();
+        const commitMs = performance.now() - commitStarted;
+        if (process.env.PARASHIELD_PROFILE === '1' && /^(TriggerContract:ProcessEventForPolicy|PayoutContract:RecordSettlement)$/.test(name)) {
+          let identifiers: { eventKey?: string; payoutId?: string } = {};
+          try {
+            const { eventKey, id: payoutId } = JSON.parse(decoder.decode(submitted.getResult()));
+            identifiers = { eventKey, payoutId };
+          } catch {
+            // Profiling must not hide a failed validation status or change its retry behavior.
+          }
+          console.log(JSON.stringify({ action: 'payout_timing', operation: name, ...identifiers,
+            endorsementMs, submitMs, commitMs, valid: commit.successful }));
+
+        }
         if (!commit.successful) throw new CommitError(commit);
         return {
           result: JSON.parse(decoder.decode(submitted.getResult())) as T,

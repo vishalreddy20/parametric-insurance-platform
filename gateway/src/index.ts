@@ -21,6 +21,11 @@ const envSchema = z.object({
   PARASHIELD_GATEWAY_STATE_DIR: z.string().min(1),
   PARASHIELD_JWT_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/),
   PARASHIELD_PII_SALT_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/),
+  PARASHIELD_EVALUATE_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(6000),
+  PARASHIELD_PAGE_SIZE: z.coerce.number().int().min(1).max(100).default(25),
+  PARASHIELD_FANOUT_CONCURRENCY: z.coerce.number().int().min(1).max(48).default(5),
+  PARASHIELD_SETTLEMENT_CONCURRENCY: z.coerce.number().int().min(1).max(48).default(5),
+  PARASHIELD_WORKER_POLL_MS: z.coerce.number().int().min(50).max(5000).default(1000),
   PARASHIELD_GATEWAY_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   PARASHIELD_GATEWAY_HOST: z.string().default('127.0.0.1'),
   PARASHIELD_ORIGIN: z.url().optional(),
@@ -48,7 +53,7 @@ async function main() {
   const upiAuth = settings.PARASHIELD_UPI_AUTHORIZATION;
   if (Boolean(upiURL) !== Boolean(upiAuth)) throw new Error('Incomplete mock UPI configuration.');
   const state = await Checkpoints.open(settings.PARASHIELD_GATEWAY_STATE_DIR);
-  const ledger = await FabricLedger.open(config.identities, 'parashield', 'parashield');
+  const ledger = await FabricLedger.open(config.identities, 'parashield', 'parashield', settings.PARASHIELD_EVALUATE_TIMEOUT_MS);
   const settlement = upiURL && upiAuth ? mockSettlement(upiURL, upiAuth) : undefined;
   const app = createApp({ ledger, auth, saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
     readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
@@ -89,7 +94,10 @@ async function main() {
   }
   log({ action: 'listening', port: settings.PARASHIELD_GATEWAY_PORT, simulatedIdentities: true });
   const background = Promise.all([
-    new Fanout(ledger, config.insurer, state, settlement, log).run(abort.signal),
+    new Fanout(ledger, config.insurer, state, settlement, log, {
+      pageSize: settings.PARASHIELD_PAGE_SIZE, fanout: settings.PARASHIELD_FANOUT_CONCURRENCY,
+      settlement: settings.PARASHIELD_SETTLEMENT_CONCURRENCY, pollMs: settings.PARASHIELD_WORKER_POLL_MS,
+    }).run(abort.signal),
     consumeEvents(ledger, config.eventActor, state, abort.signal, log),
   ]);
   const shutdown = () => {
