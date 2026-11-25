@@ -77,3 +77,5 @@
 - Slice 6 adds the platform-scoped worker directory and the admin staff provisioning and session revocation controls. Browser MFA, provisioning, role denial and axe passed. A live cookie-authenticated run activated a worker policy, accepted platform activity, closed a signed storm window, settled the simulated payout, verified its committed block, reconciled regulator totals and denied regulator access to the policy.
 
 - Slice 7 removes the unreferenced prototype screens, Supabase dependency, local browser data path and old launcher names. Existing claim-processor regression tests retain their fixtures outside the product import path. Strict frontend type checking now passes. The live smoke test and both integration scripts passed. The evaluator walkthrough documents separate role sessions and a prepared, signed settlement run.
+
+- Account security now changes passwords and revokes all sessions. The admin console issues hashed, expiring single-use reset codes. Chromium verified issue and redemption, staff sign-in with the new password and MFA, and axe. The gateway suite verified CSRF, replay denial and session revocation.

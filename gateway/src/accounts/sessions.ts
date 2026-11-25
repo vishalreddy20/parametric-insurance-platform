@@ -11,7 +11,7 @@ const validToken = (value: string) => /^[A-Za-z0-9_-]{43}$/.test(value);
 export class Sessions {
   constructor(private readonly store: SessionRepository, private readonly clock = Date.now) {}
 
-  async start(accountId: string) {
+  async start(accountId: string, expectedPasswordHash?: string) {
     const now = this.clock();
     const id = randomUUID();
     const access = token();
@@ -21,7 +21,7 @@ export class Sessions {
       id, accountId, accessHash: hash(access), refreshHash: hash(refresh), csrfHash: hash(csrf),
       accessExpiresAt: now + accessDuration, idleExpiresAt: now + idleDuration,
       absoluteExpiresAt: now + absoluteDuration, revokedAt: null,
-    });
+    }, expectedPasswordHash);
     return { id, access, refresh, csrf };
   }
 

@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { ApiError } from '../errors.js';
 
 export const accountRoles = ['worker', 'platform', 'insurer', 'regulator', 'admin'] as const;
 export type AccountRole = typeof accountRoles[number];
@@ -15,8 +16,11 @@ export interface Account {
 export type AccountSummary = Pick<Account, 'id' | 'username' | 'role' | 'platformId'>;
 
 export interface AccountRepository {
+  issuePasswordReset(accountId: string, hash: string, expiry: number): Promise<boolean>;
+  redeemPasswordReset(hash: string, passwordHash: string, now: number): Promise<boolean>;
   listAccounts(after: string, platformId?: NonNullable<Account['platformId']>): Promise<AccountSummary[]>;
   insert(account: Account): Promise<boolean>;
+  updatePassword(accountId: string, previous: string, next: string, now: number): Promise<boolean>;
   registration(key: string): Promise<{ fingerprint: string; passwordHash: string } | undefined>;
   register(account: Account, key: string, fingerprint: string): Promise<'created' | 'replay' | 'conflict'>;
   reserveLoginAttempt(key: string, now: number, maximum: number, windowMs: number): Promise<number>;
@@ -81,6 +85,11 @@ const migrations = [
     txId TEXT,
     blockNumber TEXT
   ) STRICT;`,
+  `CREATE TABLE password_resets (
+    accountId TEXT PRIMARY KEY REFERENCES accounts(id),
+    hash TEXT UNIQUE NOT NULL,
+    expiresAt INTEGER NOT NULL
+  ) STRICT;`,
 ];
 
 export interface Session {
@@ -100,7 +109,7 @@ export type ActiveSession = Pick<Session, 'id' | 'idleExpiresAt' | 'absoluteExpi
 export type SessionRotation = 'rotated' | 'reuse' | 'invalid';
 
 export interface SessionRepository {
-  insertSession(session: Session): Promise<void>;
+  insertSession(session: Session, expectedPasswordHash?: string): Promise<void>;
   useAccess(hash: string, now: number, idleUntil: number): Promise<Session | undefined>;
   rotateRefresh(oldHash: string, csrfHash: string, next: Pick<Session, 'accessHash' | 'refreshHash' | 'accessExpiresAt' | 'idleExpiresAt'>, now: number): Promise<SessionRotation>;
   listActiveSessions(accountId: string, now: number): Promise<ActiveSession[]>;
@@ -137,6 +146,39 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
 
   async insert(account: Account): Promise<boolean> {
     return this.insertAccount(account);
+  }
+
+  async updatePassword(accountId: string, previous: string, next: string, now: number): Promise<boolean> {
+    return this.database.transaction(() => {
+      const updated = this.database.prepare('UPDATE accounts SET passwordHash = ? WHERE id = ? AND passwordHash = ?')
+        .run(next, accountId, previous);
+      if (updated.changes === 0) return false;
+      this.invalidateCredentials(accountId, now);
+      return true;
+    }).immediate();
+  }
+
+  private invalidateCredentials(accountId: string, now: number): void {
+    this.database.prepare('UPDATE sessions SET revokedAt = ? WHERE accountId = ? AND revokedAt IS NULL').run(now, accountId);
+    this.database.prepare('DELETE FROM password_resets WHERE accountId = ?').run(accountId);
+  }
+
+  async issuePasswordReset(accountId: string, hash: string, expiry: number): Promise<boolean> {
+    return this.database.prepare(`INSERT INTO password_resets (accountId, hash, expiresAt)
+      SELECT id, ?, ? FROM accounts WHERE id = ?
+      ON CONFLICT(accountId) DO UPDATE SET hash = excluded.hash, expiresAt = excluded.expiresAt`)
+      .run(hash, expiry, accountId).changes === 1;
+  }
+
+  async redeemPasswordReset(hash: string, passwordHash: string, now: number): Promise<boolean> {
+    return this.database.transaction(() => {
+      const reset = this.database.prepare('SELECT accountId FROM password_resets WHERE hash = ? AND expiresAt > ?')
+        .get(hash, now) as { accountId: string } | undefined;
+      if (!reset) return false;
+      this.database.prepare('UPDATE accounts SET passwordHash = ? WHERE id = ?').run(passwordHash, reset.accountId);
+      this.invalidateCredentials(reset.accountId, now);
+      return true;
+    }).immediate();
   }
 
   private insertAccount(account: Account): boolean {
@@ -237,10 +279,13 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
       .run(accountId, hash).changes === 1;
   }
 
-  async insertSession(session: Session): Promise<void> {
-    this.database.prepare(`INSERT INTO sessions
-      VALUES (@id, @accountId, @accessHash, @refreshHash, @csrfHash, @accessExpiresAt,
-        @idleExpiresAt, @absoluteExpiresAt, @revokedAt)`).run(session);
+  async insertSession(session: Session, expectedPasswordHash?: string): Promise<void> {
+    const row = this.database.prepare(`INSERT INTO sessions
+      SELECT @id, @accountId, @accessHash, @refreshHash, @csrfHash, @accessExpiresAt,
+        @idleExpiresAt, @absoluteExpiresAt, @revokedAt FROM accounts
+      WHERE id = @accountId AND (@expectedPasswordHash IS NULL OR passwordHash = @expectedPasswordHash)`)
+      .run({ ...session, expectedPasswordHash: expectedPasswordHash ?? null });
+    if (!row.changes) throw new ApiError('ERR_AUTHENTICATION', 401, 'Sign-in could not be completed.');
   }
 
   async useAccess(hash: string, now: number, idleUntil: number): Promise<Session | undefined> {

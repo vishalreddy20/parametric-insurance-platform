@@ -128,11 +128,14 @@ export interface StaffAccount {
 export interface DataProvider {
   directory(session: Session, after?: string): Promise<{ records: DirectoryAccount[]; next: string | null }>;
   provisionStaff(session: Session, account: StaffAccount): Promise<void>;
+  issuePasswordReset(session: Session, accountId: string): Promise<{ code: string; expiresAt: number }>;
+  resetPassword(code: string, newPassword: string): Promise<void>;
   revokeAccount(session: Session, accountId: string): Promise<void>;
   signIn(username: string, password: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
   currentSession(): Promise<Session>;
   signOut(session: Session, everywhere?: boolean): Promise<void>;
   security(session: Session): Promise<AccountSecurity>;
+  changePassword(session: Session, currentPassword: string, newPassword: string): Promise<void>;
   revokeSession(session: Session, sessionId: string): Promise<void>;
   register(username: string, password: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
   policy(session: Session): Promise<Policy | null>;

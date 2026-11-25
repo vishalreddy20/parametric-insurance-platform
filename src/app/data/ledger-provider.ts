@@ -74,6 +74,11 @@ export function ledgerProvider(base: string): DataProvider {
   return {
     directory: (session, after) => request('/auth/directory' + (after ? '?after=' + encodeURIComponent(after) : ''), session),
     provisionStaff: (session, account) => request('/auth/admin/provision', session, account),
+    issuePasswordReset: (session, accountId) => request('/auth/admin/reset-code', session, { accountId }),
+    async resetPassword(code, newPassword) {
+      await request('/auth/reset-password', undefined, { code, newPassword });
+      csrfToken = undefined;
+    },
     revokeAccount: (session, accountId) => request('/auth/admin/revoke', session, { accountId }),
     async signIn(username, password, mfa): Promise<SignInResult> {
       const result = await request<Exclude<SignInResult, { status: 'signed-in' }> |
@@ -89,6 +94,10 @@ export function ledgerProvider(base: string): DataProvider {
       finally { csrfToken = undefined; }
     },
     security: (session) => request('/auth/security', session),
+    async changePassword(session, currentPassword, newPassword) {
+      await request('/auth/security/password', session, { currentPassword, newPassword });
+      csrfToken = undefined;
+    },
     revokeSession: (session, sessionId) => request('/auth/security/revoke', session, { sessionId }),
     register: (username, password, platformId, key) => request('/auth/register', undefined, { username, password, platformId }, true, key),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),

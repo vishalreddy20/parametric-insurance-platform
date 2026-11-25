@@ -197,6 +197,33 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal((await worker.send('/auth/session')).status, 401);
   assert.equal((await other.send('/auth/session')).status, 401);
 
+  assert.equal((await worker.send('/auth/csrf')).status, 200);
+  assert.equal((await worker.send('/auth/login', { username: credentials.username, password })).status, 200);
+  assert.equal((await other.send('/auth/login', { username: credentials.username, password })).status, 200);
+  const changedPassword = 'Another iris lighthouse in spirals!';
+  const change = { currentPassword: password, newPassword: changedPassword };
+  assert.equal((await worker.send('/auth/security/password', change, false)).status, 403);
+  assert.equal((await worker.send('/auth/security/password', { ...change, currentPassword: 'wrong' })).status, 400);
+  assert.equal((await worker.send('/auth/security/password', change)).status, 204);
+  assert.equal((await other.send('/auth/session')).status, 401);
+  assert.equal((await other.send('/auth/refresh', {})).status, 401);
+  await worker.send('/auth/csrf');
+  assert.equal((await worker.send('/auth/login', { username: credentials.username, password })).status, 401);
+  assert.equal((await worker.send('/auth/login', { username: credentials.username, password: changedPassword })).status, 200);
+  const resetTarget = { accountId: session.workerId };
+  assert.equal((await platform.send('/auth/admin/reset-code', resetTarget)).status, 403);
+  assert.equal((await admin.send('/auth/admin/reset-code', resetTarget, false)).status, 403);
+  const issued = await (await admin.send('/auth/admin/reset-code', resetTarget)).json();
+  const resetter = browser();
+  await resetter.send('/auth/csrf');
+  const resetBody = { code: issued.code, newPassword: password };
+  assert.equal((await resetter.send('/auth/reset-password', resetBody, false)).status, 403);
+  assert.equal((await resetter.send('/auth/reset-password', resetBody)).status, 204);
+  assert.equal((await worker.send('/auth/session')).status, 401);
+  await resetter.send('/auth/csrf');
+  assert.equal((await resetter.send('/auth/reset-password', resetBody)).status, 400);
+  assert.equal((await resetter.send('/auth/login', { username: credentials.username, password })).status, 200);
+
   const throttled = browser();
   await throttled.send('/auth/csrf');
   const attempt = (username: string) => throttled.send('/auth/login', { username, password: 'wrong' });

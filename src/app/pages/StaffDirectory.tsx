@@ -11,6 +11,7 @@ export function StaffDirectory({ provider, session, onExpired }: {
   const admin = session.role === 'admin';
   const [after, setAfter] = useState<string>();
   const [role, setRole] = useState<StaffAccount['role']>('insurer');
+  const [reset, setReset] = useState<{ code: string; expiresAt: number }>();
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<{ error: boolean; text: string }>();
   const load = useCallback(() => provider.directory(session, after), [provider, session, after]);
@@ -64,6 +65,11 @@ export function StaffDirectory({ provider, session, onExpired }: {
         <Button className="account-button" disabled={pending}>Create staff account</Button>
       </form>
     </section>}
+    {reset && <section className="account-panel"><h2>One-time reset code</h2>
+      <p>Share privately. Expires at {new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', timeStyle: 'short' }).format(reset.expiresAt)} IST.</p>
+      <code className="staff-reset-code">{reset.code}</code>
+      <div><Button variant="outline" onClick={() => setReset(undefined)}>Hide code</Button></div>
+    </section>}
     {feedback && <p role={feedback.error ? 'alert' : 'status'} className={feedback.error ? 'account-message account-error' : 'account-message'}>{feedback.text}</p>}
     <section className="account-panel"><h2>{admin ? 'Account directory' : 'Workers'}</h2>
       {loading && <p role="status">Loading accounts…</p>}
@@ -72,11 +78,17 @@ export function StaffDirectory({ provider, session, onExpired }: {
         {!value.records.length && <p>No accounts to show.</p>}
         <ul className="staff-list">{value.records.map((account) => <li key={account.id}>
           <div><strong>{account.username}</strong><p>{admin ? account.role : <code>{account.id}</code>}</p></div>
-          {admin && account.username !== session.username && <Button variant="outline" className="account-quiet" disabled={pending}
+          {admin && account.username !== session.username && <div className="account-actions">
+            <Button variant="outline" className="account-quiet" disabled={pending} aria-label={'Issue reset code for ' + account.username}
+              onClick={() => {
+                setReset(undefined);
+                void perform(async () => { setReset(await provider.issuePasswordReset(session, account.id)); }, 'Reset code issued.');
+              }}>Issue reset code</Button>
+            <Button variant="outline" className="account-quiet" disabled={pending}
             aria-label={'Revoke all sessions for ' + account.username}
             onClick={() => { void perform(() => provider.revokeAccount(session, account.id), 'All sessions revoked for ' + account.username + '.'); }}>
             Revoke sessions
-          </Button>}
+          </Button></div>}
         </li>)}</ul>
         <div className="account-actions">
           {after && <Button variant="outline" onClick={() => setAfter(undefined)}>First page</Button>}

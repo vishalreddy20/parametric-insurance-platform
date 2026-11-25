@@ -85,7 +85,7 @@ Open [ParaShield](http://127.0.0.1:5173) in three separate browser profiles to k
 
 A signed event declaration alone does not make a worker eligible for payment. The ledger also requires an active policy, an eligible platform activity attestation, the configured waiting period, and a closed event window. For a timed evaluation on a dedicated sample, use the signed one-policy verification run in the [evaluation walkthrough](docs/EVALUATION.md#prepare-a-settled-evaluation-record) and inspect its recorded payout in the worker workspace. The run uses synthetic readings and simulated payment.
 
-Platform staff can open **Platform workspace** to confirm the directory contains only accounts from their platform. Admin staff can open **Admin workspace** to provision staff accounts and revoke another account's sessions.
+Platform staff can open **Platform workspace** to confirm the directory contains only accounts from their platform. Admin staff can open **Admin workspace** to provision staff accounts, revoke another account's sessions, or issue a single-use password reset code.
 
 ## Configuration
 

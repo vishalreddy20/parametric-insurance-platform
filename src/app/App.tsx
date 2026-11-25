@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, useLocation, useNavigate } from 'react-r
 import { ArrowRight, BarChart3, KeyRound, LayoutGrid, Moon, Shield, Sun, UserRound } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { AccountSecurity } from './pages/AccountSecurity';
+import { ResetPassword } from './pages/ResetPassword';
 import { AccountNotice } from './pages/AccountNotice';
 import { DataError, type Session } from './data/provider';
 import { ledgerProvider } from './data/ledger-provider';
@@ -227,12 +228,7 @@ function AppViews() {
       ? workspaces[session.role] : undefined} />
   </AccountFrame>;
 
-  if (pathname === '/forgot-password') return <AccountFrame variant="auth">
-    <section className="account-card account-notice"><div className="account-icon"><KeyRound aria-hidden="true" /></div>
-      <h1>Forgot password?</h1><p>Password resets are handled by an administrator.</p>
-      <Button asChild className="account-button"><Link to="/sign-in" state={state}>Back to sign in</Link></Button>
-    </section>
-  </AccountFrame>;
+  if (pathname === '/forgot-password') return <AccountFrame variant="auth"><ResetPassword provider={provider} /></AccountFrame>;
 
   if (pathname === '/sign-in' || pathname === '/sign-up') {
     if (session) return <Navigate to={returnPath} replace />;

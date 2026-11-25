@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { KeyRound, LogOut, Monitor, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -18,6 +18,26 @@ export function AccountSecurity({ provider, session, onExpired, onSignedOut }: {
   const [selection, setSelection] = useState<{ sessionId?: string }>();
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; error?: boolean }>();
+
+  const [passwordPending, setPasswordPending] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (passwordPending) return;
+    setPasswordPending(true);
+    setPasswordError('');
+    const fields = new FormData(event.currentTarget);
+    try {
+      await provider.changePassword(session, String(fields.get('currentPassword')), String(fields.get('newPassword')));
+      onSignedOut();
+    } catch (failure) {
+      if (failure instanceof DataError && failure.code === 'ERR_SESSION_EXPIRED') onExpired();
+      else setPasswordError(readableError(failure));
+    } finally {
+      setPasswordPending(false);
+    }
+  }
 
   async function confirm() {
     if (!selection || pending) return;
@@ -45,7 +65,13 @@ export function AccountSecurity({ provider, session, onExpired, onSignedOut }: {
     <section className="account-panel security-credentials" aria-labelledby="security-credentials-title">
       <div className="security-panel-heading"><h2 id="security-credentials-title"><KeyRound size={20} aria-hidden="true" /> Login credentials</h2></div>
       <div className="security-panel-body">
-        <h3>Password</h3><p>Password resets are handled by an administrator.</p>
+        <h3>Password</h3><p>Changing your password signs out all browsers.</p>
+        <form className="staff-form" onSubmit={(event) => { void changePassword(event); }}>
+          <label>Current password<input className="account-input" name="currentPassword" type="password" autoComplete="current-password" required /></label>
+          <label>New password<input className="account-input" name="newPassword" type="password" autoComplete="new-password" minLength={12} maxLength={128} required /></label>
+          <Button className="account-button" disabled={passwordPending}>{passwordPending ? 'Changing password…' : 'Change password'}</Button>
+          {passwordError && <p role="alert" className="account-message account-error">{passwordError}</p>}
+        </form>
         <div className="auth-note"><ShieldCheck size={20} aria-hidden="true" /><div>
           <strong>Authenticator app</strong>
           <p>{value ? value.authenticatorEnrolled ? 'Enabled for this account.' : 'No authenticator enrolled.' : 'Checking authenticator status…'}</p>

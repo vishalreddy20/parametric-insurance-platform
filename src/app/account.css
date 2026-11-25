@@ -593,3 +593,5 @@
 .staff-list { padding: 0; list-style: none; }
 .staff-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--account-divider); }
 .staff-list p { margin: 0; overflow-wrap: anywhere; }
+
+.staff-reset-code { overflow-wrap: anywhere; }

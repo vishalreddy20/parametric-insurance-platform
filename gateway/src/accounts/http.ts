@@ -204,6 +204,37 @@ export class AccountHttp {
       await this.options.sessions.revoke(accountId);
       response.sendStatus(204);
     });
+    const resetHash = (code: string) => createHmac('sha256', this.options.requestKey).update('password-reset:' + code).digest('hex');
+    app.post('/v1/auth/admin/reset-code', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      if (account.role !== 'admin') throw forbidden();
+      this.attempts.hit('reset-issue:' + account.id, 10, 60_000, response);
+      const { accountId } = parse(z.strictObject({ accountId: z.uuid() }), request.body);
+      if (accountId === account.id) throw forbidden();
+      const code = randomBytes(32).toString('base64url');
+      const expiresAt = Date.now() + 15 * 60_000;
+      if (!await this.options.store.issuePasswordReset(accountId, resetHash(code), expiresAt)) {
+        throw new ApiError('ERR_NOT_FOUND', 404, 'Account unavailable.');
+      }
+      response.json({ code, expiresAt });
+    });
+    app.post('/v1/auth/reset-password', async (request, response) => {
+      this.csrf(request);
+      this.attempts.hit('reset-use:' + request.ip, 5, 15 * 60_000, response);
+      const { code, newPassword } = parse(z.strictObject({
+        code: z.string().regex(validCsrf), newPassword: z.string().min(1).max(256),
+      }), request.body);
+      const problem = passwordError(newPassword);
+      if (problem) throw new ApiError('ERR_PASSWORD_POLICY', 400, problem);
+      const hash = await this.options.hasher.hash(newPassword);
+      if (!await this.options.store.redeemPasswordReset(resetHash(code), hash, Date.now())) {
+        throw new ApiError('ERR_RESET_CODE', 400, 'The reset code is invalid or has expired.');
+      }
+      for (const cookie of ['ps_access', 'ps_refresh', 'ps_csrf']) this.setCookie(response, cookie, '', 0);
+      response.sendStatus(204);
+    });
     app.get('/v1/auth/csrf', (request, response) => {
       if (!(request.get('origin') === undefined && request.get('sec-fetch-site') === 'same-origin')) this.origin(request);
       const existing = cookies(request).get('ps_csrf');
@@ -267,7 +298,7 @@ export class AccountHttp {
         return;
       }
       await this.options.store.clearLoginAttempts(key);
-      const session = await this.options.sessions.start(account.id);
+      const session = await this.options.sessions.start(account.id, account.passwordHash);
       this.setTokens(response, session.access, session.refresh);
       this.setCookie(response, 'ps_csrf', session.csrf, 8 * 60 * 60_000);
       response.json({ ...this.publicAccount(account), csrfToken: session.csrf, recoveryCodes: result.recoveryCodes ?? [] });
@@ -307,6 +338,24 @@ export class AccountHttp {
         this.options.sessions.list(account.id, session.id), this.options.mfa.isEnrolled(account.id),
       ]);
       response.json({ sessions, authenticatorEnrolled });
+    });
+    app.post('/v1/auth/security/password', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      this.attempts.hit('password:' + account.id, 5, 15 * 60_000, response);
+      const credential = z.string().min(1).max(256);
+      const body = parse(z.strictObject({ currentPassword: credential, newPassword: credential }), request.body);
+      if (!await this.options.hasher.verify(body.currentPassword, account.passwordHash)) {
+        throw new ApiError('ERR_PASSWORD_MISMATCH', 400, 'The current password could not be verified.');
+      }
+      const problem = passwordError(body.newPassword, [account.username]);
+      if (problem) throw new ApiError('ERR_PASSWORD_POLICY', 400, problem);
+      if (body.newPassword === body.currentPassword) throw new ApiError('ERR_PASSWORD_POLICY', 400, 'Choose a different password.');
+      const hash = await this.options.hasher.hash(body.newPassword);
+      if (!await this.options.store.updatePassword(account.id, account.passwordHash, hash, Date.now())) throw invalid();
+      for (const cookie of ['ps_access', 'ps_refresh', 'ps_csrf']) this.setCookie(response, cookie, '', 0);
+      response.sendStatus(204);
     });
     app.post('/v1/auth/security/revoke', async (request, response) => {
       const csrf = this.csrf(request);
