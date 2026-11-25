@@ -69,3 +69,4 @@
 - Slice 1 uses the new account shell for signup, sign-in, account overview, and the wrong-role 403. The live gateway persists account lockouts and atomically handles signup retries. The existing local reset was verified with the smoke test before changes.
 - Slice 2 adds Account security with live authenticator status, active sessions, individual revocation and sign out everywhere. Session listings and mutations are scoped to the authenticated account.
 - Slice 3 adds the worker onboarding profile, plan, review and activation routes, with encrypted server drafts, the existing premium calculation and a gateway-confirmed enrollment receipt.
+- Slice 4 replaces the old worker workspace, adds a payout status timeline and a right-side ledger proof drawer. Coverage, cap, event and payout values are sourced from the gateway. Historical caps are shown as unavailable when the current ledger configuration does not match the policy version.

@@ -182,7 +182,10 @@ function AppViews() {
         {message && <p role="alert">{message}</p>}
         <OnboardingFlow provider={provider} session={session} onExpired={sessionEnded} />
       </AccountFrame>;
-      return <>{message && <p role="alert">{message}</p>}<WorkerDashboard provider={provider} session={session} onExpired={sessionEnded} logout={logout} /></>;
+      return <AccountFrame session={session} onSignOut={logout} variant="workspace">
+        {message && <p role="alert">{message}</p>}
+        <WorkerDashboard provider={provider} session={session} onExpired={sessionEnded} />
+      </AccountFrame>;
     }
     if (targetRole === 'insurer' || targetRole === 'regulator') {
       return <>{message && <p role="alert">{message}</p>}<AdminPanel provider={provider} session={session} onExpired={sessionEnded} logout={logout} /></>;

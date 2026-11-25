@@ -53,6 +53,7 @@ export interface DisruptionEvent {
 export interface Payout {
   id: string;
   eventKey: string;
+  weekStartIST?: string;
   status: PayoutStatus;
   amountPaise: number;
   reservedAt: number;
@@ -113,6 +114,7 @@ export interface DataProvider {
   revokeSession(session: Session, sessionId: string): Promise<void>;
   register(username: string, password: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
   policy(session: Session): Promise<Policy | null>;
+  coverage(session: Session): Promise<{ weeklyCapPaise: number | null }>;
   onboarding(session: Session): Promise<{ draft: OnboardingDraft | null; confirmation: EnrollmentConfirmation | null }>;
   saveOnboarding(session: Session, draft: OnboardingDraft): Promise<void>;
   enroll(session: Session, terms: Enroll): Promise<{ result: Policy } & EnrollmentConfirmation>;

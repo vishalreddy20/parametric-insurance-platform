@@ -89,6 +89,7 @@ export function ledgerProvider(base: string): DataProvider {
     revokeSession: (session, sessionId) => request('/auth/security/revoke', session, { sessionId }),
     register: (username, password, platformId, key) => request('/auth/register', undefined, { username, password, platformId }, true, key),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),
+    coverage: (session) => request(byPolicy(session.policyId) + '/coverage', session),
     onboarding: (session) => request('/auth/onboarding', session),
     saveOnboarding: (session, draft) => request('/auth/onboarding', session, draft),
     enroll: (session, terms) => request<{ result: Policy } & EnrollmentConfirmation>('/policies', session,

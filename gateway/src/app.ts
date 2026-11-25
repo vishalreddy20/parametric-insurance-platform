@@ -159,6 +159,20 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
     checkPolicyOwner(user, id, policy);
     response.json(policy);
   }));
+  app.get('/v1/policies/:id/coverage', allow(['worker'], async (request, response, user) => {
+    const id = parse(schema.id, request.params.id);
+    checkWorkerPolicy(user, id);
+    const policy = await ledger.evaluate<PolicyOwner & {
+      configVersion?: number; terms?: PolicyOwner['terms'] & { tier: 'basic' | 'standard' | 'premium' };
+    }>(user.actor, 'PolicyContract:GetPolicy', [id]);
+    checkPolicyOwner(user, id, policy);
+    const config = await ledger.evaluate<{ version: number; basic: { cap: number }; standard: { cap: number }; premium: { cap: number } }>(
+      user.actor, 'ConfigContract:GetConfig',
+    );
+    // The public contract exposes the current configuration. Older terms must not show its cap.
+    const tier = policy.terms?.tier;
+    response.json({ weeklyCapPaise: tier && (policy.configVersion ?? 0) === config.version ? config[tier].cap : null });
+  }));
   const policyPayouts = allow(policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
     checkWorkerPolicy(user, id);

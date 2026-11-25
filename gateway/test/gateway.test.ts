@@ -33,6 +33,7 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   const payoutId = 'a'.repeat(64);
   const foreignPayoutId = 'b'.repeat(64);
   const txId = 'c'.repeat(64);
+  let configVersion = 4;
   const ledger: Ledger = {
     async evaluate<T>(actor: string, name: string, args?: string[]) {
       calls.push({ actor, name });
@@ -40,7 +41,8 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
       if (name === 'PayoutContract:GetPayout') {
         return { policyId: id === foreignPayoutId ? 'worker-b' : 'worker-a', txId } as T;
       }
-      return { id, term: 1, status: 'PENDING_PREMIUM', terms: {
+      if (name === 'ConfigContract:GetConfig') return { version: configVersion, standard: { cap: 100000 } } as T;
+      return { id, term: 1, status: 'PENDING_PREMIUM', configVersion: 4, terms: { tier: 'standard',
         workerId: id, platform: id === 'worker-b' ? 'swiggy' : 'zomato', premiumPaise: 18000,
       } } as T;
     },
@@ -97,6 +99,12 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   const platformToken = 'platform-a';
   const get = (path: string, credential: string) => fetch(base + path, { headers: { Authorization: 'Bearer ' + credential } });
   assert.equal((await get('/v1/policies/worker-a', token)).status, 200);
+  const coverage = '/v1/policies/worker-a/coverage';
+  assert.deepEqual(await (await get(coverage, token)).json(), { weeklyCapPaise: 100000 });
+  configVersion = 5;
+  assert.deepEqual(await (await get(coverage, token)).json(), { weeklyCapPaise: null });
+  assert.equal((await get('/v1/policies/worker-b/coverage', token)).status, 403);
+  assert.equal((await get(coverage, platformToken)).status, 403);
   assert.equal((await get('/v1/policies/worker-a/payouts', platformToken)).status, 200);
   for (const suffix of ['', '/payouts', '/claims']) {
     assert.equal((await get('/v1/policies/worker-b' + suffix, platformToken)).status, 403);
