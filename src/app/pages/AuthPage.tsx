@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowRight, CircleAlert, Eye, EyeOff, FileCheck2, KeyRound, ShieldCheck } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Link, useLocation } from 'react-router';
 import { Alert } from '../components/ui/alert';
 import { Button } from '../components/ui/button';
@@ -19,9 +20,12 @@ function InformationPanel({ register, verification }: { register: boolean; verif
       'Signed observations establish when a disruption meets the policy threshold and quorum. You can trace payout decisions on the ledger.'}</p>
     <div className="account-panel auth-protocol">
       <h3><FileCheck2 size={18} aria-hidden="true" /> {register ? 'After account creation' : 'Coverage and proof'}</h3>
-      <ul><li>Choose a plan and review its terms before activation.</li><li>Review qualifying events and their signed observations.</li><li>Open payout details to find the transaction and block proof.</li></ul>
+      <dl><div><dt>Coverage start</dt><dd>Policy terms apply after premium confirmation.</dd></div>
+        <div><dt>Disruption quorum</dt><dd>Signed oracle readings are checked against the policy threshold.</dd></div></dl>
       <div className="account-disclosures"><span>Payment rail: simulated</span><span>Oracle inputs: synthetic</span></div>
     </div>
+    <div className="account-panel auth-proof-preview"><h3>{register ? 'Onboarding' : 'Ledger verification'}</h3>
+      <p>{register ? 'Review your profile, plan and policy details before activating coverage.' : 'Open the payout in your workspace to see its recorded decision and proof.'}</p></div>
     {verification && <p className="auth-note"><KeyRound size={18} aria-hidden="true" /> Password resets are handled by an administrator.</p>}
   </aside>;
 }
@@ -117,7 +121,12 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
     : challenge ? useRecovery ? 'Enter recovery code' : 'Enter authenticator code'
       : register ? 'Create a worker account' : 'Sign in to ParaShield';
 
-  return <div className={'auth-layout' + (register ? ' auth-layout-register' : '')}>
+  const pairing = !recoveryCodes.length && challenge?.status === 'enrol';
+  const verify = !recoveryCodes.length && challenge?.status === 'challenge' && !useRecovery;
+  return <div className={['auth-layout', register && 'auth-layout-register',
+    pairing && 'auth-layout-pairing', verify && 'auth-layout-verification',
+    recoveryCodes.length > 0 && 'auth-layout-codes'].filter(Boolean).join(' ')}>
+    {register && <nav className="auth-registration-path" aria-label="Breadcrumb"><Link to="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">Delivery partner registration</span></nav>}
     <section className="auth-primary" aria-labelledby="sign-in-title">
       {register && <p className="account-kicker">Worker registration</p>}
       <h1 id="sign-in-title">{title}</h1>
@@ -137,9 +146,6 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
         <Button type="button" className="account-button" disabled={!savedCodes} onClick={() => { void onSuccess().catch(showError); }}>Continue <ArrowRight aria-hidden="true" /></Button>
       </div> : <form onSubmit={submit} className="account-form">
         {challenge ? <>
-          {challenge.status === 'enrol' && <div className="auth-note auth-key">
-            <p>Add ParaShield in your authenticator app using this setup key.</p><code>{challenge.setupKey}</code>
-          </div>}
           <label className="account-field" htmlFor="mfa-code">{useRecovery ? 'Recovery code' : 'Authenticator code'}</label>
           {useRecovery
             ? <Input id="mfa-code" className="account-input" autoComplete="one-time-code" value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} required maxLength={20} />
@@ -192,6 +198,14 @@ export function AuthPage({ provider, onSuccess, onRegistered, message, createAcc
       </p>}
       {!challenge && <p className="auth-note"><ShieldCheck size={18} aria-hidden="true" /> Staff accounts are issued by an administrator.</p>}
     </section>
-    <InformationPanel register={register} verification={Boolean(challenge)} />
+    {pairing && challenge?.status === 'enrol' ? <aside className="auth-context auth-pairing">
+      <h2>Authenticator setup key</h2>
+      <div className="auth-pairing-qr">
+        <QRCodeCanvas value={`otpauth://totp/ParaShield:${encodeURIComponent(username)}?secret=${encodeURIComponent(challenge.setupKey)}&issuer=ParaShield`}
+          size={176} marginSize={4} title="Authenticator setup QR code" />
+        <p>Scan this code with your authenticator app, then enter the six-digit code it shows.</p>
+      </div>
+      <div className="auth-note auth-key"><p>Or enter this key manually.</p><code>{challenge.setupKey}</code></div>
+    </aside> : !recoveryCodes.length && <InformationPanel register={register} verification={Boolean(challenge)} />}
   </div>;
 }

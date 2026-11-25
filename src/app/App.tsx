@@ -24,7 +24,7 @@ const workspaces = {
 function AccountFrame({ session, onSignOut, variant, children }: {
   session?: Session | null;
   onSignOut?: () => void;
-  variant?: 'home' | 'auth' | 'workspace';
+  variant?: 'home' | 'auth' | 'register' | 'workspace';
   children: ReactNode;
 }) {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -33,7 +33,9 @@ function AccountFrame({ session, onSignOut, variant, children }: {
     <header className="account-header">
       <div className="account-header-inner">
         <Link className="account-brand" to={session ? '/account' : '/'}><Shield size={22} aria-hidden="true" /> ParaShield</Link>
-        {variant === 'home' && <a href="#how-it-works" className="account-header-guide">How it works</a>}
+        {variant === 'home' && <nav aria-label="Product" className="account-header-guide">
+          <a href="#how-it-works">How it works</a><a href="#claims-proof">Claims and proof</a>
+        </nav>}
         <nav aria-label="Account">
           {session && <Link to="/account">My account</Link>}
           {variant === 'home' && <><Link to="/sign-in">Sign in</Link><Link to="/sign-up" className="account-nav-primary">Create account</Link></>}
@@ -65,6 +67,7 @@ function AccountWorkspace({ session, workspace, message }: {
         {workspace && <Button asChild className="account-button"><Link to={workspace.path}>{workspace.label} <ArrowRight aria-hidden="true" /></Link></Button>}
       </section>
       {message && <p role="alert" className="account-message account-error">{message}</p>}
+      <div className="account-workspace-label"><UserRound size={18} aria-hidden="true" /> Account overview</div>
       <div className="account-workspace-grid">
         <section className="account-panel">
           <h2><KeyRound size={20} aria-hidden="true" /> Account details</h2>
@@ -186,7 +189,7 @@ function AppViews() {
 
   if (pathname === '/sign-in' || pathname === '/sign-up') {
     if (session) return <Navigate to={returnPath} replace />;
-    return <AccountFrame variant="auth">
+    return <AccountFrame variant={pathname === '/sign-up' ? 'register' : 'auth'}>
       <AuthPage key={pathname} provider={provider} message={message} createAccount={pathname === '/sign-up'}
         onSuccess={signIn} onRegistered={(username) => navigate('/sign-in', { replace: true, state: { returnPath, registered: true, username } })}
         registered={state?.registered === true} initialUsername={typeof state?.username === 'string' ? state.username : ''} />
