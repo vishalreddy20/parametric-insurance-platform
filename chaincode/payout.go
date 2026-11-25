@@ -70,8 +70,7 @@ func reservePayout(ctx tx, eventID, policyID string) (*Payout, error) {
 	if err != nil {
 		return nil, err
 	}
-	if policy.Terms == nil || policy.Terms.Zone != event.Zone || policy.Status != active || policy.PaidAt <= 0 ||
-		event.Start < policy.StartsAt || event.Start < policy.WaitingUntil || event.End > policy.EndsAt {
+	if !covers(policy, event) {
 		return nil, failure(stateError, "policy was not eligible for the complete event window")
 	}
 	now, err := timestamp(ctx)
@@ -79,7 +78,13 @@ func reservePayout(ctx tx, eventID, policyID string) (*Payout, error) {
 		return nil, err
 	}
 	if now < event.End+maxFreshness {
-		return nil, failure(quorumPending, "overlap selection waits for the reading window to close")
+		window, err := read[DemoWindow](ctx, demoWindowKey(event.Zone, event.Start))
+		if err != nil {
+			return nil, err
+		}
+		if window == nil || !window.Closed {
+			return nil, failure(quorumPending, "overlap selection waits for the reading window to close")
+		}
 	}
 	activity, err := qualifiesActivity(ctx, policy.Terms, event)
 	if err != nil {
@@ -97,7 +102,7 @@ func reservePayout(ctx tx, eventID, policyID string) (*Payout, error) {
 		return nil, failure(stateError, "invalid stored policy tier")
 	}
 	amount := compensation(policy.Terms.WeeklyIncome, policy.Terms.WeeklyMinutes, event.LostHours, tier)
-	if err := chooseHighest(ctx, event, policy.Terms, tier, amount); err != nil {
+	if err := chooseHighest(ctx, event, policy, tier, amount); err != nil {
 		return nil, err
 	}
 
@@ -120,24 +125,16 @@ func reservePayout(ctx tx, eventID, policyID string) (*Payout, error) {
 	}
 	p := &Payout{ID: id, PolicyID: policyID, EventKey: eventID, Zone: event.Zone, Week: week, LostHours: event.LostHours,
 		Amount: amount, Status: reserved, ReservedAt: now, TxID: ctx.GetStub().GetTxID()}
-	index, err := composite(ctx, "payout~week~zone~id", week, event.Zone, id)
-	if err != nil {
+	if err := indexRecord(ctx, "payout~week~zone~id", []string{week, event.Zone, id}, id); err != nil {
 		return nil, err
 	}
-	policyIndex, err := composite(ctx, "payout~policy~id", policyID, id)
-	if err != nil {
-		return nil, err
-	}
-	if err := write(ctx, policyIndex, id); err != nil {
+	if err := indexRecord(ctx, "payout~policy~id", []string{policyID, id}, id); err != nil {
 		return nil, err
 	}
 	if err := write(ctx, capKey, used+amount); err != nil {
 		return nil, err
 	}
 	if err := write(ctx, overlapKey, id); err != nil {
-		return nil, err
-	}
-	if err := write(ctx, index, id); err != nil {
 		return nil, err
 	}
 	if err := write(ctx, "payout:"+id, p); err != nil {
@@ -149,9 +146,16 @@ func reservePayout(ctx tx, eventID, policyID string) (*Payout, error) {
 	return p, emit(ctx, "PayoutReserved", p)
 }
 
+func activityHourKey(worker, platform string, bucket int64) string {
+	return "activity-hour:" + digest(worker, platform, strconv.FormatInt(bucket, 10))
+}
+
 func qualifiesActivity(ctx tx, terms *PolicyTerms, event *Event) (bool, error) {
-	// Partial composite range keeps worker and platform isolated. Querying the
-	// full prefix also works on state DBs that reject raw composite range bounds.
+	covered, err := read[bool](ctx, activityHourKey(terms.WorkerID, terms.Platform, event.Start))
+	if err != nil || covered != nil {
+		return covered != nil && *covered, err
+	}
+	// Earlier ledgers indexed attestations only by their exact intervals.
 	iter, err := ctx.GetStub().GetStateByPartialCompositeKey("activity", []string{terms.WorkerID, terms.Platform})
 	if err != nil {
 		return false, failure(stateError, "could not query activity")
@@ -173,7 +177,14 @@ func qualifiesActivity(ctx tx, terms *PolicyTerms, event *Event) (bool, error) {
 	return false, nil
 }
 
-func chooseHighest(ctx tx, event *Event, terms *PolicyTerms, tier Tier, amount int64) error {
+func covers(policy *Policy, event *Event) bool {
+	observed := max(event.ObservedAt, event.Start)
+	return policy.Terms != nil && policy.Terms.Zone == event.Zone && policy.Status == active && policy.PaidAt > 0 &&
+		observed >= policy.StartsAt && observed >= policy.WaitingUntil && observed < policy.EndsAt
+}
+
+func chooseHighest(ctx tx, event *Event, policy *Policy, tier Tier, amount int64) error {
+	terms := policy.Terms
 	for _, rule := range defaultConfig().Triggers {
 		if rule.Code == event.Trigger {
 			continue
@@ -183,7 +194,7 @@ func chooseHighest(ctx tx, event *Event, terms *PolicyTerms, tier Tier, amount i
 		if err != nil {
 			return err
 		}
-		if other == nil || other.Status != declared {
+		if other == nil || other.Status != declared || !covers(policy, other) {
 			continue
 		}
 		otherAmount := compensation(terms.WeeklyIncome, terms.WeeklyMinutes, other.LostHours, tier)

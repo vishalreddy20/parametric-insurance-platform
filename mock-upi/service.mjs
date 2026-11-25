@@ -115,6 +115,15 @@ export async function mockUPI({ directory, authorization, callback, latencyMs, f
     });
   }
 
+  app.get('/v1/receipts/:reference', async (request, response) => {
+    if (!same(request.get('authorization') ?? '', authorization)) throw new ServiceError(401, 'ERR_AUTHENTICATION');
+    if (!id.safeParse(request.params.reference).success) throw new ServiceError(400, 'ERR_VALIDATION');
+    const record = await get(join(records, digest(request.params.reference).toString('hex') + '.json'));
+    if (!record) throw new ServiceError(404, 'ERR_NOT_FOUND');
+    const { fingerprint: _fingerprint, ...result } = record;
+    response.json(result);
+  });
+
   app.use((error, _request, response, _next) => {
     const status = error?.status === 413 || error?.status === 400 ? error.status : error instanceof ServiceError ? error.status : 503;
     const code = error instanceof ServiceError ? error.code : status === 400 || status === 413 ? 'ERR_VALIDATION' : 'ERR_SIMULATED_UPI';

@@ -63,6 +63,7 @@ export const configUpdate = z.strictObject({
     quorum: z.number().int().min(1).max(9),
     freshness: z.number().int().min(1).max(3600),
     waiting: z.number().int().min(0).max(604800),
+    demoClose: z.boolean().default(false),
     oracles: z.array(id).min(1).max(9),
     basic: configTier, standard: configTier, premium: configTier,
     triggers: z.array(z.strictObject({
@@ -77,4 +78,6 @@ export const simulation = z.strictObject({
   zone,
   scenario: z.enum(['storm', 'rainfall', 'heat', 'pollution', 'strike', 'curfew', 'protest', 'gridlock', 'outage', 'dispatch_freeze']).default('storm'),
   mode: z.enum(['normal', 'disagree', 'offline']).default('normal'),
+  closeWindow: z.boolean().default(false),
 });
+export const demoWindow = z.strictObject({ zone, windowStart: epoch.refine((value) => value % 3600 === 0) });

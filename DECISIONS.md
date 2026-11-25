@@ -106,3 +106,26 @@ automation would allow a UI-only decision to appear as a ledger settlement.
 The gateway stores the transaction/block pair from committed DRUNIX events.
 The frontend displays a pending proof state when event indexing has not caught
 up. It shows a benchmark only when a measured report is available.
+
+## Require unanimous oracle closure for accelerated demos
+
+Ordinary event windows still close after the reading horizon. The insurer can
+enable a demo-only early close in versioned configuration. All registered
+oracle identities must commit a closure for the same zone and hour before
+payout processing starts. Once an oracle signs, it cannot add a reading that
+could declare a new event in that bucket. A late reading may still be stored
+for an already declared event without changing the winner. The benchmark
+restores the previous configuration. For overlap selection, coverage is
+evaluated at the latest breached observation in the declaration, and cap
+accounting still uses the IST week of the hour's start.
+
+## Use application cursors over bounded composite-key partitions
+
+During a live 32-policy run, the DRUNIX SQL state DB returned a full 25-policy
+page with an empty native bookmark. Using that bookmark as the only cursor
+would silently omit eligible workers. The chaincode now partitions the
+composite indexes by hash, orders each bounded partition, and returns an
+application cursor. An additional read partition preserves indexes written
+by older versions. It rejects an overfull partition explicitly. New activity
+attestations also write worker-and-hour markers so payout eligibility can
+use a point read instead of depending on the sample's default range size.

@@ -77,17 +77,12 @@ func (c *AuditContract) Reconcile(ctx tx, week, zone string, size int32, bookmar
 	if err != nil || date.Weekday() != time.Monday || !validZone(zone) || size < 1 || size > 100 || len(bookmark) > 4096 {
 		return nil, failure(validation, "invalid reconciliation page")
 	}
-	iter, meta, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination("payout~week~zone~id", []string{week, zone}, size, bookmark)
+	rows, next, err := queryIndexPage(ctx, "payout~week~zone~id", []string{week, zone}, size, bookmark)
 	if err != nil {
-		return nil, failure(stateError, "could not query reconciliation index")
+		return nil, err
 	}
-	defer iter.Close()
-	result := &Reconciliation{Bookmark: meta.Bookmark}
-	for iter.HasNext() {
-		kv, err := iter.Next()
-		if err != nil {
-			return nil, failure(stateError, "could not iterate reconciliation index")
-		}
+	result := &Reconciliation{Bookmark: next}
+	for _, kv := range rows {
 		var id string
 		if json.Unmarshal(kv.Value, &id) != nil || !validDigest(id) {
 			return nil, failure(stateError, "invalid payout index")

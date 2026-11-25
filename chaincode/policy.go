@@ -141,19 +141,11 @@ func (c *PolicyContract) CreatePolicy(ctx tx, id string) (*Policy, error) {
 func savePolicy(ctx tx, p *Policy, previous string) error {
 	if p.Terms != nil && p.Status != previous {
 		if previous != "" {
-			key, err := composite(ctx, "zone~status~policyId", p.Terms.Zone, previous, p.ID)
-			if err != nil {
+			if err := removeIndex(ctx, "zone~status~policyId", []string{p.Terms.Zone, previous, p.ID}, p.ID); err != nil {
 				return err
 			}
-			if ctx.GetStub().DelState(key) != nil {
-				return failure(stateError, "could not remove policy index")
-			}
 		}
-		key, err := composite(ctx, "zone~status~policyId", p.Terms.Zone, p.Status, p.ID)
-		if err != nil {
-			return err
-		}
-		if err := write(ctx, key, p.ID); err != nil {
+		if err := indexRecord(ctx, "zone~status~policyId", []string{p.Terms.Zone, p.Status, p.ID}, p.ID); err != nil {
 			return err
 		}
 	}
@@ -336,22 +328,17 @@ func (c *PolicyContract) ListPoliciesByZone(ctx tx, zone, status string, size in
 		// Expiry is derived from the transaction timestamp so a read never writes state.
 		prefix = []string{zone}
 	}
-	iter, meta, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination("zone~status~policyId", prefix, size, bookmark)
+	rows, next, err := queryIndexPage(ctx, "zone~status~policyId", prefix, size, bookmark)
 	if err != nil {
-		return nil, failure(stateError, "could not query policy index")
+		return nil, err
 	}
-	defer iter.Close()
-	page := &PolicyPage{Policies: []Policy{}, Bookmark: meta.Bookmark}
-	for iter.HasNext() {
-		kv, err := iter.Next()
-		if err != nil {
-			return nil, failure(stateError, "could not iterate policy index")
-		}
+	page := &PolicyPage{Policies: []Policy{}, Bookmark: next}
+	for _, kv := range rows {
 		_, parts, err := ctx.GetStub().SplitCompositeKey(kv.Key)
-		if err != nil || len(parts) != 3 {
+		if err != nil || (len(parts) != 3 && len(parts) != 4) {
 			return nil, failure(stateError, "invalid policy index")
 		}
-		p, err := c.GetPolicy(ctx, parts[2])
+		p, err := c.GetPolicy(ctx, parts[len(parts)-1])
 		if err != nil {
 			return nil, err
 		}

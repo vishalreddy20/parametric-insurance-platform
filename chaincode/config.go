@@ -30,6 +30,7 @@ type Config struct {
 	Quorum    int       `json:"quorum"`
 	Freshness int64     `json:"freshness"`
 	Waiting   int64     `json:"waiting"`
+	DemoClose bool      `json:"demoClose"`
 	Oracles   []string  `json:"oracles"`
 	Basic     Tier      `json:"basic"`
 	Standard  Tier      `json:"standard"`

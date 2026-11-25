@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"slices"
 	"sort"
@@ -42,6 +43,7 @@ type testStub struct {
 	now                       int64
 	event                     string
 	history                   []*queryresult.KeyModification
+	missingNativeBookmark     bool
 }
 
 func (s *testStub) GetState(key string) ([]byte, error)     { return s.state[key], nil }
@@ -80,13 +82,16 @@ func (s *testStub) GetStateByPartialCompositeKeyWithPagination(name string, part
 		}
 	}
 	sort.Strings(keys)
+	if s.missingNativeBookmark {
+		slices.Reverse(keys)
+	}
 	page := keys[:min(int(size), len(keys))]
 	rows := []*queryresult.KV{}
 	for _, key := range page {
 		rows = append(rows, &queryresult.KV{Key: key, Value: s.state[key]})
 	}
 	meta := &pb.QueryResponseMetadata{}
-	if len(page) < len(keys) {
+	if !s.missingNativeBookmark && len(page) < len(keys) {
 		meta.Bookmark = page[len(page)-1]
 	}
 	return &testIterator[*queryresult.KV]{rows}, meta, nil
@@ -517,8 +522,8 @@ func TestPayoutIneligibility(t *testing.T) {
 		{"paused", func(p *Policy, _ *testStub, _ *Event) { p.Status = paused }},
 		{"cancelled", func(p *Policy, _ *testStub, _ *Event) { p.Status = cancelled }},
 		{"expired", func(p *Policy, _ *testStub, e *Event) { p.EndsAt = e.Start }},
-		{"waiting", func(p *Policy, _ *testStub, e *Event) { p.WaitingUntil = e.Start + 1 }},
-		{"late premium", func(p *Policy, _ *testStub, e *Event) { p.StartsAt = e.Start + 1 }},
+		{"waiting", func(p *Policy, _ *testStub, e *Event) { p.WaitingUntil = e.ObservedAt + 1 }},
+		{"late premium", func(p *Policy, _ *testStub, e *Event) { p.StartsAt = e.ObservedAt + 1 }},
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			ctx, stub, p := setupPayout(t)
@@ -700,4 +705,110 @@ func TestReplayBindingAndMalformedInputs(t *testing.T) {
 	stub.now = 0
 	_, err = timestamp(ctx)
 	checkCode(t, err, stateError)
+}
+
+func TestUnanimousDemoClosure(t *testing.T) {
+	ctx, stub := testContext()
+	oracle := &OracleQuorumContract{}
+	as(ctx, "oracle", "oracle-1")
+	_, err := oracle.CloseDemoWindow(ctx, "mumbai", testStart)
+	checkCode(t, err, unauthorized)
+	as(ctx, "insurer", "insurer-test")
+	cfg := defaultConfig()
+	cfg.DemoClose, cfg.Waiting = true, 0
+	config, err := (&ConfigContract{}).SetConfig(ctx, cfg, "enable-demo")
+	must(t, config, err)
+	stub.now = testStart + 20
+	p := enroll(t, ctx, stub, "demo-eligible", "mumbai")
+	p = pay(t, ctx, p.ID, 1, "demo-premium")
+	stub.now = testStart + 90
+	attest(t, ctx, p.Terms.WorkerID, p.Terms.Platform, testStart+10, testStart+70)
+	reading, err := observe(ctx, "oracle-1", "mumbai", "severe_storm", testStart, 80, testStart+60)
+	if must(t, reading, err).Status != pending {
+		t.Fatal(reading)
+	}
+	event, err := observe(ctx, "oracle-2", "mumbai", "severe_storm", testStart, 81, testStart+61)
+	if must(t, event, err).Status != declared {
+		t.Fatal(event)
+	}
+	for _, signer := range []string{"oracle-1", "oracle-2"} {
+		as(ctx, "oracle", signer)
+		value, err := oracle.CloseDemoWindow(ctx, "mumbai", testStart)
+		if must(t, value, err).Closed {
+			t.Fatal("closed without unanimous signatures")
+		}
+	}
+	as(ctx, "insurer", "insurer-test")
+	_, err = (&PayoutContract{}).CreatePayout(ctx, event.Key, p.ID)
+	checkCode(t, err, quorumPending)
+	_, err = observe(ctx, "oracle-1", "mumbai", "strike", testStart, 80, testStart+60)
+	checkCode(t, err, conflict)
+	as(ctx, "oracle", "oracle-1")
+	replayed, err := oracle.CloseDemoWindow(ctx, "mumbai", testStart)
+	if len(must(t, replayed, err).Signers) != 1 {
+		t.Fatal(replayed)
+	}
+	as(ctx, "oracle", "oracle-3")
+	closed, err := oracle.CloseDemoWindow(ctx, "mumbai", testStart)
+	if got := must(t, closed, err); !got.Closed || len(got.Signers) != 3 || stub.event != "DemoWindowClosed" {
+		t.Fatal(got)
+	}
+	_, err = observe(ctx, "oracle-3", "mumbai", "strike", testStart, 80, testStart+60)
+	checkCode(t, err, conflict)
+	late, err := observe(ctx, "oracle-3", "mumbai", "severe_storm", testStart, 81, testStart+62)
+	if got := must(t, late, err); len(got.Readings) != 2 || got.ObservedAt != testStart+61 {
+		t.Fatal(got)
+	}
+	as(ctx, "insurer", "insurer-test")
+	paid, err := (&PayoutContract{}).CreatePayout(ctx, event.Key, p.ID)
+	if got := must(t, paid, err); got.Status != reserved || got.ReservedAt >= event.End {
+		t.Fatal(got)
+	}
+}
+
+func TestApplicationBookmarkSurvivesMissingNativeCursor(t *testing.T) {
+	ctx, stub := testContext()
+	stub.missingNativeBookmark = true
+	for i := 0; i < 40; i++ {
+		id := fmt.Sprintf("cursor-policy-%02d", i)
+		p := enroll(t, ctx, stub, id, "mumbai")
+		pay(t, ctx, p.ID, 1, id)
+		if i < 3 {
+			legacy, key, err := indexLocation(ctx, "zone~status~policyId", []string{"mumbai", active, id}, id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			delete(stub.state, key)
+			if err := write(ctx, legacy, id); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	as(ctx, "insurer", "insurer-test")
+	seen := map[string]bool{}
+	bookmark := ""
+	pages := 0
+	for {
+		page, err := (&PolicyContract{}).ListPoliciesByZone(ctx, "mumbai", active, 9, bookmark)
+		got := must(t, page, err)
+		for _, policy := range got.Policies {
+			if seen[policy.ID] {
+				t.Fatal("duplicate policy across pages")
+			}
+			seen[policy.ID] = true
+		}
+		pages++
+		if got.Bookmark == "" {
+			break
+		}
+		if got.Bookmark == bookmark {
+			t.Fatal("pagination did not advance")
+		}
+		bookmark = got.Bookmark
+	}
+	if pages != 5 || len(seen) != 40 {
+		t.Fatalf("expected 40 distinct policies across 5 pages, got %d across %d", len(seen), pages)
+	}
+	_, err := (&PolicyContract{}).ListPoliciesByZone(ctx, "chennai", active, 9, bookmark)
+	checkCode(t, err, validation)
 }

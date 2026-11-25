@@ -33,7 +33,7 @@ export function retryableLedgerError(error: unknown): boolean {
 
 export class FabricLedger implements Ledger {
   private readonly peers = new Map<string, { gateway: Gateway; client: Client }>();
-  private retries = 0;
+  private mvccRetries = 0;
 
   private constructor(private readonly channel: string, readonly chaincode: string) {}
 
@@ -97,13 +97,15 @@ export class FabricLedger implements Ledger {
           txId: commit.transactionId,
           blockNumber: String(commit.blockNumber),
         };
-      }, retryableLedgerError, () => { this.retries++; });
+      }, retryableLedgerError, (error) => {
+        if (error instanceof CommitError && error.code === StatusCode.MVCC_READ_CONFLICT) this.mvccRetries++;
+      });
     } catch (error) {
       throw ledgerFailure(error);
     }
   }
 
-  retryCount() { return this.retries; }
+  metrics() { return { mvccRetries: this.mvccRetries }; }
 
   close() {
     for (const { gateway, client } of this.peers.values()) {

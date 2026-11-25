@@ -105,11 +105,11 @@ export function AdminPanel({ provider, session, onExpired, logout }: {
           </section>}
           <section className="glass-card ps-card"><h3><BarChart3 size={19} /> Surge benchmark</h3>
             {current.report ? <>
-              <p>{current.report.environment.network} · {current.report.completedAt}</p>
+              <p>{current.report.environment.network} · {current.report.completedAt} · {current.report.passed ? 'PASS' : 'FAIL'}</p>
               <div className="zs-grid-3">
-                <p>Throughput <strong>{current.report.metrics.tps} TPS</strong></p>
-                <p>p50 / p95 <strong>{current.report.metrics.p50Ms} / {current.report.metrics.p95Ms} ms</strong></p>
-                <p>Failures / MVCC retries <strong>{current.report.metrics.failures} / {current.report.metrics.mvccRetries}</strong></p>
+                <p>Throughput <strong>{current.report.metrics.tps === undefined ? '—' : current.report.metrics.tps + ' TPS'}</strong></p>
+                <p>p50 / p95 <strong>{current.report.metrics.p50Ms ?? '—'} / {current.report.metrics.p95Ms ?? '—'} ms</strong></p>
+                <p>Failures / MVCC retries <strong>{current.report.metrics.failures ?? '—'} / {current.report.metrics.mvccRetries ?? '—'}</strong></p>
               </div>
             </> : <p className="ps-muted">No verified benchmark report is available.</p>}
           </section>

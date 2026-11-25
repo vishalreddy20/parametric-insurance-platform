@@ -51,6 +51,11 @@ func (c *ActivityContract) RecordActivityAttestation(ctx tx, activity Activity, 
 	if err := write(ctx, index, activity); err != nil {
 		return nil, err
 	}
+	for bucket := activity.Start - activity.Start%hour; bucket < activity.End; bucket += hour {
+		if err := write(ctx, activityHourKey(activity.WorkerID, activity.Platform, bucket), true); err != nil {
+			return nil, err
+		}
+	}
 	return &activity, saveReceipt(ctx, key, fp, &activity)
 }
 
@@ -83,6 +88,7 @@ type Event struct {
 	Quorum        int       `json:"quorum"`
 	LostHours     int64     `json:"lostHours"`
 	DeclaredAt    int64     `json:"declaredAt"`
+	ObservedAt    int64     `json:"observedAt"`
 	TxID          string    `json:"txId"`
 	Readings      []Reading `json:"readings"`
 }
@@ -132,6 +138,16 @@ func (c *OracleQuorumContract) SubmitReading(ctx tx, observation Observation) (*
 		return nil, err
 	}
 
+	if event == nil || event.Status != declared {
+		window, err := read[DemoWindow](ctx, demoWindowKey(observation.Zone, observation.Start))
+		if err != nil {
+			return nil, err
+		}
+		if window != nil && (window.Closed || slices.Contains(window.Signers, oracle)) {
+			return nil, failure(conflict, "the oracle has sealed this demo reading window")
+		}
+	}
+
 	var cfg *Config
 	if event == nil {
 		cfg, err = currentConfig(ctx)
@@ -167,22 +183,20 @@ func (c *OracleQuorumContract) SubmitReading(ctx tx, observation Observation) (*
 	if event.Status != declared {
 		event.Readings = append(event.Readings, reading)
 		breaches := 0
+		latest := event.Start
 		for _, record := range event.Readings {
 			if record.Breach {
 				breaches++
+				latest = max(latest, record.ObservedAt)
 			}
 		}
 		if breaches >= event.Quorum {
-			event.Status, event.Code, event.DeclaredAt, event.TxID = declared, "", now, ctx.GetStub().GetTxID()
+			event.Status, event.Code, event.DeclaredAt, event.ObservedAt, event.TxID = declared, "", now, latest, ctx.GetStub().GetTxID()
 			if err := emit(ctx, "EventDeclared", event); err != nil {
 				return nil, err
 			}
 		}
-		index, err := composite(ctx, "event~zone~start~trigger", event.Zone, epochKey(event.Start), event.Trigger)
-		if err != nil {
-			return nil, err
-		}
-		if err := write(ctx, index, key); err != nil {
+		if err := indexRecord(ctx, "event~zone~start~trigger", []string{event.Zone, epochKey(event.Start), event.Trigger}, key); err != nil {
 			return nil, err
 		}
 		if err := write(ctx, "event:"+key, event); err != nil {

@@ -24,6 +24,7 @@ const scenario = z.strictObject({
   zone: z.enum(['mumbai', 'chennai', 'kolkata', 'delhi', 'hyderabad', 'bangalore', 'pune', 'ahmedabad', 'jaipur', 'lucknow']),
   scenario: z.enum(['storm', 'rainfall', 'heat', 'pollution', 'strike', 'curfew', 'protest', 'gridlock', 'outage', 'dispatch_freeze']).default('storm'),
   mode: z.enum(['normal', 'disagree', 'offline']).default('normal'),
+  closeWindow: z.boolean().default(false),
 });
 type Scenario = z.infer<typeof scenario>;
 
@@ -75,14 +76,24 @@ app.post('/v1/simulations', async (request, response) => {
   if (!parsed.success) throw new HttpError(400, 'ERR_VALIDATION');
 
   const input = parsed.data;
+  if (input.closeWindow && input.mode === 'offline') throw new HttpError(400, 'ERR_VALIDATION');
+  if (input.closeWindow) {
+    const config = await gateway('/v1/config', authorization);
+    if (!config.demoClose || config.oracles.length !== 3 ||
+        !['oracle-1', 'oracle-2', 'oracle-3'].every((id) => config.oracles.includes(id))) {
+      throw new HttpError(409, 'ERR_DEMO_WINDOW');
+    }
+  }
   const given = baseline(input);
   const observedAt = Math.floor(Date.now() / 1000);
   const windowStart = Math.floor(observedAt / 3600) * 3600;
   const sequence = input.mode === 'disagree' ? [2, 0, 1] : input.mode === 'offline' ? [0, 1] : [0, 1, 2];
   const results = [];
+  const sources = [];
   for (const index of sequence) {
     const username = 'oracle-' + (index + 1);
     const source = await gateway('/v1/login', undefined, { username, accessCode: codes[index] });
+    sources.push('Bearer ' + source.token);
     const seed = createHash('sha256').update([username, input.zone, windowStart, given.triggerType].join('|')).digest();
     const noise = seed[0] % 3;
     const value = input.mode === 'disagree' && index === 2
@@ -94,7 +105,14 @@ app.post('/v1/simulations', async (request, response) => {
       event: transaction.result, simulated: true });
   }
   const event = results.find(({ event }) => event.status === 'DECLARED')?.event ?? results.at(-1)?.event;
-  response.json({ simulated: true, mode: input.mode, offlineOracle: input.mode === 'offline' ? 'oracle-3' : null, event, readings: results });
+  let closure = null;
+  if (input.closeWindow && event?.status === 'DECLARED') {
+    for (const source of sources) {
+      closure = (await gateway('/v1/reading-window-close', source, { zone: input.zone, windowStart })).result;
+    }
+    if (!closure?.closed) throw new HttpError(409, 'ERR_DEMO_WINDOW');
+  }
+  response.json({ closure, simulated: true, mode: input.mode, offlineOracle: input.mode === 'offline' ? 'oracle-3' : null, event, readings: results });
 });
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
   const code = error instanceof HttpError ? error.code : 'ERR_SIMULATION';

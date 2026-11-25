@@ -37,7 +37,7 @@ export function ledgerFailure(error: unknown): ApiError {
 export async function retry<T>(
   attempt: () => Promise<T>,
   retryable: (error: unknown) => boolean,
-  onRetry: () => void,
+  onRetry: (error: unknown) => void,
   wait: (ms: number) => Promise<unknown> = delay,
   random: () => number = Math.random,
 ): Promise<T> {
@@ -46,7 +46,7 @@ export async function retry<T>(
       return await attempt();
     } catch (error) {
       if (index >= 3 || !retryable(error)) throw error;
-      onRetry();
+      onRetry(error);
       const cap = Math.min(1500, 150 * 2 ** index);
       await wait(Math.round(cap / 2 + random() * cap / 2));
     }

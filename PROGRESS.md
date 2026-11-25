@@ -41,3 +41,10 @@
 - The active frontend now defaults to the ledger provider. It includes worker onboarding, simulated premium collection, policy and payout state, quorum and block proof, insurer and read-only regulator views, and a measured benchmark panel. Prototype-local claim automation is isolated under `src/app/legacy`.
 - `npm test` passed all 13 frontend tests; `npm run build` and the gateway's 3 tests passed. The root test runner only collects frontend tests; gateway and UPI tests remain in their packages.
 - Chromium against DRUNIX verified login routing, enrollment, premium confirmation, empty claims, gateway offline/retry, insurer simulation, regulator reconciliation, and session expiry. Chromium also verified local fixture mode without gateway requests. The walkthrough is in `docs/DEMO.md`. This run did not include a settled payout proof.
+
+## Phase 6 — Surge verification passed on two Lite Peers
+
+- `scripts/surge-test 20` first settled 20/20 policies on contract version 3.0. A 32-policy attempt then exposed an empty native SQL bookmark after 25 records. That run was interrupted with 25 settlements. After deploying 3.1, the original event was replayed and recovered all 32 unique policies across four read pages, with no double payment.
+- A fresh `scripts/surge-test 32` run on 3.1 passed. All 32 policies settled across two fan-out pages. There were zero failures, duplicates, and MVCC retries. Ledger and simulated UPI each reconciled to 1,920,000 paise. The gateway verified an actual reserved payout block number from the committed event stream.
+- End-to-end time 80,026.34 ms, storm-to-terminal time 48,781.98 ms, 0.66 settled payouts/s, p50 41,302.74 ms and p95 48,778.42 ms under the recorded workload. Environment, methodology and JSON are in `docs/BENCHMARKS.md` and `docs/benchmark-latest.json`. The documented sample has two Lite Peers. Four peers and a 1,000-policy run were not exercised.
+- `go vet` and the Go suite passed at 82.8% statement coverage. Frontend build and 13 tests, three gateway tests, two mock UPI tests, and the chaincode 3.1 smoke test also passed.

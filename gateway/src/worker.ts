@@ -9,6 +9,7 @@ import type { FabricLedger, Ledger } from './ledger.js';
 import { eventKey, payoutID, zone } from './schema.js';
 
 const eventPayload = z.object({ eventKey, zone, windowEnd: z.number().int().positive() });
+const closedWindowPayload = z.object({ zone, windowStart: z.number().int().positive(), closed: z.literal(true) });
 const payoutPayload = z.object({ id: payoutID, amountPaise: z.number().int().positive() });
 const decoder = new TextDecoder();
 const fsCode = (error: unknown) => (error as NodeJS.ErrnoException).code;
@@ -74,6 +75,10 @@ export class Checkpoints {
     await this.save(this.name(job), { job, done });
   }
 
+  windowClosed(zone: string, windowStart: number) {
+    return this.load<boolean>('closed-' + zone + '-' + windowStart + '.json');
+  }
+
   findProof(txId: string) { return this.load<Cursor>('proof-' + txId + '.json'); }
 
   loadCursor() { return this.load<Cursor>('cursor.json'); }
@@ -84,9 +89,15 @@ export class Checkpoints {
       const value = eventPayload.parse(parse());
       await this.enqueue({ kind: 'fanout', key: value.eventKey, zone: value.zone,
         notBefore: value.windowEnd + 3600, bookmark: '' });
+    } else if (event.eventName === 'DemoWindowClosed') {
+      const value = closedWindowPayload.parse(parse());
+      await this.save('closed-' + value.zone + '-' + value.windowStart + '.json', true);
     } else if (event.eventName === 'PayoutReserved') {
       const value = payoutPayload.parse(parse());
       await this.enqueue({ kind: 'settlement', key: value.id, amountPaise: value.amountPaise });
+    } else if (event.eventName === 'PayoutSettled' || event.eventName === 'PayoutFailed') {
+      const value = payoutPayload.parse(parse());
+      await this.progress({ kind: 'settlement', key: value.id, amountPaise: value.amountPaise }, true);
     }
     const proof = { blockNumber: String(event.blockNumber), transactionId: event.transactionId };
     if (/^[a-f0-9]{64}$/.test(event.transactionId)) await this.save('proof-' + event.transactionId + '.json', proof);
@@ -108,7 +119,7 @@ export class Fanout {
       await this.state.progress(job, true);
       return;
     }
-    if (now < job.notBefore) return;
+    if (now < job.notBefore && !await this.state.windowClosed(job.zone, job.notBefore - 7200)) return;
     const page = await this.ledger.evaluate<{ policies: { id: string }[]; bookmark: string }>(
       this.insurer, 'PolicyContract:ListPoliciesByZone', [job.zone, 'ACTIVE', '25', job.bookmark],
     );
@@ -131,23 +142,38 @@ export class Fanout {
     this.log({ action: 'fanout_page', rows: page.policies.length, skipped: Object.fromEntries(skips) });
   }
 
+  private async attempt(job: Job) {
+    try {
+      await this.process(job);
+    } catch (error) {
+      this.log({ action: 'job_retry', kind: job.kind, code: error instanceof ApiError ? error.code : 'ERR_JOB' });
+    }
+  }
+
   async run(signal: AbortSignal) {
     while (!signal.aborted) {
+      const settlementBatch: SettlementJob[] = [];
+      const flushSettlements = async () => {
+        await Promise.all(settlementBatch.splice(0).map((job) => this.attempt(job)));
+      };
       try {
         for await (const job of this.state.pending()) {
           if (signal.aborted) break;
-          try {
-            await this.process(job);
-          } catch (error) {
-            this.log({ action: 'job_retry', kind: job.kind, code: error instanceof ApiError ? error.code : 'ERR_JOB' });
+          if (job.kind === 'fanout') {
+            await this.attempt(job);
+          } else if (this.settle) {
+            settlementBatch.push(job);
+            if (settlementBatch.length === 5) await flushSettlements();
           }
         }
+        if (!signal.aborted) await flushSettlements();
       } catch {
         this.log({ action: 'checkpoint_retry', code: 'ERR_CHECKPOINT' });
       }
       await delay(1000, undefined, { signal }).catch(() => {});
     }
   }
+
 }
 
 export async function consumeEvents(ledger: FabricLedger, actor: string, state: Checkpoints, signal: AbortSignal, log: Logger) {

@@ -2,12 +2,15 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/hyperledger/fabric-protos-go-apiv2/ledger/queryresult"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
@@ -172,20 +175,12 @@ type ledgerPage[T any] struct {
 }
 
 func indexedPage[T any](ctx tx, index string, prefix []string, size int32, bookmark, keyPrefix string) (*ledgerPage[T], error) {
-	if size < 1 || size > 100 || len(bookmark) > 4096 {
-		return nil, failure(validation, "invalid page options")
-	}
-	iter, meta, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination(index, prefix, size, bookmark)
+	rows, next, err := queryIndexPage(ctx, index, prefix, size, bookmark)
 	if err != nil {
-		return nil, failure(stateError, "could not query ledger index")
+		return nil, err
 	}
-	defer iter.Close()
-	result := &ledgerPage[T]{Records: []T{}, Bookmark: meta.Bookmark}
-	for iter.HasNext() {
-		row, err := iter.Next()
-		if err != nil {
-			return nil, failure(stateError, "could not iterate ledger index")
-		}
+	result := &ledgerPage[T]{Records: []T{}, Bookmark: next}
+	for _, row := range rows {
 		var id string
 		if json.Unmarshal(row.Value, &id) != nil {
 			return nil, failure(stateError, "invalid ledger index")
@@ -197,4 +192,113 @@ func indexedPage[T any](ctx tx, index string, prefix []string, size int32, bookm
 		result.Records = append(result.Records, *record)
 	}
 	return result, nil
+}
+
+const shardNames = "0123456789abcdef"
+const indexScanLimit int32 = 4096
+
+func indexLocation(ctx tx, index string, parts []string, id string) (string, string, error) {
+	legacy, err := composite(ctx, index, parts...)
+	if err != nil {
+		return "", "", err
+	}
+	shard := digest(id)[:1]
+	key, err := composite(ctx, index+"~shard", append([]string{shard}, parts...)...)
+	return legacy, key, err
+}
+
+func removeIndex(ctx tx, index string, parts []string, id string) error {
+	legacy, key, err := indexLocation(ctx, index, parts, id)
+	if err != nil {
+		return err
+	}
+	if ctx.GetStub().DelState(legacy) != nil || ctx.GetStub().DelState(key) != nil {
+		return failure(stateError, "could not remove ledger index")
+	}
+	return nil
+}
+
+func indexRecord(ctx tx, index string, parts []string, id string) error {
+	legacy, key, err := indexLocation(ctx, index, parts, id)
+	if err != nil {
+		return err
+	}
+	if ctx.GetStub().DelState(legacy) != nil {
+		return failure(stateError, "could not retire the legacy ledger index")
+	}
+	return write(ctx, key, id)
+}
+
+// The DRUNIX SQL range scan may emit an empty native bookmark for a full
+// page, and its SQL results are unordered. Read and sort bounded hash
+// partitions, then use an application cursor. The last partition reads
+// unsharded keys written by earlier chaincode versions.
+func queryIndexPage(ctx tx, index string, prefix []string, size int32, bookmark string) ([]*queryresult.KV, string, error) {
+	if size < 1 || size > 100 || len(bookmark) > 4096 {
+		return nil, "", failure(validation, "invalid page options")
+	}
+	firstPartition, after := 0, ""
+	if bookmark != "" {
+		payload, err := base64.RawURLEncoding.DecodeString(bookmark)
+		if err != nil || len(payload) < 2 || int(payload[0]) > len(shardNames) {
+			return nil, "", failure(validation, "invalid index bookmark")
+		}
+		firstPartition, after = int(payload[0]), string(payload[1:])
+	}
+	rows := make([]*queryresult.KV, 0, size)
+	for partition := firstPartition; partition <= len(shardNames); partition++ {
+		name, parts := index, prefix
+		if partition < len(shardNames) {
+			name += "~shard"
+			parts = append([]string{string(shardNames[partition])}, prefix...)
+		}
+		keyPrefix, err := composite(ctx, name, parts...)
+		if err != nil {
+			return nil, "", err
+		}
+		if after != "" && !strings.HasPrefix(after, keyPrefix) {
+			return nil, "", failure(validation, "bookmark belongs to a different index")
+		}
+		shard, err := readIndexShard(ctx, name, parts, keyPrefix, after)
+		if err != nil {
+			return nil, "", err
+		}
+		for _, row := range shard {
+			if len(rows) == int(size) {
+				cursor := append([]byte{byte(partition)}, []byte(row.Key)...)
+				return rows, base64.RawURLEncoding.EncodeToString(cursor), nil
+			}
+			rows = append(rows, row)
+		}
+		after = ""
+	}
+	return rows, "", nil
+}
+
+func readIndexShard(ctx tx, name string, parts []string, prefix, start string) ([]*queryresult.KV, error) {
+	iter, _, err := ctx.GetStub().GetStateByPartialCompositeKeyWithPagination(name, parts, indexScanLimit+1, "")
+	if err != nil {
+		return nil, failure(stateError, "could not query ledger index partition")
+	}
+	defer iter.Close()
+	var rows []*queryresult.KV
+	var count int32
+	for iter.HasNext() {
+		row, err := iter.Next()
+		if err != nil {
+			return nil, failure(stateError, "could not iterate ledger index partition")
+		}
+		if !strings.HasPrefix(row.Key, prefix) {
+			continue
+		}
+		count++
+		if count > indexScanLimit {
+			return nil, failure(stateError, "ledger index partition exceeds supported scan size")
+		}
+		if row.Key >= start {
+			rows = append(rows, row)
+		}
+	}
+	slices.SortFunc(rows, func(a, b *queryresult.KV) int { return strings.Compare(a.Key, b.Key) })
+	return rows, nil
 }

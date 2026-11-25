@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/drunix-env.sh"
 
 channel_joined || fail 'Run scripts/network-up.sh before deploying.'
-version=2.0
+version=3.1
 if committed 2>/dev/null | jq -e --arg version "$version" '.version == $version' >/dev/null; then
   printf '%s\n' "parashield $version is already committed."
   exit 0

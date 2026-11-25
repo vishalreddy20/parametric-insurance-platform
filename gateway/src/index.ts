@@ -54,6 +54,7 @@ async function main() {
     readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
     simulatePremium: upiURL && upiAuth ? (payment) => callMockUPI(upiURL, upiAuth, '/v1/premiums', payment) : undefined,
     corsOrigin: settings.PARASHIELD_ORIGIN,
+    deploymentMetrics: () => ledger.metrics(),
     findProof: (id) => state.findProof(id),
     loadBenchmark: async () => {
       if (!settings.PARASHIELD_BENCHMARK_REPORT) return null;

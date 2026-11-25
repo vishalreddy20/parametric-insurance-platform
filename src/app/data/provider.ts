@@ -73,8 +73,9 @@ export interface Enroll {
 export interface LedgerProof { blockNumber: string; transactionId: string }
 export interface Benchmark {
   completedAt: string;
+  passed: boolean;
   environment: { network: string };
-  metrics: { tps: number; p50Ms: number; p95Ms: number; failures: number; mvccRetries: number };
+  metrics: { tps?: number; p50Ms?: number | null; p95Ms?: number | null; failures?: number; mvccRetries?: number };
 }
 export interface Reconciliation {
   reservedCount: number; settledCount: number; failedCount: number;

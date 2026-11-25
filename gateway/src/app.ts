@@ -18,6 +18,7 @@ type Context = {
   corsOrigin?: string;
   findProof?: (txId: string) => Promise<unknown>;
   loadBenchmark?: () => Promise<unknown>;
+  deploymentMetrics?: () => { mvccRetries: number };
   runSimulation?: (authorization: string, body: unknown) => Promise<unknown>;
   log?: (fields: Record<string, unknown>) => void;
 };
@@ -44,7 +45,7 @@ function enforceWorker(user: Principal, policyId: string, workerId?: string) {
   }
 }
 
-export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, runSimulation, log = () => {} }: Context) {
+export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
   const app = express();
   app.disable('x-powered-by');
   app.use((request, response, next) => {
@@ -134,6 +135,13 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
     }));
   }));
 
+  app.post('/v1/reading-window-close', protect(auth, ['oracle'], async (request, response, user) => {
+    const { zone, windowStart } = parse(schema.demoWindow, request.body);
+    response.json(await ledger.submit(user.actor, 'OracleQuorumContract:CloseDemoWindow', {
+      arguments: [zone, String(windowStart)],
+    }));
+  }));
+
   const policyReaders: schema.Role[] = ['worker', 'platform', 'insurer', 'bank', 'regulator'];
   app.get('/v1/policies/:id', protect(auth, policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
@@ -163,6 +171,9 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
     const proof = await findProof?.(txId);
     if (!proof) throw new ApiError('ERR_NOT_FOUND', 404, 'Ledger proof has not reached the event index.');
     response.json(proof);
+  }));
+  app.get('/v1/metrics', protect(auth, ['insurer', 'regulator'], async (_request, response) => {
+    response.json(deploymentMetrics?.() ?? { mvccRetries: 0 });
   }));
   app.get('/v1/benchmarks/latest', protect(auth, ['insurer', 'regulator'], async (_request, response) => {
     response.json({ run: await loadBenchmark?.() ?? null });
