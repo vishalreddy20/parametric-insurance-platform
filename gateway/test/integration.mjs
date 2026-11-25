@@ -69,7 +69,10 @@ await checked('/v1/activity', { token: platform, method: 'POST', body: {
 } });
 const page = await checked('/v1/summary/bangalore?size=100', { token: insurer });
 assert(page.policies.some(({ id }) => id === policyId));
-const payouts = await checked('/v1/policies/' + policyId + '/payouts', { token: regulator });
+await checked('/v1/policies/' + policyId, { token: regulator }, 403);
+await checked('/v1/summary/bangalore?size=100', { token: regulator }, 403);
+await checked('/v1/policies/' + policyId + '/payouts', { token: regulator }, 403);
+const payouts = await checked('/v1/policies/' + policyId + '/payouts', { token: insurer });
 assert.equal(payouts.records.length, 0);
 const eventPage = await checked('/v1/events/bangalore', { token: insurer });
 assert(Array.isArray(eventPage.records));

@@ -97,7 +97,7 @@ export interface DataProvider {
   events(session: Session, zone: Zone): Promise<DisruptionEvent[]>;
   payouts(session: Session): Promise<Payout[]>;
   event(session: Session, key: string): Promise<DisruptionEvent | null>;
-  proof(session: Session, txId: string): Promise<LedgerProof | null>;
+  proof(session: Session, txId: string, payoutId: string): Promise<LedgerProof | null>;
   policies(session: Session, zone: Zone, status: PolicyStatus): Promise<Policy[]>;
   benchmark(session: Session): Promise<Benchmark | null>;
   reconciliation(session: Session, zone: Zone, week: string): Promise<Reconciliation | null>;

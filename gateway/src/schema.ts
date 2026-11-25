@@ -10,6 +10,7 @@ export type Role = typeof roles[number];
 
 export const eventKey = z.string().regex(/^[a-z]+\|[a-z_]+\|[1-9][0-9]{1,11}$/);
 export const payoutID = z.string().regex(/^[0-9a-f]{64}$/);
+export const proofQuery = z.strictObject({ payoutId: payoutID.optional() });
 export const policyStatus = z.enum(['PENDING_PREMIUM', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']);
 export const page = z.strictObject({
   size: z.coerce.number().int().min(1).max(100).default(25),

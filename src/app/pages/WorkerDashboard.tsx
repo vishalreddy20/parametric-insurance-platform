@@ -16,10 +16,10 @@ function Proof({ provider, session, payout, onExpired }: {
   const load = useCallback(async () => {
     const [event, proof] = await Promise.all([
       provider.event(session, payout.eventKey),
-      payout.txId ? provider.proof(session, payout.txId) : Promise.resolve(null),
+      payout.txId ? provider.proof(session, payout.txId, payout.id) : Promise.resolve(null),
     ]);
     return { event, proof };
-  }, [provider, session, payout.eventKey, payout.txId]);
+  }, [provider, session, payout.eventKey, payout.txId, payout.id]);
   const { value, error, loading, refresh } = useResource(load, onExpired);
   if (loading) return <p role="status">Fetching ledger proof…</p>;
   if (error) return <p className="ps-error" role="alert">{error} <button className="btn-secondary" onClick={refresh}>Retry</button></p>;

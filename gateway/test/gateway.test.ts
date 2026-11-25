@@ -30,10 +30,16 @@ test('retry is capped and delays use jitter, validation does not retry', async (
 
 test('HTTP routes enforce worker ownership, schema validation and role scope', async (context) => {
   const calls: { actor: string; name: string }[] = [];
+  const payoutId = 'a'.repeat(64);
+  const foreignPayoutId = 'b'.repeat(64);
+  const txId = 'c'.repeat(64);
   const ledger: Ledger = {
     async evaluate<T>(actor: string, name: string, args?: string[]) {
       calls.push({ actor, name });
       const id = args?.[0];
+      if (name === 'PayoutContract:GetPayout') {
+        return { policyId: id === foreignPayoutId ? 'worker-b' : 'worker-a', txId } as T;
+      }
       return { id, term: 1, status: 'PENDING_PREMIUM', terms: {
         workerId: id, platform: id === 'worker-b' ? 'swiggy' : 'zomato', premiumPaise: 18000,
       } } as T;
@@ -50,6 +56,7 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
     ['worker-a', { username: 'worker-a', role: 'worker', actor: 'platform-a', workerId: 'worker-a',
       policyId: 'worker-a', platformId: 'zomato' }],
     ['platform-a', { username: 'platform-a', role: 'platform', actor: 'platform-a', platformId: 'zomato' }],
+    ['regulator', { username: 'regulator', role: 'regulator', actor: 'regulator' }],
   ]);
   const auth: ServiceAuthentication = {
     async authenticate(authorization) {
@@ -61,7 +68,7 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   };
   const logs: Record<string, unknown>[] = [];
   const server = createApp({ ledger, auth, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
-    settlementEnabled: false, simulatePremium: async (payment) => payment, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
+    settlementEnabled: false, findProof: async () => ({ blockNumber: '2' }), simulatePremium: async (payment) => payment, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
   context.after(() => { server.close(); });
   await once(server, 'listening');
   const address = server.address();
@@ -96,6 +103,16 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   }
   assert.equal((await fetch(base + '/v1/policies/worker-b/premium-simulation', post(platformToken))).status, 403);
   assert.equal((await fetch(base + '/v1/policies/worker-a/premium-simulation', post(platformToken))).status, 200);
+  const proof = '/v1/ledger-proof/' + txId;
+  assert.equal((await get(proof, token)).status, 403);
+  assert.equal((await get(proof + '?payoutId=' + payoutId, token)).status, 200);
+  assert.equal((await get(proof + '?payoutId=' + foreignPayoutId, token)).status, 403);
+  assert.equal((await get(proof + '?payoutId=' + foreignPayoutId, platformToken)).status, 403);
+  assert.equal((await get('/v1/ledger-proof/' + 'd'.repeat(64) + '?payoutId=' + payoutId, token)).status, 403);
+  assert.equal((await get('/v1/payouts/' + payoutId, 'regulator')).status, 403);
+  assert.equal((await get('/v1/policies/worker-a', 'regulator')).status, 403);
+  assert.equal((await get('/v1/summary/bangalore', 'regulator')).status, 403);
+  assert.equal((await get(proof, 'regulator')).status, 200);
 
   assert(!JSON.stringify(logs).includes('SYNTHETIC PHONE'));
   assert(!JSON.stringify(logs).includes(accessCode));

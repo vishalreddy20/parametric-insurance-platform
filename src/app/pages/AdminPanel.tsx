@@ -27,7 +27,7 @@ export function AdminPanel({ provider, session, onExpired, logout }: {
   const regulator = session.role === 'regulator';
   const load = useCallback(async () => {
     const [policies, events, report, reconciliation] = await Promise.all([
-      provider.policies(session, zone, status), provider.events(session, zone), provider.benchmark(session),
+      (regulator ? [] : provider.policies(session, zone, status)), provider.events(session, zone), provider.benchmark(session),
       regulator && week ? provider.reconciliation(session, zone, week) : null,
     ]);
     return { policies, events, report, reconciliation, zone, status, week };
@@ -59,9 +59,9 @@ export function AdminPanel({ provider, session, onExpired, logout }: {
           <label className="zs-label">Zone <select aria-label="Zone" className="zs-input" value={zone} onChange={(event) => setZone(event.target.value as Zone)}>
             {zones.map((name) => <option key={name} value={name}>{name}</option>)}
           </select></label>
-          <label className="zs-label">Policy status <select className="zs-input" value={status} onChange={(event) => setStatus(event.target.value as PolicyStatus)}>
+          {!regulator && <label className="zs-label">Policy status <select className="zs-input" value={status} onChange={(event) => setStatus(event.target.value as PolicyStatus)}>
             {statuses.map((name) => <option key={name} value={name}>{name.replaceAll('_', ' ')}</option>)}
-          </select></label>
+          </select></label>}
           {regulator && <label className="zs-label">Week starting Monday (IST) <input type="date" className="zs-input" value={week} onChange={(event) => setWeek(event.target.value)} /></label>}
         </div>
         {error && <p className="ps-error" role="alert">{error} <button className="btn-secondary" onClick={refresh}>Retry</button></p>}
@@ -80,13 +80,13 @@ export function AdminPanel({ provider, session, onExpired, logout }: {
         </section>}
         {current && <>
           <div className="zs-grid-2">
-            <section className="glass-card ps-card"><h3>Policies · {current.policies.length}</h3>
+            {!regulator && <section className="glass-card ps-card"><h3>Policies · {current.policies.length}</h3>
               {!current.policies.length && <p className="ps-muted">No matching policies.</p>}
               <ul className="ps-list">{current.policies.map((policy) => <li key={policy.id}>
                 <div><strong>{policy.id}</strong><p>{policy.terms.platform} · {policy.terms.tier}</p></div>
                 <span>{money(policy.terms.premiumPaise)}</span>
               </li>)}</ul>
-            </section>
+            </section>}
             <section className="glass-card ps-card"><h3><Activity size={19} /> Events</h3><span className="badge badge-info">SIMULATED ORACLE DATA</span>
               {!current.events.length && <p className="ps-muted">No events in this zone.</p>}
               <ul className="ps-list">{current.events.map((event) => <li key={event.eventKey}>

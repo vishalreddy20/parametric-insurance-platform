@@ -92,7 +92,7 @@ export function ledgerProvider(base: string): DataProvider {
     events: (session, zone) => all<DisruptionEvent>('/events/' + zone, session, 'records'),
     payouts: (session) => all<Payout>(byPolicy(session.policyId) + '/payouts', session, 'records'),
     event: (session, key) => optional(request<DisruptionEvent>('/events/detail?key=' + encodeURIComponent(key), session)),
-    proof: (session, txId) => optional(request<LedgerProof>('/ledger-proof/' + encodeURIComponent(txId), session)),
+    proof: (session, txId, payoutId) => optional(request<LedgerProof>('/ledger-proof/' + encodeURIComponent(txId) + '?payoutId=' + encodeURIComponent(payoutId), session)),
     policies: (session, zone, status) => all<Policy>('/summary/' + zone + '?status=' + status, session, 'policies'),
     benchmark: async (session) => (await request<{ run: Benchmark | null }>('/benchmarks/latest', session)).run,
     reconciliation: async (session, zone, week) => {

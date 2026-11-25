@@ -146,7 +146,8 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
     }));
   }));
 
-  const policyReaders: schema.Role[] = ['worker', 'platform', 'insurer', 'bank', 'regulator'];
+  const policyReaders: schema.Role[] = ['worker', 'platform', 'insurer', 'bank'];
+  const eventReaders: schema.Role[] = [...policyReaders, 'regulator', 'oracle'];
   app.get('/v1/policies/:id', allow(policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
     checkWorkerPolicy(user, id);
@@ -166,16 +167,25 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
   });
   app.get('/v1/policies/:id/payouts', policyPayouts);
   app.get('/v1/policies/:id/claims', policyPayouts);
-  app.get('/v1/payouts/:id', allow(['insurer', 'regulator'], async (request, response, user) => {
+  app.get('/v1/payouts/:id', allow(['insurer'], async (request, response, user) => {
     const id = parse(schema.payoutID, request.params.id);
     response.json(await ledger.evaluate(user.actor, 'PayoutContract:GetPayout', [id]));
   }));
-  app.get('/v1/events/detail', allow([...policyReaders, 'oracle'], async (request, response, user) => {
+  app.get('/v1/events/detail', allow(eventReaders, async (request, response, user) => {
     const key = parse(schema.eventKey, request.query.key);
     response.json(await ledger.evaluate(user.actor, 'OracleQuorumContract:GetEvent', [key]));
   }));
-  app.get('/v1/ledger-proof/:id', allow(policyReaders, async (request, response) => {
+  app.get('/v1/ledger-proof/:id', allow([...policyReaders, 'regulator'], async (request, response, user) => {
     const txId = parse(schema.payoutID, request.params.id);
+    const { payoutId } = parse(schema.proofQuery, request.query);
+    if (user.role === 'worker' || user.role === 'platform') {
+      if (!payoutId) throw new ApiError('ERR_UNAUTHORIZED', 403, 'A payout is required to access this proof.');
+      const payout = await ledger.evaluate<{ policyId: string; txId: string }>(user.actor, 'PayoutContract:GetPayout', [payoutId]);
+      checkWorkerPolicy(user, payout.policyId);
+      const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [payout.policyId]);
+      checkPolicyOwner(user, payout.policyId, policy);
+      if (payout.txId !== txId) throw new ApiError('ERR_UNAUTHORIZED', 403, 'This proof does not belong to the payout.');
+    }
     const proof = await findProof?.(txId);
     if (!proof) throw new ApiError('ERR_NOT_FOUND', 404, 'Ledger proof has not reached the event index.');
     response.json(proof);
@@ -195,12 +205,12 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
       : { Authorization: request.get('authorization')! };
     response.json(await runSimulation(credentials, input));
   }));
-  app.get('/v1/events/:zone', allow([...policyReaders, 'oracle'], async (request, response, user) => {
+  app.get('/v1/events/:zone', allow(eventReaders, async (request, response, user) => {
     const zone = parse(schema.zone, request.params.zone);
     const page = parse(schema.page, request.query);
     response.json(await ledger.evaluate(user.actor, 'OracleQuorumContract:ListEvents', [zone, String(page.size), page.bookmark]));
   }));
-  app.get('/v1/summary/:zone', allow(['insurer', 'regulator'], async (request, response, user) => {
+  app.get('/v1/summary/:zone', allow(['insurer'], async (request, response, user) => {
     const zone = parse(schema.zone, request.params.zone);
     const page = parse(schema.policyList, request.query);
     response.json(await ledger.evaluate(user.actor, 'PolicyContract:ListPoliciesByZone', [zone, page.status, String(page.size), page.bookmark]));

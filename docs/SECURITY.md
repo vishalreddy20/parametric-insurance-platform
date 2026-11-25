@@ -28,7 +28,9 @@ staff MFA and cookie sessions against temporary account databases.
 Sign-in throttles by IP and account in memory, so limits reset on a gateway
 restart. SMTP reset, administrator reset codes, password change, worker MFA
 management, account security screens, and the auth audit log remain pending.
-The role and ownership review is still in progress, including indexed ledger
-proof and regulator data. The gateway currently targets one node. Host the
+Workers and platforms must prove ownership of the payout before reading its
+indexed ledger proof. Regulators have event, audit and reconciliation access.
+Individual policies, claims, and payouts are excluded from their API access.
+The ownership review for the remaining routes is in progress. The gateway currently targets one node. Host the
 frontend and API on the same site when deploying with Strict cookies, use TLS
 outside loopback, protect the database and runtime key, and back them up together.
