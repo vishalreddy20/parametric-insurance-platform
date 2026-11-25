@@ -1,0 +1,17 @@
+# Progress
+
+## Phase 0 — Verified
+
+- Branch: `parashield-drunix`. The active UI loads `src/app/pages/*` through `src/app/App.tsx`. Application records are stored through `src/app/services/mock-db.ts` in localStorage. The active UI uses Supabase Auth; its Edge Function has no active UI caller.
+- `git ls-files -- .env dist node_modules` produced no paths. The staged removals of previously tracked `.env` and `dist/` are included in this phase. `git check-ignore` confirmed the local environment file and generated artifacts are ignored.
+- Secret scan, owner-accepted result: `.env` present in history only, no other secrets reported. The owner is handling rotation.
+- Existing verification: `npm ci && npm test && npm run build` passed on Node 20.20.2. Vitest passed all 4 tests in 2 files. npm reported 19 dependency vulnerabilities (1 low, 5 moderate, 9 high, 4 critical). Build output was generated in ignored `dist/`. The same commands also passed in a temporary archive of the Phase 0 commit with no local environment file.
+
+## Phase 1 — Verified on the two-organization DRUNIX sample
+
+- Inspected the upstream root and sample READMEs, architecture document location, channel scripts, Compose topology, and lifecycle commands at revision `8090e0ce58802c8a0f13d23a6abe5a2d35456cc5`. The standalone wiki Git endpoint returned `fatal: could not read Username for 'https://github.com': No such device or address`. The in-repository sample documentation was sufficient for startup.
+- Built the documented binaries with `make peer orderer configtxgen configtxlator osnadmin cryptogen discover ledgerutil`. Ran `./network.sh up createChannel -c parashield -s yugabyte` from a separate writable checkout. The orderer joined `parashield` and all four sample peers joined the channel.
+- The first chaincode install failed with `No such image: npcioss/drunix-ccenv:1.0`. The deployment wrapper now ensures the upstream Go builder and runtime images are locally available. The retry installed chaincode on both Lite Peers and committed definition 1.0, sequence 1, with both organizations' approval.
+- `scripts/smoke-test.sh` enrolled a simulated policy with a transient private write into `workerPII` and verified that the public readback contained only the policy ID and the expected salted worker hash. `go vet ./...`, `go test ./...` (compilation, no Go test files in Phase 1), `bash -n` on every wrapper, and `git diff --check` passed.
+- Verified the startup and deploy wrappers against the already running sample, repeated the smoke test, ran sample teardown twice, then brought the network back up through the repository wrapper, redeployed, and enrolled and read back a policy again. The network is running with the smoke fixture committed.
+- Topology uses the two-organization sample with YugabyteDB, KeyDB services, single-node Raft, two Lite Peers, two Committing Peers, and two validation-service containers. The chaincode uses point reads and the sample's default SQL state database. Org1 and Org2 serve as insurer and platform respectively. The enrollment write requires both endorsements. A separate bank, oracle and regulator, and policies specific to their transactions, are outside this sample verification. Falcon and peer scaling were not exercised. The browser still uses the prototype data path.
