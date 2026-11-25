@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-on-surface":"#edf0ff","on-secondary-container":"#596372","on-primary-container":"#cad3ff","error-container":"#ffdad6","surface-container-high":"#e1e8fd","tertiary-fixed-dim":"#ffb59c","surface-bright":"#f9f9ff","outline":"#747686","surface-container-highest":"#dce2f7","on-tertiary-fixed":"#390c00","primary-fixed-dim":"#b7c4ff","on-tertiary":"#ffffff","inverse-primary":"#b7c4ff","on-primary-fixed":"#001551","background":"#f9f9ff","primary-container":"#1d4ed8","on-secondary-fixed":"#121c28","surface":"#f9f9ff","surface-tint":"#2151da","on-error":"#ffffff","secondary-fixed-dim":"#bdc7d8","surface-container-low":"#f1f3ff","surface-dim":"#d3daef","on-primary":"#ffffff","on-background":"#141b2b","primary-fixed":"#dce1ff","on-tertiary-fixed-variant":"#832700","error":"#ba1a1a","on-error-container":"#93000a","primary":"#0037b0","on-surface":"#141b2b","surface-container-lowest":"#ffffff","surface-variant":"#dce2f7","secondary-container":"#d6e0f1","tertiary-fixed":"#ffdbcf","secondary-fixed":"#d9e3f4","tertiary":"#7f2500","on-tertiary-container":"#ffc9b7","outline-variant":"#c4c5d7","secondary":"#555f6d","on-primary-fixed-variant":"#0039b5","surface-container":"#e9edff","tertiary-container":"#a73400","on-surface-variant":"#434655","on-secondary-fixed-variant":"#3e4755","on-secondary":"#ffffff","inverse-surface":"#293040"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","space-md":"1rem",margin:"1rem",gutter:"1rem","space-xs":"0.25rem","space-lg":"1.5rem","space-xl":"2rem","margin-desktop":"2rem"},fontFamily:{"headline-xl":["Inter"],"body-sm":["Inter"],"headline-md":["Inter"],"label-md":["Inter"],"label-sm":["Inter"],"body-md":["Inter"],"mono-data":["Inter"],"headline-lg":["Inter"],"headline-xl-mobile":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-xl":["32px",{lineHeight:"40px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],"label-md":["14px",{lineHeight:"20px",fontWeight:"500"}],"label-sm":["12px",{lineHeight:"16px",fontWeight:"500"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"mono-data":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"500"}],"headline-lg":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-xl-mobile":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-14 px-space-md flex items-center gap-space-sm bg-surface-container-low"><div class="w-7 h-7 rounded bg-primary flex items-center justify-center text-on-primary font-headline-md text-headline-md font-bold">P</div><div class="flex flex-col"><span class="font-headline-md text-label-md font-bold tracking-tight text-on-surface">ParaShield</span><span class="font-label-sm text-body-sm text-on-surface-variant font-mono-data">Institutional Ops</span></div></div><div class="px-space-md py-space-sm bg-surface-container-low/50"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Workspaces</span></div><nav class="flex flex-col gap-space-xs px-space-sm py-space-sm" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span>Overview</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="insurer-console" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span>Insurer Console</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-2 transition-colors bg-primary-container text-on-primary font-medium rounded-lg" data-path="platform-fleet-console" href="#"><span class="material-symbols-outlined text-[18px]">commute</span><span>Platform Fleet Console</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="regulator-audit" href="#"><span class="material-symbols-outlined text-[18px]">policy</span><span>Regulator Audit</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="admin-and-identity" href="#"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span><span>Admin & Identity</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="ledger-proofs" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span>Ledger Proofs</span></a></nav></div><div class="p-space-md bg-surface-container-low"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-body-sm text-on-surface-variant font-medium">Consensus Engine</span><span class="w-2 h-2 rounded-full bg-primary"></span></div><div class="font-mono-data text-body-sm text-secondary">Quorum: 5/5 Validated</div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-md"><span class="font-headline-md text-label-md text-on-surface font-semibold">ParaShield Institutional Console</span><div class="flex items-center gap-space-xs"><span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Payment rail: simulated</span><span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Oracle inputs: synthetic</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-md text-secondary font-mono-data text-body-sm"><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">dns</span>IST-BLR-01</span><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span>14:32:08 IST</span></div><div class="flex items-center gap-space-sm pl-space-md bg-surface-container-lowest"><div class="flex flex-col text-right"><span class="font-label-md text-label-sm text-on-surface font-semibold">arun.kumar@parashield.ops</span><span class="font-label-sm text-body-sm text-secondary">Super-Admin / L3 Ops</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><a class="p-1 text-on-surface-variant hover:text-error transition-colors title='Sign Out'" data-path="login" href="#"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></div></header><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="p-space-lg max-w-[1200px] w-full mx-auto flex flex-col gap-space-lg">
+<!-- Top Action Bar & Platform Context -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="font-mono-data text-body-sm text-primary uppercase font-bold tracking-wider">Fleet Telemetry Grid</span>
+<span class="text-outline-variant font-mono-data text-body-sm">/</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono-data text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Payment rail: simulated
+          </span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono-data text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Oracle inputs: synthetic
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Platform Fleet Operations & Shift Verification</h1>
+<p class="font-body-md text-body-md text-secondary max-w-3xl">Continuous delivery partner shift attestations, localized weather risk overlays, and automated micro-indemnity distribution.</p>
+</div>
+<div class="flex items-center gap-space-sm self-start lg:self-center">
+<button class="px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors font-label-md text-label-md flex items-center gap-1.5 shadow-sm" id="batch-verify-btn">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Batch Attest</span>
+</button>
+<button class="px-space-md py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary transition-colors font-label-md text-label-md flex items-center gap-1.5 shadow-sm" id="export-log-btn">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Audit Export (NDJSON)</span>
+</button>
+</div>
+</div>
+<!-- Partner Fleet Switcher Tabs -->
+<div class="flex items-center justify-between bg-surface-container-low p-1.5 rounded-xl">
+<div class="flex items-center gap-1 overflow-x-auto">
+<button class="fleet-tab active-fleet px-space-md py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm flex items-center gap-2 transition-all">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Swiggy BLR Fleet (Active)</span>
+<span class="px-1.5 py-0.5 text-[11px] rounded bg-primary-fixed text-on-primary-fixed font-mono-data font-bold">4.1k live</span>
+</button>
+<button class="fleet-tab px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all font-label-md text-label-md flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Zomato NCR Fleet</span>
+<span class="text-secondary font-mono-data text-body-sm">6.8k</span>
+</button>
+<button class="fleet-tab px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all font-label-md text-label-md flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Zepto West Hub</span>
+<span class="text-secondary font-mono-data text-body-sm">2.4k</span>
+</button>
+</div>
+<div class="hidden md:flex items-center gap-2 pr-2 text-secondary font-mono-data text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">sync</span>
+<span>H3 Mesh Ingest: 1.2s tick</span>
+</div>
+</div>
+<!-- Metric KPI Tiles -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-fixed/20 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-body-sm text-secondary uppercase font-semibold">Active On-Shift Partners</span>
+<span class="p-1.5 bg-surface-container-high rounded text-primary material-symbols-outlined text-[18px]">two_wheeler</span>
+</div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">4,192</span>
+<span class="font-mono-data text-body-sm text-primary font-medium">riders</span>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Monitored Geofences</span>
+<span class="text-on-surface font-semibold">18 Zones</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-fixed/20 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-body-sm text-secondary uppercase font-semibold">Heartbeat Telemetry</span>
+<span class="p-1.5 bg-surface-container-high rounded text-primary material-symbols-outlined text-[18px]">hub</span>
+</div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">99.98%</span>
+<span class="font-mono-data text-body-sm text-secondary font-medium">sync</span>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Spatial Precision</span>
+<span class="text-on-surface font-semibold">H3 Res-8 Hexagons</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-fixed/20 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-body-sm text-secondary uppercase font-semibold">Quorum Payouts Today</span>
+<span class="p-1.5 bg-surface-container-high rounded text-primary material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">₹14.28 L</span>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Automated Triggers</span>
+<span class="text-primary font-semibold">1,190 Payouts</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-tertiary-fixed/30 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-body-sm text-secondary uppercase font-semibold">Shift Interruption Rate</span>
+<span class="p-1.5 bg-surface-container-high rounded text-tertiary material-symbols-outlined text-[18px]">thunderstorm</span>
+</div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-tertiary font-bold tracking-tight">28.4%</span>
+<span class="font-mono-data text-body-sm text-tertiary font-medium">impact</span>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Primary Cause</span>
+<span class="text-tertiary font-semibold">Monsoon Surges</span>
+</div>
+</div>
+</div>
+<!-- Main Operational Split: Geofence Grid & Contextual Map -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Geofence & Zone Status Grid (7 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">radar</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold">Bangalore Operational Geofences</h2>
+</div>
+<span class="font-mono-data text-body-sm text-secondary">Trigger Threshold: >45.0 mm/hr</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Zone 1: BLR-KOR-S04 (Breach) -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-error"></div>
+<div>
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<span class="font-mono-data text-label-sm font-bold text-on-surface">BLR-KOR-S04</span>
+<div class="font-label-sm text-body-sm text-secondary">Koramangala 4th Block</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-mono-data text-[11px] font-bold uppercase tracking-wide">Breach Triggered</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg my-space-xs">
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Precipitation</span>
+<span class="font-headline-md text-headline-md text-error font-bold">48.2 <span class="text-body-sm font-normal text-secondary">mm/hr</span></span>
+</div>
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Active Riders</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">840</span>
+</div>
+</div>
+<!-- Gauge -->
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex justify-between font-mono-data text-[11px] text-secondary">
+<span>Threshold: 45 mm</span>
+<span class="text-error font-bold">107% Saturation</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-body-sm">
+<span class="font-label-sm text-on-surface-variant">Shift Protection: <strong class="text-primary font-bold">100% Active</strong></span>
+<span class="font-mono-data text-on-surface font-bold text-right">₹10,08,000 paid</span>
+</div>
+</div>
+<!-- Zone 2: BLR-HSR-S01 (Watch) -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-tertiary"></div>
+<div>
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<span class="font-mono-data text-label-sm font-bold text-on-surface">BLR-HSR-S01</span>
+<div class="font-label-sm text-body-sm text-secondary">HSR Layout Sectors 1-6</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-tertiary font-mono-data text-[11px] font-bold uppercase tracking-wide">Watch Warning</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg my-space-xs">
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Precipitation</span>
+<span class="font-headline-md text-headline-md text-tertiary font-bold">41.0 <span class="text-body-sm font-normal text-secondary">mm/hr</span></span>
+</div>
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Active Riders</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">790</span>
+</div>
+</div>
+<!-- Gauge -->
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex justify-between font-mono-data text-[11px] text-secondary">
+<span>Threshold: 45 mm</span>
+<span class="text-tertiary font-bold">91% Saturation</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 91%;"></div>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-body-sm">
+<span class="font-label-sm text-on-surface-variant">Shift Protection: <strong class="text-primary font-bold">Active</strong></span>
+<span class="font-mono-data text-secondary text-right">Escalation imminent</span>
+</div>
+</div>
+<!-- Zone 3: BLR-IND-E02 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-surface-container-highest"></div>
+<div>
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<span class="font-mono-data text-label-sm font-bold text-on-surface">BLR-IND-E02</span>
+<div class="font-label-sm text-body-sm text-secondary">Indiranagar 100ft Metro</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[11px] font-medium uppercase tracking-wide">Nominal</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg my-space-xs">
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Precipitation</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">22.0 <span class="text-body-sm font-normal text-secondary">mm/hr</span></span>
+</div>
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Active Riders</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">620</span>
+</div>
+</div>
+<!-- Gauge -->
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex justify-between font-mono-data text-[11px] text-secondary">
+<span>Threshold: 45 mm</span>
+<span class="font-mono-data text-secondary">48% Saturation</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 48%;"></div>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-body-sm">
+<span class="font-label-sm text-on-surface-variant">Shift Protection: <strong class="text-primary font-bold">Active</strong></span>
+<span class="font-mono-data text-secondary text-right">Disbursed: ₹0</span>
+</div>
+</div>
+<!-- Zone 4: BLR-WFD-E03 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-surface-container-highest"></div>
+<div>
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<span class="font-mono-data text-label-sm font-bold text-on-surface">BLR-WFD-E03</span>
+<div class="font-label-sm text-body-sm text-secondary">Whitefield ITPL Hub</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[11px] font-medium uppercase tracking-wide">Nominal</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg my-space-xs">
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Precipitation</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">16.0 <span class="text-body-sm font-normal text-secondary">mm/hr</span></span>
+</div>
+<div>
+<span class="font-label-sm text-[11px] text-secondary uppercase block">Active Riders</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">940</span>
+</div>
+</div>
+<!-- Gauge -->
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex justify-between font-mono-data text-[11px] text-secondary">
+<span>Threshold: 45 mm</span>
+<span class="font-mono-data text-secondary">35% Saturation</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 35%;"></div>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-body-sm">
+<span class="font-label-sm text-on-surface-variant">Shift Protection: <strong class="text-primary font-bold">Active</strong></span>
+<span class="font-mono-data text-secondary text-right">Disbursed: ₹0</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Geographic Map & Telemetry Mesh Feed (5 cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">map</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold">Live Risk Overlay Map</h2>
+</div>
+<span class="font-mono-data text-body-sm text-primary font-semibold">Bengaluru Metro</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="w-full h-64 bg-cover bg-center relative" data-location="Koramangala, Bengaluru, India" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAEs_osc5hzNz6DRj2iFCaE2LY4cQECViMug7cvK-ZNxyZaMl-YkY31Zhm3DVolKAkG2rfNMZKyTLGHgA-dYFheUiuoLZf9Bjm6vzWX0m4rbs6Iu2U8aYeVGpkx8jBhzLC22xJ0LXjfStOfvh2jXKATHY46bYfN9aKQr6olVuh2sTAoADVMVU9vp2yrYNh9HgdRKrDfTWFPU8GGpZxiQjbWwsAC7upu8endmZKuDvpb')">
+<!-- Map overlay tag -->
+<div class="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm px-2.5 py-1 rounded text-body-sm font-mono-data flex items-center gap-2 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+<span class="font-bold text-on-surface">KOR-S04 Deluge Alert</span>
+</div>
+<div class="absolute bottom-3 right-3 bg-surface-container-lowest/90 backdrop-blur-sm px-2.5 py-1 rounded text-body-sm font-mono-data text-secondary shadow-sm">
+              Zoom: H3-8 (0.7 km²)
+            </div>
+</div>
+<div class="p-space-md flex flex-col gap-space-sm bg-surface-container-low/40">
+<div class="flex items-center justify-between text-body-sm">
+<span class="font-label-md text-on-surface font-semibold">Active Weather Sensors in Cluster</span>
+<span class="font-mono-data text-primary font-bold">14 Stations Online</span>
+</div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[11px]">IMD-KGA-01</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[11px]">AWS-BLR-09</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[11px]">CIVIC-RAD-4</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[11px]">HYDROMET-12</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Shift Verification Attestation Box (Zero PII Notice) -->
+<div class="bg-surface-container-low p-space-lg rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
+<div class="flex items-start gap-space-md">
+<div class="p-3 bg-primary-container text-on-primary rounded-xl shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[24px]">enhanced_encryption</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-label-md text-on-surface font-bold">Zero-PII Shift Attestation Framework</h3>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono-data text-[11px] font-bold">GDPR & DPDP Compliant</span>
+</div>
+<p class="font-body-md text-body-md text-secondary max-w-4xl">
+            ParaShield operates strictly on transient H3 spatial hashes. Platform app GPS pings are converted to anonymous hexagonal buckets in memory and instantly discarded. No raw coordinates, residential stops, or persistent trajectory histories are ever logged or written to the indemnity ledger.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="px-space-md py-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm">
+          Cryptographic Spec
+        </button>
+</div>
+</div>
+<!-- Delivery Partner Shift Activity & Claims Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold">Live Shift Activity & Automated Indemnity Ledger</h2>
+<span class="font-body-md text-body-md text-secondary">Real-time status of individual partner attestations and contract triggers</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-outline text-[18px]">search</span>
+<input class="pl-8 pr-3 py-1.5 text-body-sm font-body-md bg-surface-container-low rounded-lg text-on-surface focus:outline-none focus:bg-surface-container-high w-64 transition-all" placeholder="Filter by partner token or zone..." type="text"/>
+</div>
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" title="Filter columns">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Flat Table -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left font-body-md text-body-md">
+<thead class="bg-surface-container-low text-secondary font-label-sm text-label-sm uppercase tracking-wider">
+<tr>
+<th class="py-space-sm px-space-md font-semibold">Partner Ref</th>
+<th class="py-space-sm px-space-md font-semibold">Operational Zone</th>
+<th class="py-space-sm px-space-md font-semibold">Shift Status</th>
+<th class="py-space-sm px-space-md font-semibold">Disruption Trigger</th>
+<th class="py-space-sm px-space-md font-semibold">Claim Status</th>
+<th class="py-space-sm px-space-md font-semibold text-right">Amount</th>
+<th class="py-space-sm px-space-md font-semibold text-center">Ledger Proof</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<div class="font-bold text-on-surface">WRK-88412</div>
+<div class="text-secondary text-[11px]">Rohan V. (Hashed)</div>
+</td>
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<span class="text-error font-medium">BLR-KOR-S04</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-[12px] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>On Active Order
+                </span>
+</td>
+<td class="py-space-sm px-space-md text-body-sm font-mono-data">
+<div class="text-on-surface font-semibold">Precipitation > 45mm</div>
+<div class="text-secondary text-[11px]">48.2 mm/hr logged</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-[12px] font-bold">SETTLED</span>
+</td>
+<td class="py-space-sm px-space-md text-right font-mono-data text-body-md font-bold text-on-surface">
+                ₹1,200
+              </td>
+<td class="py-space-sm px-space-md text-center">
+<a class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-mono-data text-body-sm font-medium" href="#">
+<span>0x8f2a...19</span>
+<span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<div class="font-bold text-on-surface">WRK-91024</div>
+<div class="text-secondary text-[11px]">Arun P. (Hashed)</div>
+</td>
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<span class="text-error font-medium">BLR-KOR-S04</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-[12px] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Standby Hotspot
+                </span>
+</td>
+<td class="py-space-sm px-space-md text-body-sm font-mono-data">
+<div class="text-on-surface font-semibold">Precipitation > 45mm</div>
+<div class="text-secondary text-[11px]">48.2 mm/hr logged</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-[12px] font-bold">SETTLED</span>
+</td>
+<td class="py-space-sm px-space-md text-right font-mono-data text-body-md font-bold text-on-surface">
+                ₹1,200
+              </td>
+<td class="py-space-sm px-space-md text-center">
+<a class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-mono-data text-body-sm font-medium" href="#">
+<span>0x3d7b...4e</span>
+<span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<div class="font-bold text-on-surface">WRK-64301</div>
+<div class="text-secondary text-[11px]">Kiran M. (Hashed)</div>
+</td>
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<span class="text-tertiary font-medium">BLR-HSR-S01</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-[12px] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>In Delivery
+                </span>
+</td>
+<td class="py-space-sm px-space-md text-body-sm font-mono-data">
+<div class="text-on-surface font-semibold">Weather Escalation Watch</div>
+<div class="text-secondary text-[11px]">41.0 mm/hr logged</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container text-tertiary font-mono-data text-[12px] font-bold">RESERVED</span>
+</td>
+<td class="py-space-sm px-space-md text-right font-mono-data text-body-md font-bold text-secondary">
+                ₹1,200
+              </td>
+<td class="py-space-sm px-space-md text-center">
+<span class="text-secondary font-mono-data text-body-sm">Pending Quorum</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<div class="font-bold text-on-surface">WRK-78199</div>
+<div class="text-secondary text-[11px]">Suresh N. (Hashed)</div>
+</td>
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<span class="text-error font-medium">BLR-KOR-S04</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-[12px] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>On Active Order
+                </span>
+</td>
+<td class="py-space-sm px-space-md text-body-sm font-mono-data">
+<div class="text-on-surface font-semibold">Precipitation > 45mm</div>
+<div class="text-secondary text-[11px]">48.2 mm/hr logged</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-secondary font-mono-data text-[12px] font-bold">IN-TRANSIT</span>
+</td>
+<td class="py-space-sm px-space-md text-right font-mono-data text-body-md font-bold text-on-surface">
+                ₹1,200
+              </td>
+<td class="py-space-sm px-space-md text-center">
+<span class="font-mono-data text-secondary text-body-sm flex items-center justify-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>UPI Disbursing
+                </span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<div class="font-bold text-on-surface">WRK-55210</div>
+<div class="text-secondary text-[11px]">Venkatesh T. (Hashed)</div>
+</td>
+<td class="py-space-sm px-space-md font-mono-data text-body-sm">
+<span class="text-secondary font-medium">BLR-IND-E02</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[12px] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Active - Monitoring
+                </span>
+</td>
+<td class="py-space-sm px-space-md text-body-sm font-mono-data">
+<div class="text-secondary font-medium">None (Nominal)</div>
+<div class="text-secondary text-[11px]">22.0 mm/hr logged</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-data text-[12px]">MONITORED</span>
+</td>
+<td class="py-space-sm px-space-md text-right font-mono-data text-body-md text-secondary">
+                ₹0
+              </td>
+<td class="py-space-sm px-space-md text-center">
+<span class="text-secondary font-mono-data text-body-sm">—</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-space-md bg-surface-container-low/50 flex items-center justify-between font-body-md text-body-sm text-secondary">
+<span>Showing 5 of 4,192 active partner sessions</span>
+<div class="flex items-center gap-space-xs font-mono-data">
+<button class="px-2.5 py-1 rounded bg-surface-container text-secondary hover:text-on-surface disabled:opacity-40" disabled="">Previous</button>
+<span class="px-2 py-1 font-bold text-on-surface">Page 1 of 839</span>
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface">Next</button>
+</div>
+</div>
+</div>
+<!-- Simulated Disruption Support & Override Panel -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">troubleshoot</span>
+<h3 class="font-headline-md text-headline-md text-on-surface font-bold">Fleet Manager Disruption Simulator & Batch Attestation</h3>
+</div>
+<span class="font-mono-data text-body-sm text-secondary">Synthetic Sandbox Mode</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md items-center">
+<!-- Input 1 -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface font-medium">Targeted Platform Fleet Zone</label>
+<select class="px-3 py-2 bg-surface-container-low rounded-lg text-body-md font-body-md text-on-surface focus:outline-none focus:bg-surface-container-high">
+<option>BLR-KOR-S04 (Koramangala 4th Block)</option>
+<option>BLR-HSR-S01 (HSR Layout)</option>
+<option>BLR-IND-E02 (Indiranagar)</option>
+<option>BLR-WFD-E03 (Whitefield ITPL)</option>
+</select>
+</div>
+<!-- Input 2 -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface font-medium">Simulated Synthetic Weather Injection</label>
+<div class="flex items-center gap-2">
+<input class="px-3 py-2 bg-surface-container-low rounded-lg text-body-md font-body-md text-on-surface w-full focus:outline-none focus:bg-surface-container-high font-mono-data" type="number" value="52.4"/>
+<span class="font-mono-data text-body-sm text-secondary shrink-0">mm/hr</span>
+</div>
+</div>
+<!-- Action Trigger -->
+<div class="flex flex-col justify-end pt-5 md:pt-0">
+<button class="w-full py-2.5 px-space-md bg-primary hover:bg-primary-container text-on-primary rounded-lg font-label-md text-label-md font-medium transition-colors shadow-sm flex items-center justify-center gap-2" id="dispatch-sim-btn">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span>Broadcast Oracle Signal</span>
+</button>
+</div>
+</div>
+<div class="hidden p-space-sm bg-surface-container-high rounded-lg text-on-surface font-mono-data text-body-sm flex items-center justify-between" id="sim-status-banner">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span>Dispatched synthetic rainfall pulse (52.4 mm/hr) to BLR-KOR-S04. Quorum batch signing in progress...</span>
+</span>
+<span class="text-secondary">Latency: 44ms</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple interactive hooks for Fleet Switcher & Disruption Simulator
+  document.querySelectorAll('.fleet-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      document.querySelectorAll('.fleet-tab').forEach(t => {
+        t.classList.remove('bg-surface-container-lowest', 'text-primary', 'font-semibold', 'shadow-sm');
+        t.classList.add('text-on-surface-variant');
+      });
+      tab.classList.add('bg-surface-container-lowest', 'text-primary', 'font-semibold', 'shadow-sm');
+      tab.classList.remove('text-on-surface-variant');
+    });
+  });
+
+  const simBtn = document.getElementById('dispatch-sim-btn');
+  const simBanner = document.getElementById('sim-status-banner');
+  if (simBtn && simBanner) {
+    simBtn.addEventListener('click', () => {
+      simBanner.classList.remove('hidden');
+      setTimeout(() => {
+        simBanner.innerHTML = `
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+            <span class="text-on-surface font-semibold">Attestation Complete:</span> 840/840 micro-payouts credited to Swiggy simulated UPI rails. Proof hash recorded to ledger.
+          </span>
+          <span class="text-secondary font-mono-data">Batch ID: #QRM-9941</span>
+        `;
+      }, 1200);
+    });
+  }
+
+  const batchBtn = document.getElementById('batch-verify-btn');
+  if (batchBtn) {
+    batchBtn.addEventListener('click', () => {
+      alert("Triggering parallel zero-PII batch attestation for 4,192 active partners across 18 H3 clusters.");
+    });
+  }
+
+  const exportBtn = document.getElementById('export-log-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      alert("Generating NDJSON cryptographic audit export with deterministic oracle proofs.");
+    });
+  }
+</script></main></div></body></html>

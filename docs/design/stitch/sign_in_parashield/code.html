@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_blank" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-surface-variant": "#434655", "error-container": "#ffdad6", "secondary-container": "#d6e0f1", "on-surface": "#141b2b", "secondary-fixed": "#d9e3f4", "tertiary-container": "#a73400", "inverse-on-surface": "#edf0ff", "on-primary-container": "#cad3ff", "primary-container": "#1d4ed8", "surface": "#f9f9ff", "on-background": "#141b2b", "on-secondary": "#ffffff", "outline": "#747686", "outline-variant": "#c4c5d7", "on-tertiary-container": "#ffc9b7", "secondary": "#555f6d", "surface-bright": "#f9f9ff", "primary-fixed-dim": "#b7c4ff", "on-error-container": "#93000a", "inverse-primary": "#b7c4ff", "on-tertiary": "#ffffff", "on-tertiary-fixed-variant": "#832700", "surface-variant": "#dce2f7", "surface-tint": "#2151da", "background": "#f9f9ff", "on-secondary-fixed": "#121c28", "inverse-surface": "#293040", "surface-container-highest": "#dce2f7", "primary": "#0037b0", "tertiary-fixed-dim": "#ffb59c", "surface-container-lowest": "#ffffff", "secondary-fixed-dim": "#bdc7d8", "surface-container": "#e9edff", "tertiary-fixed": "#ffdbcf", "error": "#ba1a1a", "on-error": "#ffffff", "on-tertiary-fixed": "#390c00", "primary-fixed": "#dce1ff", "on-secondary-container": "#596372", "surface-dim": "#d3daef", "tertiary": "#7f2500", "on-primary-fixed": "#001551", "on-secondary-fixed-variant": "#3e4755", "surface-container-low": "#f1f3ff", "on-primary": "#ffffff", "surface-container-high": "#e1e8fd", "on-primary-fixed-variant": "#0039b5" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin": "1rem", "space-xl": "2rem", "gutter": "1rem", "space-lg": "1.5rem", "gutter-desktop": "1.5rem", "space-sm": "0.5rem", "margin-desktop": "2rem", "space-xs": "0.25rem", "space-md": "1rem" }, "fontFamily": { "body-md": ["Inter"], "headline-lg": ["Inter"], "label-md": ["Inter"], "label-sm": ["Inter"], "body-lg": ["Inter"], "body-sm": ["Inter"], "headline-md": ["Inter"], "headline-xl-mobile": ["Inter"], "mono-data": ["Inter"], "headline-xl": ["Inter"] }, "fontSize": { "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}], "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}], "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}], "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}], "headline-xl-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}], "mono-data": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}], "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}] } } } }</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><main class="w-full min-h-screen flex items-center justify-center p-margin bg-surface"><div class="flex flex-col w-full">
+<div class="w-full max-w-[1200px] mx-auto py-space-xl">
+<!-- Institutional Top Bar / Regulatory Context Strip -->
+<div class="flex items-center justify-between pb-space-sm mb-space-lg text-body-sm text-secondary">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[16px] text-primary-container" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+<span class="font-label-sm tracking-wide text-on-surface uppercase">ParaShield Financial Technologies India</span>
+<span class="text-outline-variant">|</span>
+<span class="font-body-sm text-secondary">Institutional Parametric Rail (v2.4.1)</span>
+</div>
+<div class="flex items-center gap-space-md text-body-sm">
+<span class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="font-mono-data text-body-sm text-on-surface">IMPS/UPI Consensus Active</span>
+</span>
+<span class="text-outline-variant">|</span>
+<span class="font-body-sm text-secondary">UTC+05:30 (IST)</span>
+</div>
+</div>
+<!-- Main Container Card -->
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-[#D1D5DB] overflow-hidden">
+<div class="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
+<!-- Left Column: Sign-in Form (~480px width: 5 cols on 12-col grid) -->
+<div class="lg:col-span-5 p-space-xl flex flex-col justify-between">
+<div>
+<!-- Header Group -->
+<div class="mb-space-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+                Sign in to ParaShield
+              </h1>
+<p class="font-body-md text-body-md text-secondary mt-1">
+                Enter your credentials to access your income protection portal.
+              </p>
+</div>
+<!-- Form -->
+<form class="space-y-space-md" id="signInForm" onsubmit="event.preventDefault();">
+<!-- Username -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1" for="username">
+                  Username
+                </label>
+<div class="relative">
+<input class="w-full h-[36px] px-3 font-body-md text-body-md text-on-surface bg-surface-container-lowest border border-[#6B7280] rounded placeholder:text-secondary/50 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container" id="username" name="username" placeholder="e.g. partner_id or staff_id" required="" type="text"/>
+</div>
+</div>
+<!-- Password -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="block font-label-md text-label-md text-on-surface" for="password">
+                    Password
+                  </label>
+</div>
+<div class="relative">
+<input class="w-full h-[36px] pl-3 pr-14 font-body-md text-body-md text-on-surface bg-surface-container-lowest border border-[#6B7280] rounded placeholder:text-secondary/50 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container" id="password" name="password" placeholder="••••••••••••" required="" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 font-label-sm text-label-sm text-secondary hover:text-on-surface transition-colors focus:outline-none" id="togglePassword" type="button">
+                    Show
+                  </button>
+</div>
+<!-- Forgot Password Hint Row -->
+<div class="flex items-center justify-between mt-2">
+<div class="relative group">
+<button class="font-body-md text-body-md text-primary-container hover:underline inline-flex items-center gap-1 focus:outline-none" type="button">
+                      Forgot password?
+                      <span class="material-symbols-outlined text-[14px]">info</span>
+</button>
+<!-- Tooltip -->
+<div class="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 w-64 p-2 bg-[#1F2937] text-white font-body-sm text-body-sm rounded shadow-md pointer-events-none">
+                      Password resets are handled by an administrator. Please contact your operations hub.
+                    </div>
+</div>
+<span class="font-body-sm text-body-sm text-secondary">Secured by IndiaStack KMS</span>
+</div>
+</div>
+<!-- Primary Submit -->
+<div class="pt-2">
+<button class="w-full h-10 px-space-md bg-primary-container hover:bg-[#1e40af] text-on-primary font-label-md text-label-md rounded flex items-center justify-center gap-2 transition-colors cursor-pointer" type="submit">
+<span>Sign in</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<!-- Secondary Navigation Link -->
+<div class="text-center pt-1">
+<span class="font-body-md text-body-md text-secondary">Don't have an account?</span>
+<a class="font-label-md text-label-md text-primary-container hover:underline ml-1" href="#create-account">
+                  Create account
+                </a>
+</div>
+</form>
+</div>
+<!-- Informational Note Callout Card -->
+<div class="mt-space-lg p-3 bg-surface-container-low border border-[#D1D5DB] rounded">
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary-container shrink-0 mt-0.5">verified_user</span>
+<p class="font-body-sm text-body-sm text-secondary leading-normal">
+                Staff accounts are issued by an administrator. For authenticator-enrolled accounts, you will be prompted for your time-based code or recovery code next.
+              </p>
+</div>
+</div>
+</div>
+<!-- Vertical Divider -->
+<div class="hidden lg:block lg:col-span-1 border-r border-[#D1D5DB] -mr-[1px] w-full h-full"></div>
+<!-- Right Column: Quiet Branded Operational Panel (6 cols) -->
+<div class="lg:col-span-6 p-space-xl bg-[#F9FAFB] flex flex-col justify-between">
+<div>
+<!-- Badge -->
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-primary-container font-label-sm text-label-sm tracking-wider uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+              Parametric Architecture
+            </div>
+<!-- Headline -->
+<h2 class="font-headline-md text-headline-md text-on-surface mt-3 leading-snug">
+              Real-time income resilience for delivery partners
+            </h2>
+<!-- Summary Paragraph -->
+<p class="font-body-md text-body-md text-secondary mt-2 leading-relaxed">
+              ParaShield helps delivery partners receive payouts when signed observations confirm a disruption and their policy and work activity qualify. Payout decisions can be traced on a shared ledger.
+            </p>
+<!-- Ledger & Settlement Disclosures Box -->
+<div class="bg-surface-container-lowest border border-[#D1D5DB] rounded p-4 mt-6">
+<div class="flex items-center justify-between pb-2 border-b border-[#D1D5DB]">
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-secondary">contract</span>
+                  Protocol Specifications
+                </div>
+<span class="font-mono-data text-body-sm text-secondary">SPEC-VER 4.2</span>
+</div>
+<!-- Rule Specifications -->
+<div class="space-y-2 mt-3 font-body-sm text-body-sm text-secondary">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[14px] text-primary-container shrink-0 mt-0.5">check_circle</span>
+<span><strong>Coverage start:</strong> Immediate upon confirmed premium &amp; active shift window</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[14px] text-primary-container shrink-0 mt-0.5">check_circle</span>
+<span><strong>Disruption consensus:</strong> Multi-oracle quorum validation (Rain, Flood, Civic Curfew)</span>
+</div>
+</div>
+<div class="h-[1px] bg-[#D1D5DB] my-3"></div>
+<!-- System Status Badges -->
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-label-sm font-label-sm bg-[#FEF3C7] text-[#92400E] border border-amber-300">
+                  Payment rail: simulated
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-label-sm font-label-sm bg-[#DBEAFE] text-[#1E40AF] border border-blue-200">
+                  Oracle inputs: synthetic
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-label-sm font-label-sm bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">
+                  UPI SLA: &lt; 450ms
+                </span>
+</div>
+<!-- Hash Anchor -->
+<div class="mt-3 pt-3 border-t border-[#D1D5DB] flex items-center justify-between">
+<span class="font-mono-data text-body-sm text-secondary">
+                  Ledger anchor: <span class="text-on-surface font-medium">0x7f9a...3c82</span>
+</span>
+<span class="font-body-sm text-secondary text-right">
+                  (IST sync 14:32:00)
+                </span>
+</div>
+</div>
+<!-- Parametric Telemetry Pulse Visual (Inline SVG) -->
+<div class="mt-5 p-3 rounded border border-[#D1D5DB] bg-surface-container-lowest">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm text-on-surface">Recent Precipitation Trigger Telemetry (BOM-04 Zone)</span>
+<span class="font-mono-data text-body-sm text-secondary">Threshold: 45 mm/hr</span>
+</div>
+<svg class="w-full h-12 text-primary-container" fill="none" preserveaspectratio="none" viewbox="0 0 380 48">
+<path d="M0 40 L40 38 L80 41 L120 32 L160 35 L200 24 L240 28 L280 12 L320 8 L360 4 L380 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+<line stroke="#DC2626" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="380" y1="14" y2="14"></line>
+<circle cx="320" cy="8" fill="#DC2626" r="3"></circle>
+<circle cx="360" cy="4" fill="#DC2626" r="3"></circle>
+</svg>
+<div class="flex justify-between items-center text-body-sm text-secondary mt-1">
+<span>08:00 IST</span>
+<span class="text-red-700 font-label-sm text-label-sm">Auto-Payout Triggered (13:15 IST)</span>
+<span>14:00 IST</span>
+</div>
+</div>
+</div>
+<!-- Bottom Footer Metric Strip inside Right Column -->
+<div class="pt-4 border-t border-[#D1D5DB] flex items-center justify-between text-body-sm text-secondary">
+<span>Deterministic Smart Contracts</span>
+<span>IRDAI Sandbox Sandbox-Ref: PS/2025/T8</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Institutional Footer Legal Disclosures -->
+<div class="mt-space-md flex flex-col md:flex-row items-center justify-between text-body-sm text-secondary gap-2 px-1">
+<div>
+        ParaShield is an algorithmic risk transfer infrastructure. Automated parametric payouts operate in accordance with master policy terms.
+      </div>
+<div class="flex items-center gap-space-md">
+<a class="hover:text-on-surface underline" href="#security">Security Policy</a>
+<a class="hover:text-on-surface underline" href="#audit">Ledger Audit</a>
+<a class="hover:text-on-surface underline" href="#grievance">Grievance Redressal</a>
+</div>
+</div>
+</div>
+<script>
+    (function() {
+      const toggleBtn = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+
+      if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', function() {
+          const isPassword = passwordInput.getAttribute('type') === 'password';
+          passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+          toggleBtn.textContent = isPassword ? 'Hide' : 'Show';
+        });
+      }
+    })();
+  </script>
+</div></main></body></html>

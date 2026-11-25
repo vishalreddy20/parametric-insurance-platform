@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-on-surface":"#edf0ff","on-secondary-container":"#596372","on-primary-container":"#cad3ff","error-container":"#ffdad6","surface-container-high":"#e1e8fd","tertiary-fixed-dim":"#ffb59c","surface-bright":"#f9f9ff","outline":"#747686","surface-container-highest":"#dce2f7","on-tertiary-fixed":"#390c00","primary-fixed-dim":"#b7c4ff","on-tertiary":"#ffffff","inverse-primary":"#b7c4ff","on-primary-fixed":"#001551","background":"#f9f9ff","primary-container":"#1d4ed8","on-secondary-fixed":"#121c28","surface":"#f9f9ff","surface-tint":"#2151da","on-error":"#ffffff","secondary-fixed-dim":"#bdc7d8","surface-container-low":"#f1f3ff","surface-dim":"#d3daef","on-primary":"#ffffff","on-background":"#141b2b","primary-fixed":"#dce1ff","on-tertiary-fixed-variant":"#832700","error":"#ba1a1a","on-error-container":"#93000a","primary":"#0037b0","on-surface":"#141b2b","surface-container-lowest":"#ffffff","surface-variant":"#dce2f7","secondary-container":"#d6e0f1","tertiary-fixed":"#ffdbcf","secondary-fixed":"#d9e3f4","tertiary":"#7f2500","on-tertiary-container":"#ffc9b7","outline-variant":"#c4c5d7","secondary":"#555f6d","on-primary-fixed-variant":"#0039b5","surface-container":"#e9edff","tertiary-container":"#a73400","on-surface-variant":"#434655","on-secondary-fixed-variant":"#3e4755","on-secondary":"#ffffff","inverse-surface":"#293040"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","space-md":"1rem",margin:"1rem",gutter:"1rem","space-xs":"0.25rem","space-lg":"1.5rem","space-xl":"2rem","margin-desktop":"2rem"},fontFamily:{"headline-xl":["Inter"],"body-sm":["Inter"],"headline-md":["Inter"],"label-md":["Inter"],"label-sm":["Inter"],"body-md":["Inter"],"mono-data":["Inter"],"headline-lg":["Inter"],"headline-xl-mobile":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-xl":["32px",{lineHeight:"40px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],"label-md":["14px",{lineHeight:"20px",fontWeight:"500"}],"label-sm":["12px",{lineHeight:"16px",fontWeight:"500"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"mono-data":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"500"}],"headline-lg":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-xl-mobile":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-14 px-space-md flex items-center gap-space-sm bg-surface-container-low"><div class="w-7 h-7 rounded bg-primary flex items-center justify-center text-on-primary font-headline-md text-headline-md font-bold">P</div><div class="flex flex-col"><span class="font-headline-md text-label-md font-bold tracking-tight text-on-surface">ParaShield</span><span class="font-label-sm text-body-sm text-on-surface-variant font-mono-data">Institutional Ops</span></div></div><div class="px-space-md py-space-sm bg-surface-container-low/50"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Workspaces</span></div><nav class="flex flex-col gap-space-xs px-space-sm py-space-sm" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span>Overview</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="insurer-console" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span>Insurer Console</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="platform-fleet-console" href="#"><span class="material-symbols-outlined text-[18px]">commute</span><span>Platform Fleet Console</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-2 transition-colors bg-primary-container text-on-primary font-medium rounded-lg" data-path="regulator-audit" href="#"><span class="material-symbols-outlined text-[18px]">policy</span><span>Regulator Audit</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="admin-and-identity" href="#"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span><span>Admin & Identity</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="ledger-proofs" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span>Ledger Proofs</span></a></nav></div><div class="p-space-md bg-surface-container-low"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-body-sm text-on-surface-variant font-medium">Consensus Engine</span><span class="w-2 h-2 rounded-full bg-primary"></span></div><div class="font-mono-data text-body-sm text-secondary">Quorum: 5/5 Validated</div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-md"><span class="font-headline-md text-label-md text-on-surface font-semibold">ParaShield Institutional Console</span><div class="flex items-center gap-space-xs"><span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Payment rail: simulated</span><span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Oracle inputs: synthetic</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-md text-secondary font-mono-data text-body-sm"><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">dns</span>IST-BLR-01</span><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span>14:32:08 IST</span></div><div class="flex items-center gap-space-sm pl-space-md bg-surface-container-lowest"><div class="flex flex-col text-right"><span class="font-label-md text-label-sm text-on-surface font-semibold">arun.kumar@parashield.ops</span><span class="font-label-sm text-body-sm text-secondary">Super-Admin / L3 Ops</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><a class="p-1 text-on-surface-variant hover:text-error transition-colors title='Sign Out'" data-path="login" href="#"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></div></header><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="max-w-[1200px] w-full mx-auto px-gutter py-space-lg flex flex-col gap-space-lg">
+<!-- Header Section -->
+<div class="flex flex-col gap-space-sm bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold tracking-wider uppercase">Statutory Supervisory Node</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm">IRDAI Cohort #6 Reference: PS-IND-4091</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">IRDAI Regulatory Sandbox Supervisory Console</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Statutory oversight, parametric solvency ratio audits, zero-PII data privacy compliance, and cryptographic consensus verification.</p>
+</div>
+<div class="flex items-center gap-space-sm self-start sm:self-center">
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high text-secondary font-mono-data text-label-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>Payment rail: simulated
+          </span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high text-secondary font-mono-data text-label-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>Oracle inputs: synthetic
+          </span>
+<button class="flex items-center gap-space-xs bg-primary-container text-on-primary px-space-md py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity" id="downloadBtn" onclick="triggerDownload()">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Download IRDAI Compliance Pack (.JSON & Signed PDF)</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-space-md pt-space-xs text-secondary font-mono-data text-body-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">account_balance</span>Auditing Body: IRDAI Sandbox Secretariat (Hyderabad)</span>
+<span class="hidden md:inline">•</span>
+<span class="hidden md:flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">lock_clock</span>Audit Window: FY 2024-25 Q3 Simulation Trial</span>
+</div>
+</div>
+<!-- Regulatory Compliance KPI Cards (4 Cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Sandbox Solvency Ratio</span>
+<span class="inline-flex items-center px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-sm text-body-sm font-semibold">COMPLIANT</span>
+</div>
+<div class="my-space-sm">
+<div class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">142.8%</div>
+<div class="font-body-sm text-body-sm text-secondary mt-1">Statutory Minimum: 120.0% (+22.8% margin)</div>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 82%;"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Escrow Reserve Liquidity</span>
+<span class="inline-flex items-center px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-sm text-body-sm font-semibold">SECURED</span>
+</div>
+<div class="my-space-sm">
+<div class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">₹4.82 Cr</div>
+<div class="font-body-sm text-body-sm text-secondary mt-1">Deterministic Sandbox Vault (Escrow A/C #0921)</div>
+</div>
+<div class="flex items-center gap-1 font-mono-data text-body-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span>Dual-Sign Multi-Sig Escrow Locked</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Zero-PII Hashing Audit</span>
+<span class="inline-flex items-center px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-sm text-body-sm font-semibold">PASS</span>
+</div>
+<div class="my-space-sm">
+<div class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">100% Verified</div>
+<div class="font-body-sm text-body-sm text-secondary mt-1">0 raw phone / UPI VPA exposed to audit streams</div>
+</div>
+<div class="flex items-center gap-1 font-mono-data text-body-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">fingerprint</span>
+<span>HMAC-SHA256 salted at client ingress</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Consensus Latency</span>
+<span class="inline-flex items-center px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-sm text-body-sm font-semibold">REAL-TIME</span>
+</div>
+<div class="my-space-sm">
+<div class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">418 ms</div>
+<div class="font-body-sm text-body-sm text-secondary mt-1">Average across all synthetic payout triggers</div>
+</div>
+<div class="flex items-center gap-1 font-mono-data text-body-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">speed</span>
+<span>99.94% settlements < 850 ms</span>
+</div>
+</div>
+</div>
+<!-- Audit Section 1: Algorithmic Solvency & Capital Adequacy Stress Model -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">ssid_chart</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Audit Section 1: Algorithmic Solvency & Capital Adequacy Stress Model</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Dynamic capital adequacy buffer tracking during synthetic 1-in-100 year extreme monsoon deluge scenarios (Mumbai & Bengaluru micro-zones).</p>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-mono-data text-body-sm text-secondary">Stress Condition: Deluge > 65mm/hr peak</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-data text-body-sm">Simulated Run #204</span>
+</div>
+</div>
+<!-- Stress Stats Strip -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-sm bg-surface-container-low p-space-md rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary uppercase">Initial Capital Pool</span>
+<span class="font-mono-data text-headline-md font-semibold text-on-surface">₹5.00 Cr</span>
+<span class="font-body-sm text-body-sm text-secondary">Allocated statutory sandbox vault</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary uppercase">Cumulative Inflows</span>
+<span class="font-mono-data text-headline-md font-semibold text-on-surface">₹1.48 Cr</span>
+<span class="font-body-sm text-body-sm text-secondary">Synthetic micro-premiums</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary uppercase">Disbursed Indemnities</span>
+<span class="font-mono-data text-headline-md font-semibold text-error">₹1.66 Cr</span>
+<span class="font-body-sm text-body-sm text-secondary">Triggered automated claim payouts</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary uppercase">Capital Buffer Minimum</span>
+<span class="font-mono-data text-headline-md font-semibold text-primary">₹4.82 Cr</span>
+<span class="font-body-sm text-body-sm text-secondary">Solvency trough: 138.4% (T+48h)</span>
+</div>
+</div>
+<!-- Inline Stress Graph (SVG under 2KB) -->
+<div class="w-full bg-surface-container-low p-space-md rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-secondary font-mono-data text-body-sm mb-2">
+<span>Capital vs. Cumulative Indemnity Timeline (Epoch 0h to 96h)</span>
+<div class="flex items-center gap-space-md">
+<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary"></span>Capital Buffer</span>
+<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-error"></span>Indemnities Disbursed</span>
+<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>120% Regulatory Floor</span>
+</div>
+</div>
+<div class="relative w-full h-48">
+<svg class="w-full h-full text-on-surface" preserveaspectratio="none" viewbox="0 0 1000 200">
+<!-- Grid Lines -->
+<line stroke="currentColor" stroke-dasharray="4 4" stroke-opacity="0.08" x1="0" x2="1000" y1="40" y2="40"></line>
+<line stroke="currentColor" stroke-dasharray="4 4" stroke-opacity="0.08" x1="0" x2="1000" y1="90" y2="90"></line>
+<line stroke="currentColor" stroke-dasharray="4 4" stroke-opacity="0.08" x1="0" x2="1000" y1="140" y2="140"></line>
+<!-- Regulatory 120% floor reference line -->
+<line stroke="#747686" stroke-dasharray="6 4" stroke-width="1.5" x1="0" x2="1000" y1="150" y2="150"></line>
+<text fill="#747686" font-family="Inter" font-size="11" font-weight="600" x="10" y="145">IRDAI 120% STATUTORY MINIMUM FLOOR</text>
+<!-- Capital Buffer Area & Curve -->
+<path d="M 0,50 L 150,52 L 300,58 L 450,92 L 600,84 L 750,78 L 900,72 L 1000,70 L 1000,200 L 0,200 Z" fill="#1d4ed8" fill-opacity="0.08"></path>
+<path d="M 0,50 L 150,52 L 300,58 L 450,92 L 600,84 L 750,78 L 900,72 L 1000,70" fill="none" stroke="#0037b0" stroke-width="2.5"></path>
+<!-- Indemnities Disbursed Cumulative Line -->
+<path d="M 0,195 L 150,192 L 300,188 L 450,128 L 600,118 L 750,110 L 900,105 L 1000,102" fill="none" stroke="#ba1a1a" stroke-dasharray="4 2" stroke-width="2"></path>
+<!-- Event Marker at Peak Trigger (450, 92) -->
+<circle cx="450" cy="92" fill="#0037b0" r="5"></circle>
+<line stroke="#ba1a1a" stroke-dasharray="2 2" stroke-width="1" x1="450" x2="450" y1="20" y2="180"></line>
+<text fill="#ba1a1a" font-family="Inter" font-size="11" font-weight="600" x="455" y="32">Peak Trigger: Deluge Spike (72.4 mm/hr)</text>
+</svg>
+</div>
+<div class="flex justify-between text-secondary font-mono-data text-body-sm pt-1">
+<span>T = 0h (Normal Baseline)</span>
+<span>T = 24h (Monsoon Inflow)</span>
+<span>T = 48h (Extreme Shock Event)</span>
+<span>T = 72h (Payout Stabilization)</span>
+<span>T = 96h (Re-capitalization)</span>
+</div>
+</div>
+</div>
+<!-- Audit Section 2: Immutable Ledger Proof Verification & Consensus Trail -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Audit Section 2: Immutable Ledger Proof Verification & Consensus Trail</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Multi-oracle cryptographic consensus signatures validating triggers prior to programmatic disbursement.</p>
+</div>
+<div class="flex items-center gap-space-xs">
+<input class="bg-surface-container-low text-on-surface font-mono-data text-body-sm px-space-sm py-1.5 rounded-lg focus:outline-none" id="blockSearch" onkeyup="filterLedger()" placeholder="Search block hash or epoch..." type="text"/>
+<span class="px-space-xs py-1 rounded bg-surface-container text-secondary font-mono-data text-body-sm">Blocks #18,402,911 – #18,402,900</span>
+</div>
+</div>
+<!-- Ledger Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-md text-body-md" id="ledgerTable">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-body-sm uppercase">
+<th class="py-space-sm px-space-md font-semibold">Block / Epoch</th>
+<th class="py-space-sm px-space-md font-semibold">Event Trigger & Parameter</th>
+<th class="py-space-sm px-space-md font-semibold">Quorum Signatures (3/3)</th>
+<th class="py-space-sm px-space-md font-semibold">Merkle Root SHA-256</th>
+<th class="py-space-sm px-space-md font-semibold text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-transparent font-mono-data text-body-sm">
+<!-- Block 18,402,911 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md">
+<span class="font-bold text-primary">#18,402,911</span>
+<span class="block text-secondary text-body-sm">Epoch: 0x8FA4 • 14:31:02</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-semibold text-error">
+<span class="material-symbols-outlined text-[15px]">thunderstorm</span> Rainfall: 54.2 mm/hr
+                </span>
+<span class="block text-secondary text-body-sm">GeoZone: BLR-KORAMANGALA-04</span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col gap-0.5 text-body-sm">
+<span class="text-on-surface">IMD AWS: <span class="text-secondary">0x9f2a...81b4</span></span>
+<span class="text-on-surface">OpenMeteo: <span class="text-secondary">0x3ca9...c401</span></span>
+<span class="text-on-surface">KSNDMC: <span class="text-secondary">0x7ed1...a93f</span></span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="text-secondary select-all text-body-sm">d7f8...91a2e4c9</span>
+<span class="block text-on-surface-variant text-body-sm">Height: 9283 • 84 claims</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-semibold text-body-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> VERIFIED
+                </span>
+</td>
+</tr>
+<!-- Block 18,402,910 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md">
+<span class="font-bold text-primary">#18,402,910</span>
+<span class="block text-secondary text-body-sm">Epoch: 0x8FA3 • 14:28:19</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-semibold text-error">
+<span class="material-symbols-outlined text-[15px]">thunderstorm</span> Rainfall: 48.6 mm/hr
+                </span>
+<span class="block text-secondary text-body-sm">GeoZone: BOM-ANDHERI-EAST</span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col gap-0.5 text-body-sm">
+<span class="text-on-surface">IMD AWS: <span class="text-secondary">0x4b18...3902</span></span>
+<span class="text-on-surface">OpenMeteo: <span class="text-secondary">0x92f3...dd07</span></span>
+<span class="text-on-surface">MCGM AWS: <span class="text-secondary">0x81ee...209b</span></span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="text-secondary select-all text-body-sm">4a12...89bb2190</span>
+<span class="block text-on-surface-variant text-body-sm">Height: 9282 • 112 claims</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-semibold text-body-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> VERIFIED
+                </span>
+</td>
+</tr>
+<!-- Block 18,402,909 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md">
+<span class="font-bold text-primary">#18,402,909</span>
+<span class="block text-secondary text-body-sm">Epoch: 0x8FA2 • 14:15:40</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-semibold text-secondary">
+<span class="material-symbols-outlined text-[15px]">thermostat</span> Heat Index: 43.1 °C
+                </span>
+<span class="block text-secondary text-body-sm">GeoZone: DEL-CHANDNI-CHOWK</span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col gap-0.5 text-body-sm">
+<span class="text-on-surface">IMD AWS: <span class="text-secondary">0xaa90...112e</span></span>
+<span class="text-on-surface">OpenMeteo: <span class="text-secondary">0x12c4...e07b</span></span>
+<span class="text-on-surface">CPCB Sensor: <span class="text-secondary">0x55aa...3341</span></span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="text-secondary select-all text-body-sm">9bc1...1847af92</span>
+<span class="block text-on-surface-variant text-body-sm">Height: 9281 • 42 claims</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-semibold text-body-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> VERIFIED
+                </span>
+</td>
+</tr>
+<!-- Block 18,402,908 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md">
+<span class="font-bold text-primary">#18,402,908</span>
+<span class="block text-secondary text-body-sm">Epoch: 0x8FA1 • 13:58:11</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-semibold text-error">
+<span class="material-symbols-outlined text-[15px]">air</span> Wind Gust: 78 km/h
+                </span>
+<span class="block text-secondary text-body-sm">GeoZone: MAA-MARINA-BEACH</span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col gap-0.5 text-body-sm">
+<span class="text-on-surface">IMD AWS: <span class="text-secondary">0x38ef...991a</span></span>
+<span class="text-on-surface">OpenMeteo: <span class="text-secondary">0x07dc...32ef</span></span>
+<span class="text-on-surface">TNSDMA: <span class="text-secondary">0xbb14...89ac</span></span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="text-secondary select-all text-body-sm">31ef...48ac12de</span>
+<span class="block text-on-surface-variant text-body-sm">Height: 9280 • 19 claims</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-semibold text-body-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> VERIFIED
+                </span>
+</td>
+</tr>
+<!-- Block 18,402,907 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md">
+<span class="font-bold text-primary">#18,402,907</span>
+<span class="block text-secondary text-body-sm">Epoch: 0x8FA0 • 13:40:05</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-semibold text-error">
+<span class="material-symbols-outlined text-[15px]">thunderstorm</span> Rainfall: 61.0 mm/hr
+                </span>
+<span class="block text-secondary text-body-sm">GeoZone: HYD-HITECH-CITY</span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col gap-0.5 text-body-sm">
+<span class="text-on-surface">IMD AWS: <span class="text-secondary">0x77c2...51ae</span></span>
+<span class="text-on-surface">OpenMeteo: <span class="text-secondary">0xfa39...1109</span></span>
+<span class="text-on-surface">TSDPS: <span class="text-secondary">0x00ba...7742</span></span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="text-secondary select-all text-body-sm">82ad...3300efab</span>
+<span class="block text-on-surface-variant text-body-sm">Height: 9279 • 156 claims</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-semibold text-body-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> VERIFIED
+                </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flex items-center justify-between text-secondary font-mono-data text-body-sm pt-space-xs">
+<span>Displaying latest 5 of 12 blocks in current supervisory epoch</span>
+<button class="text-primary hover:underline font-label-md text-label-sm">Inspect Complete Cryptographic Merkle Tree →</button>
+</div>
+</div>
+<!-- Audit Section 3: Statutory Non-Custodial & Zero-PII Compliance Checklist -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+<!-- Statutory Item 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold">DPDP ACT 2023</span>
+<span class="inline-flex items-center gap-1 text-primary font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span> PASS
+            </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-1">Zero-PII Ingress Hashing</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Worker phone numbers, bank accounts, and UPI VPAs are immediately transformed into salted HMAC-SHA256 nonces at platform edge. No unencrypted identity tokens enter telemetry consensus or supervisory databases.</p>
+</div>
+<div class="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Telemetry Salt Rotation: 24h</span>
+<span class="text-on-surface font-semibold">Salt ID: #SLT-9810</span>
+</div>
+</div>
+<!-- Statutory Item 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold">IRDAI 2024 REGS</span>
+<span class="inline-flex items-center gap-1 text-primary font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span> PASS
+            </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-1">Deterministic Parametric Adjustments</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Zero subjective human claims loss adjustment. Trigger equations are codified directly into immutable smart-escrow rules. Payout triggers execute solely on multi-oracle quorum consensus confirmation.</p>
+</div>
+<div class="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Human Touchpoints: 0</span>
+<span class="text-on-surface font-semibold">Dispute Rate: 0.00%</span>
+</div>
+</div>
+<!-- Statutory Item 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold">NPCI INTEGRATION</span>
+<span class="inline-flex items-center gap-1 text-primary font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span> PASS
+            </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-1">Disbursement Rail Integrity</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Automated payouts execute across simulated sandbox NPCI mock rails. Idempotency keys prevent duplicate payouts. Round-trip acknowledgement confirmation received on 100% of tested batch transactions.</p>
+</div>
+<div class="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between text-secondary font-mono-data text-body-sm">
+<span>Idempotency Failures: 0</span>
+<span class="text-on-surface font-semibold">M-UPI Simulation: Active</span>
+</div>
+</div>
+</div>
+<!-- IRDAI Supervisory Action Footer Banner -->
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[22px]">policy</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Supervisory Regulatory Sign-off Status</span>
+<span class="font-body-sm text-body-sm text-secondary">IRDAI Sandbox Cohort #6 Sandbox Supervisor: Verification Key Valid until 31-MAR-2025</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-mono-data text-body-sm text-secondary">Hash: 89a0b3...4e91</span>
+<button class="bg-surface-container-lowest text-primary font-label-md text-label-md px-space-md py-1.5 rounded-lg shadow-sm hover:bg-surface-container-high transition-colors" onclick="triggerVerification()">
+          Validate Node Quorum Now
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function triggerDownload() {
+    const btn = document.getElementById('downloadBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Compiling Cryptographic Bundle...</span>';
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span><span>IRDAI Compliance Pack Downloaded</span>';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 3000);
+    }, 1200);
+  }
+
+  function triggerVerification() {
+    alert("Supervisory Node Check: 5/5 Oracles Active. Zero-PII Hash Integrity 100%. Solvency Ratio verified at 142.8%. IRDAI Sandbox Certificate PS-IND-4091 remains valid.");
+  }
+
+  function filterLedger() {
+    const query = document.getElementById('blockSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#ledgerTable tbody tr');
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      if (text.includes(query)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+</script></main></div></body></html>

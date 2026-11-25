@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-on-surface":"#edf0ff","on-secondary-container":"#596372","on-primary-container":"#cad3ff","error-container":"#ffdad6","surface-container-high":"#e1e8fd","tertiary-fixed-dim":"#ffb59c","surface-bright":"#f9f9ff","outline":"#747686","surface-container-highest":"#dce2f7","on-tertiary-fixed":"#390c00","primary-fixed-dim":"#b7c4ff","on-tertiary":"#ffffff","inverse-primary":"#b7c4ff","on-primary-fixed":"#001551","background":"#f9f9ff","primary-container":"#1d4ed8","on-secondary-fixed":"#121c28","surface":"#f9f9ff","surface-tint":"#2151da","on-error":"#ffffff","secondary-fixed-dim":"#bdc7d8","surface-container-low":"#f1f3ff","surface-dim":"#d3daef","on-primary":"#ffffff","on-background":"#141b2b","primary-fixed":"#dce1ff","on-tertiary-fixed-variant":"#832700","error":"#ba1a1a","on-error-container":"#93000a","primary":"#0037b0","on-surface":"#141b2b","surface-container-lowest":"#ffffff","surface-variant":"#dce2f7","secondary-container":"#d6e0f1","tertiary-fixed":"#ffdbcf","secondary-fixed":"#d9e3f4","tertiary":"#7f2500","on-tertiary-container":"#ffc9b7","outline-variant":"#c4c5d7","secondary":"#555f6d","on-primary-fixed-variant":"#0039b5","surface-container":"#e9edff","tertiary-container":"#a73400","on-surface-variant":"#434655","on-secondary-fixed-variant":"#3e4755","on-secondary":"#ffffff","inverse-surface":"#293040"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","space-md":"1rem",margin:"1rem",gutter:"1rem","space-xs":"0.25rem","space-lg":"1.5rem","space-xl":"2rem","margin-desktop":"2rem"},fontFamily:{"headline-xl":["Inter"],"body-sm":["Inter"],"headline-md":["Inter"],"label-md":["Inter"],"label-sm":["Inter"],"body-md":["Inter"],"mono-data":["Inter"],"headline-lg":["Inter"],"headline-xl-mobile":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-xl":["32px",{lineHeight:"40px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],"label-md":["14px",{lineHeight:"20px",fontWeight:"500"}],"label-sm":["12px",{lineHeight:"16px",fontWeight:"500"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"mono-data":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"500"}],"headline-lg":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-xl-mobile":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-14 px-space-md flex items-center gap-space-sm bg-surface-container-low"><div class="w-7 h-7 rounded bg-primary flex items-center justify-center text-on-primary font-headline-md text-headline-md font-bold">P</div><div class="flex flex-col"><span class="font-headline-md text-label-md font-bold tracking-tight text-on-surface">ParaShield</span><span class="font-label-sm text-body-sm text-on-surface-variant font-mono-data">Institutional Ops</span></div></div><div class="px-space-md py-space-sm bg-surface-container-low/50"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Workspaces</span></div><nav class="flex flex-col gap-space-xs px-space-sm py-space-sm" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span>Overview</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="insurer-console" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span>Insurer Console</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="platform-fleet-console" href="#"><span class="material-symbols-outlined text-[18px]">commute</span><span>Platform Fleet Console</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="regulator-audit" href="#"><span class="material-symbols-outlined text-[18px]">policy</span><span>Regulator Audit</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-2 transition-colors bg-primary-container text-on-primary font-medium rounded-lg" data-path="admin-and-identity" href="#"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span><span>Admin & Identity</span></a><a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md" data-path="ledger-proofs" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span>Ledger Proofs</span></a></nav></div><div class="p-space-md bg-surface-container-low"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-body-sm text-on-surface-variant font-medium">Consensus Engine</span><span class="w-2 h-2 rounded-full bg-primary"></span></div><div class="font-mono-data text-body-sm text-secondary">Quorum: 5/5 Validated</div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-md"><span class="font-headline-md text-label-md text-on-surface font-semibold">ParaShield Institutional Console</span><div class="flex items-center gap-space-xs"><span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Payment rail: simulated</span><span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-secondary font-mono-data text-body-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Oracle inputs: synthetic</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-md text-secondary font-mono-data text-body-sm"><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">dns</span>IST-BLR-01</span><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span>14:32:08 IST</span></div><div class="flex items-center gap-space-sm pl-space-md bg-surface-container-lowest"><div class="flex flex-col text-right"><span class="font-label-md text-label-sm text-on-surface font-semibold">arun.kumar@parashield.ops</span><span class="font-label-sm text-body-sm text-secondary">Super-Admin / L3 Ops</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><a class="p-1 text-on-surface-variant hover:text-error transition-colors title='Sign Out'" data-path="login" href="#"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></div></header><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Operational Banner & Enclave Metadata -->
+<section class="w-full bg-surface-container-low px-space-md py-space-lg">
+<div class="max-w-[1200px] mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="font-mono-data text-body-sm text-primary uppercase font-bold tracking-widest">SEC-OPS // LEVEL 3 CLEARANCE</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-mono-data text-body-sm text-secondary">ISO/IEC 27001 & IRDAI CYBER SEC FRAMEWORK</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Staff Identity, Access & Enclave Administration</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">Institutional RBAC governance, MFA key lifecycle management, session revocation, and security operations center oversight across all automated parametric settlement nodes.</p>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+<div class="px-space-sm py-1 rounded-lg bg-surface-container text-on-surface flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">dns</span>
+<span class="font-mono-data text-body-sm font-semibold">Node: IST-BLR-01</span>
+</div>
+<div class="px-space-sm py-1 rounded-lg bg-surface-container text-on-surface flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-mono-data text-body-sm font-semibold">Enclave: TPM 2.0 Attested</span>
+</div>
+<div class="px-space-sm py-1 rounded-lg bg-primary-container text-on-primary flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span class="font-mono-data text-body-sm font-semibold">Zero-Standing Privileges</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Security Operations KPI Suite -->
+<section class="w-full px-space-md py-space-lg">
+<div class="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary font-medium tracking-wide uppercase">Authenticated Operators</span>
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold mt-1">18 Active</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">badge</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between">
+<span class="font-mono-data text-body-sm text-on-surface-variant">Across 4 RBAC Roles</span>
+<span class="font-mono-data text-body-sm text-primary font-bold">100% Policy Sync</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 82%;"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary font-medium tracking-wide uppercase">Hardware Enclave State</span>
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold mt-1 flex items-center gap-1.5">
+              ATTESTED
+              <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">memory</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between">
+<span class="font-mono-data text-body-sm text-on-surface-variant">Node IST-BLR-01</span>
+<span class="font-mono-data text-body-sm text-primary font-bold">PCR[0-7] Valid</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary font-medium tracking-wide uppercase">MFA Compliance Metric</span>
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold mt-1">100% RFC 6238</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">fingerprint</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between">
+<span class="font-mono-data text-body-sm text-on-surface-variant">Hardware & TOTP Only</span>
+<span class="font-mono-data text-body-sm text-primary font-bold">Zero Bypass</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-body-sm text-secondary font-medium tracking-wide uppercase">Incident Queue</span>
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold mt-1">0 Crit / 1 Rev</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[22px]">chevron_backward</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between">
+<span class="font-mono-data text-body-sm text-on-surface-variant">Pending Geofence Drift</span>
+<span class="font-mono-data text-body-sm text-tertiary font-bold">SLA: 42m</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 25%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Security Matrix: Operator Table -->
+<section class="w-full px-space-md pb-space-lg">
+<div class="max-w-[1200px] mx-auto bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<!-- Table Header Bar -->
+<div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">markdown_copy</span>
+</div>
+<div class="flex flex-col">
+<h2 class="font-headline-md text-label-md font-bold text-on-surface">Staff Operator Directory & Access Controls</h2>
+<span class="font-body-sm text-body-sm text-secondary">Authorized institutional signatories & platform audit principals</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-colors flex items-center gap-1" id="filterActiveBtn">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span>Filter Active (4)</span>
+</button>
+<button class="px-space-sm py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container transition-colors flex items-center gap-1 shadow-sm" id="addOperatorTrigger">
+<span class="material-symbols-outlined text-[16px]">person_add</span>
+<span>Provision Keyholder</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left font-body-md text-body-md">
+<thead class="bg-surface-container/60 text-secondary font-label-sm text-label-sm uppercase tracking-wider">
+<tr>
+<th class="py-space-sm px-space-md font-semibold">Operator & Institutional Identity</th>
+<th class="py-space-sm px-space-md font-semibold">Assigned RBAC Role</th>
+<th class="py-space-sm px-space-md font-semibold">MFA Device / Token</th>
+<th class="py-space-sm px-space-md font-semibold">Recovery Entropy</th>
+<th class="py-space-sm px-space-md font-semibold">Active Sessions</th>
+<th class="py-space-sm px-space-md font-semibold">Telemetry IP & Node</th>
+<th class="py-space-sm px-space-md font-semibold text-right">Emergency Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high text-on-surface font-body-md text-body-md">
+<!-- Row 1: Arun Kumar -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center font-headline-md text-label-md font-bold text-primary">AK</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface group-hover:text-primary transition-colors">Arun Kumar</span>
+<span class="font-mono-data text-body-sm text-secondary">arun.kumar@parashield.ops</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">assured_workload</span>
+                  Risk Underwriter (Insurer)
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">phonelink_lock</span>
+                    TOTP (RFC 6238)
+                  </span>
+<span class="font-mono-data text-body-sm text-secondary">Key Hash: #8F01..BC3A</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1 w-32">
+<div class="flex justify-between font-mono-data text-body-sm">
+<span class="text-on-surface font-semibold">6 of 8 Left</span>
+<span class="text-secondary">75%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 75%;"></div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded bg-surface-container font-mono-data text-body-sm text-on-surface font-medium">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  1 Web (This Node)
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-mono-data text-body-sm text-on-surface">103.21.244.18</span>
+<span class="font-mono-data text-body-sm text-secondary">IST-BLR-01 // AWS Gov</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded transition-colors" onclick="openOtpModal('Arun Kumar', 'arun.kumar@parashield.ops')" title="Issue Temporary OTP Reset">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="triggerRevoke('Arun Kumar')" title="Revoke Session Token">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="confirmSuspend('Arun Kumar')" title="Suspend Operator Account">
+<span class="material-symbols-outlined text-[18px]">block</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Priya Sharma -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center font-headline-md text-label-md font-bold text-primary">PS</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface group-hover:text-primary transition-colors">Priya Sharma</span>
+<span class="font-mono-data text-body-sm text-secondary">priya.sharma@parashield.ops</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">local_shipping</span>
+                  Fleet Ops (Swiggy Liaison)
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">usb</span>
+                    YubiKey 5C NFC
+                  </span>
+<span class="font-mono-data text-body-sm text-secondary">SN: 19482012 (FIPS 140-2)</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1 w-32">
+<div class="flex justify-between font-mono-data text-body-sm">
+<span class="text-on-surface font-semibold">8 of 8 Left</span>
+<span class="text-secondary">100%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded bg-surface-container font-mono-data text-body-sm text-on-surface font-medium">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  2 CLI / Fleet Node
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-mono-data text-body-sm text-on-surface">49.207.181.9</span>
+<span class="font-mono-data text-body-sm text-secondary">IST-BOM-02 // Edge API</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded transition-colors" onclick="openOtpModal('Priya Sharma', 'priya.sharma@parashield.ops')" title="Issue Temporary OTP Reset">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="triggerRevoke('Priya Sharma')" title="Revoke Session Token">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="confirmSuspend('Priya Sharma')" title="Suspend Operator Account">
+<span class="material-symbols-outlined text-[18px]">block</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Rajesh Rao -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center font-headline-md text-label-md font-bold text-primary">RR</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface group-hover:text-primary transition-colors">Rajesh Rao</span>
+<span class="font-mono-data text-body-sm text-secondary">rajesh.rao@irdai.gov.in</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono-data text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">policy</span>
+                  IRDAI Audit Officer
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">usb</span>
+                    Hardware Token (YubiKey)
+                  </span>
+<span class="font-mono-data text-body-sm text-secondary">SN: 44091219 (Read-Only)</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1 w-32">
+<div class="flex justify-between font-mono-data text-body-sm">
+<span class="text-on-surface font-semibold">4 of 8 Left</span>
+<span class="text-secondary">50%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 50%;"></div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded bg-surface-container font-mono-data text-body-sm text-on-surface font-medium">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  1 Audit Ledger Console
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-mono-data text-body-sm text-on-surface">14.139.128.4</span>
+<span class="font-mono-data text-body-sm text-secondary">IST-DEL-01 // NIC Node</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded transition-colors" onclick="openOtpModal('Rajesh Rao', 'rajesh.rao@irdai.gov.in')" title="Issue Temporary OTP Reset">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="triggerRevoke('Rajesh Rao')" title="Revoke Session Token">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="confirmSuspend('Rajesh Rao')" title="Suspend Operator Account">
+<span class="material-symbols-outlined text-[18px]">block</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Vikram Malhotra -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center font-headline-md text-label-md font-bold text-primary">VM</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface group-hover:text-primary transition-colors">Vikram Malhotra</span>
+<span class="font-mono-data text-body-sm text-secondary">vikram.malhotra@parashield.ops</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-primary-container text-on-primary font-mono-data text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+                  Root Security Officer (Admin)
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">security</span>
+                    Hardware HSM + TOTP
+                  </span>
+<span class="font-mono-data text-body-sm text-secondary">Multi-Tier Smartcard</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1 w-32">
+<div class="flex justify-between font-mono-data text-body-sm">
+<span class="text-on-surface font-semibold">8 of 8 Left</span>
+<span class="text-secondary">100%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded bg-surface-container font-mono-data text-body-sm text-on-surface font-medium">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  1 Enclave Gateway
+                </span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-mono-data text-body-sm text-on-surface">122.179.31.201</span>
+<span class="font-mono-data text-body-sm text-secondary">IST-BLR-01 // Bastion 0</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded transition-colors" onclick="openOtpModal('Vikram Malhotra', 'vikram.malhotra@parashield.ops')" title="Issue Temporary OTP Reset">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded transition-colors" onclick="triggerRevoke('Vikram Malhotra')" title="Revoke Session Token">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+<button class="p-1.5 text-outline opacity-40 cursor-not-allowed rounded" disabled="" title="Root Admin cannot be suspended without dual root signoff">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-space-md py-space-sm bg-surface-container-low/70 flex flex-col sm:flex-row items-center justify-between gap-space-sm text-secondary font-mono-data text-body-sm">
+<span>Showing 4 institutional operators • Quorum verification active</span>
+<div class="flex items-center gap-2">
+<span>Enclave Signature: ed25519:6ae8...d901</span>
+<button class="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface text-body-sm">Export Audit CSV</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Split Panel: Emergency Key Administration & Live Audit Log Stream -->
+<section class="w-full px-space-md pb-space-xl">
+<div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Column Left: Emergency M-of-N Multi-Sig Action Panel (5 Cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<!-- M-of-N Reset Box -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">vpn_key_alert</span>
+<h3 class="font-headline-md text-label-md font-bold text-on-surface">Emergency TOTP Reset Authority</h3>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-primary font-mono-data text-body-sm font-semibold">2-of-3 Quorum</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md">Per ParaShield Institutional Governance, password resets are prohibited; single-use emergency bypass tokens require two concurrent L3 admin biometric signatures.</p>
+<div class="p-space-sm bg-surface-container-low rounded-lg mb-space-md flex flex-col gap-space-xs font-mono-data text-body-sm">
+<div class="flex justify-between items-center text-on-surface">
+<span>Signer 1 (arun.kumar@ops):</span>
+<span class="text-primary font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">check_circle</span> APPROVED</span>
+</div>
+<div class="flex justify-between items-center text-secondary">
+<span>Signer 2 (vikram.malhotra@ops):</span>
+<span class="text-tertiary font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">hourglass_top</span> AWAITING PASSKEY</span>
+</div>
+<div class="flex justify-between items-center text-secondary">
+<span>Signer 3 (rajesh.rao@irdai):</span>
+<span class="text-outline">NOT_REQUIRED</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs">
+<button class="w-full py-2 px-space-md rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-medium transition-colors flex items-center justify-center gap-space-xs shadow-sm" id="signQuorumBtn" onclick="simulateMultiSigApproval()">
+<span class="material-symbols-outlined text-[18px]">fingerprint</span>
+<span>Authorize Dual-Key Signing Ceremony</span>
+</button>
+<span class="text-center font-body-sm text-body-sm text-secondary">Audit receipt logged to tamper-proof IRDAI ledger</span>
+</div>
+</div>
+<!-- Global Session & Enclave Security Action -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-error text-[20px]">cloud_download</span>
+<h3 class="font-headline-md text-label-md font-bold text-on-surface">Enclave Cryptographic Revocation</h3>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Immediate operational defense levers. Invoking these mechanisms will flush distributed token caches across Bangalore and Mumbai edge nodes.</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<button class="px-space-sm py-2 rounded-lg bg-surface-container hover:bg-error-container hover:text-on-error-container text-on-surface font-label-md text-label-sm font-semibold transition-colors flex items-center justify-center gap-1" onclick="emergencyRevokeAllSessions()">
+<span class="material-symbols-outlined text-[18px]">group_remove</span>
+<span>Revoke All Sessions</span>
+</button>
+<button class="px-space-sm py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-sm font-semibold transition-colors flex items-center justify-center gap-1" onclick="rotateHsmKeys()">
+<span class="material-symbols-outlined text-[18px]">published_with_changes</span>
+<span>Rotate Enclave Keys</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Column Right: Live Security Operations Audit Log Stream (7 Cols) -->
+<div class="lg:col-span-7 bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm bg-surface-container-low -mx-space-md -mt-space-md p-space-md rounded-t-xl">
+<div class="flex items-center gap-space-sm">
+<div class="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+<h3 class="font-headline-md text-label-md font-bold text-on-surface">SOC Live Audit Stream</h3>
+<span class="font-mono-data text-body-sm text-secondary">Real-Time Ingestion</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2 py-1 rounded bg-surface-container text-secondary hover:text-on-surface font-mono-data text-body-sm transition-colors" onclick="clearStreamFilter()">Clear Filter</button>
+<span class="font-mono-data text-body-sm text-primary font-bold">14.2 msg/sec</span>
+</div>
+</div>
+<!-- Terminal-like Log Feed -->
+<div class="flex flex-col gap-2 font-mono-data text-body-sm overflow-y-auto max-h-[360px] pr-2" id="logStreamContainer">
+<!-- Event 1 -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:32:04.112</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-bold">AUTH_SUCCESS</span>
+<span class="text-on-surface truncate">arun.kumar@parashield.ops via TOTP</span>
+</div>
+<span class="text-secondary shrink-0">IST-BLR-01</span>
+</div>
+<!-- Event 2 -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:31:58.894</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-bold">ENCLAVE_VALID</span>
+<span class="text-on-surface truncate">TPM 2.0 quote signed PCR[0..7] verified</span>
+</div>
+<span class="text-secondary shrink-0">IST-BLR-01</span>
+</div>
+<!-- Event 3 -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:31:40.231</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-tertiary font-bold">RATE_LIMIT</span>
+<span class="text-on-surface truncate">IP 49.207.181.9 (Priya S.) token renewed</span>
+</div>
+<span class="text-secondary shrink-0">IST-BOM-02</span>
+</div>
+<!-- Event 4 -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:30:15.012</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-bold">AUDIT_READ</span>
+<span class="text-on-surface truncate">rajesh.rao@irdai.gov.in queried claims batch #9921</span>
+</div>
+<span class="text-secondary shrink-0">IST-DEL-01</span>
+</div>
+<!-- Event 5 -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:28:44.770</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-bold">KEY_VALIDATED</span>
+<span class="text-on-surface truncate">YubiKey 5C touch assertion accepted</span>
+</div>
+<span class="text-secondary shrink-0">IST-BOM-02</span>
+</div>
+<!-- Event 6 -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:27:01.401</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-bold">ENCLAVE_TICK</span>
+<span class="text-on-surface truncate">Proof merkle tree rooted: 0x9fa1...ee30</span>
+</div>
+<span class="text-secondary shrink-0">IST-BLR-01</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container flex items-center justify-between font-mono-data text-body-sm text-secondary">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Zero Tamper Buffer (Append-Only)</span>
+</div>
+<button class="hover:text-on-surface flex items-center gap-1" id="pauseStreamBtn" onclick="pauseLogStream()">
+<span class="material-symbols-outlined text-[16px]">pause</span>
+<span>Freeze Stream</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Modal: Issue Emergency Temporary OTP Key -->
+<div class="fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-space-md" id="otpModalBackdrop">
+<div class="bg-surface-container-lowest max-w-lg w-full rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+<div class="p-space-md bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">vpn_key</span>
+<h3 class="font-headline-md text-label-md font-bold text-on-surface">Emergency Key Issue Ceremony</h3>
+</div>
+<button class="text-secondary hover:text-on-surface p-1 rounded-lg" onclick="closeOtpModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="p-space-md flex flex-col gap-space-md">
+<div class="p-space-sm bg-surface-container rounded-lg flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-bold">!</div>
+<div class="flex flex-col font-body-sm text-body-sm">
+<span class="text-on-surface font-semibold">Institutional Recovery Notice</span>
+<span class="text-secondary">Password resets are handled exclusively by authorized administrators under multi-signature protocol.</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-secondary">Target Institutional Operator</label>
+<input class="w-full h-9 px-space-sm rounded bg-surface-container font-mono-data text-body-sm text-on-surface outline-none" id="targetOperatorField" readonly="" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-secondary">Validity Window</label>
+<select class="w-full h-9 px-space-sm rounded bg-surface-container-low border-0 font-body-md text-body-md text-on-surface outline-none">
+<option>15 Minutes (Strict Incident Remediation)</option>
+<option>30 Minutes (Cross-Node Synchronization)</option>
+<option>1 Hour (Maximum Regulatory Window)</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-secondary">Mandatory Incident Reason Code</label>
+<input class="w-full h-9 px-space-sm rounded bg-surface-container-low border-0 font-body-md text-body-md text-on-surface outline-none" placeholder="e.g. INC-2024-8812 Hardware Token Desync" type="text"/>
+</div>
+<div class="hidden p-space-sm bg-primary/10 rounded-lg flex flex-col gap-1" id="generatedKeyBox">
+<span class="font-label-sm text-body-sm text-primary font-bold">One-Time Recovery TOTP Generated:</span>
+<div class="font-mono-data text-headline-md font-bold tracking-widest text-primary flex items-center justify-between">
+<span id="keyCodePlaceholder">749-108-941</span>
+<button class="text-secondary hover:text-primary p-1" onclick="copyGeneratedKey()"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+</div>
+<span class="font-body-sm text-body-sm text-secondary">Logged to Enclave Ledger. Expires automatically after first use.</span>
+</div>
+</div>
+<div class="p-space-md bg-surface-container-low flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-1.5 rounded-lg text-secondary hover:bg-surface-container font-label-md text-label-md font-medium transition-colors" onclick="closeOtpModal()">Cancel</button>
+<button class="px-space-md py-1.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-medium shadow-sm transition-colors flex items-center gap-1" id="generateKeyBtn" onclick="generateTemporaryKey()">
+<span class="material-symbols-outlined text-[18px]">key</span>
+<span>Generate Ephemeral Key</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Notification Toast Container -->
+<div class="fixed bottom-6 right-6 bg-surface-container-highest text-on-surface p-space-md rounded-xl shadow-xl flex items-center gap-space-sm border-0 transition-transform translate-y-24 duration-200 z-50" id="adminToast">
+<span class="material-symbols-outlined text-primary" id="toastIcon">verified</span>
+<span class="font-label-md text-body-md font-semibold" id="toastMsg">Action registered</span>
+</div>
+<!-- Client Interaction Logic -->
+<script>
+    let isStreamPaused = false;
+    let streamInterval;
+
+    function showToast(msg, icon = 'verified') {
+      const toast = document.getElementById('adminToast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      toastMsg.innerText = msg;
+      toastIcon.innerText = icon;
+      toast.classList.remove('translate-y-24');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24');
+      }, 3500);
+    }
+
+    function openOtpModal(name, email) {
+      document.getElementById('targetOperatorField').value = `${name} (${email})`;
+      document.getElementById('generatedKeyBox').classList.add('hidden');
+      document.getElementById('generateKeyBtn').classList.remove('hidden');
+      document.getElementById('otpModalBackdrop').classList.remove('hidden');
+    }
+
+    function closeOtpModal() {
+      document.getElementById('otpModalBackdrop').classList.add('hidden');
+    }
+
+    function generateTemporaryKey() {
+      const code = Math.floor(100000000 + Math.random() * 900000000);
+      const formatted = `${code.toString().slice(0,3)}-${code.toString().slice(3,6)}-${code.toString().slice(6,9)}`;
+      document.getElementById('keyCodePlaceholder').innerText = formatted;
+      document.getElementById('generatedKeyBox').classList.remove('hidden');
+      document.getElementById('generateKeyBtn').classList.add('hidden');
+      showToast('Single-use TOTP key minted by Enclave', 'key');
+      appendLog(`KEY_MINTED: Ephemeral TOTP generated for ${document.getElementById('targetOperatorField').value.split(' ')[0]}`);
+    }
+
+    function copyGeneratedKey() {
+      const val = document.getElementById('keyCodePlaceholder').innerText;
+      navigator.clipboard?.writeText(val);
+      showToast('Key copied to clipboard', 'content_copy');
+    }
+
+    function triggerRevoke(operator) {
+      if (confirm(`Revoke all active web & terminal sessions for ${operator}?`)) {
+        showToast(`Active sessions terminated for ${operator}`, 'link_off');
+        appendLog(`SESSION_REVOKED: Operator tokens purged for ${operator}`);
+      }
+    }
+
+    function confirmSuspend(operator) {
+      if (confirm(`CRITICAL: Are you sure you want to suspend institutional operator ${operator}?`)) {
+        showToast(`Operator ${operator} suspended from all enclaves`, 'block');
+        appendLog(`OPERATOR_SUSPENDED: ${operator} access revoked via Root policy`);
+      }
+    }
+
+    function simulateMultiSigApproval() {
+      const btn = document.getElementById('signQuorumBtn');
+      btn.innerHTML = `<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Signing HSM Certificate...</span>`;
+      setTimeout(() => {
+        btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">verified</span><span>Quorum 2/3 Validated & Anchored</span>`;
+        btn.classList.remove('bg-primary');
+        btn.classList.add('bg-surface-container-high', 'text-on-surface');
+        showToast('Dual-signature certificate signed by IST-BLR-01 Enclave', 'verified_user');
+        appendLog(`QUORUM_ATTESTED: Dual-signature signoff completed for emergency authority`);
+      }, 1200);
+    }
+
+    function emergencyRevokeAllSessions() {
+      if (confirm('DANGER: This will immediately revoke ALL active staff operator tokens across Bangalore, Mumbai, and Delhi. Continue?')) {
+        showToast('Distributed session cache flushed (18 sessions revoked)', 'security');
+        appendLog(`GLOBAL_REVOKE_INITIATED: Flush signal dispatched to 3 AWS Gov nodes`);
+      }
+    }
+
+    function rotateHsmKeys() {
+      if (confirm('Authorize Enclave master root rotation ceremony?')) {
+        showToast('Master HSM key rotated. New fingerprint: #128A..77F1', 'sync');
+        appendLog(`HSM_KEY_ROTATED: TPM 2.0 PCR state re-sealed successfully`);
+      }
+    }
+
+    function appendLog(detail) {
+      const container = document.getElementById('logStreamContainer');
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+      
+      const el = document.createElement('div');
+      el.className = 'p-space-xs rounded bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-surface-container transition-colors';
+      el.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-secondary">${timeStr}</span>
+          <span class="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-bold">SOC_ACTION</span>
+          <span class="text-on-surface truncate">${detail}</span>
+        </div>
+        <span class="text-secondary shrink-0">IST-BLR-01</span>
+      `;
+      container.insertBefore(el, container.firstChild);
+    }
+
+    function pauseLogStream() {
+      isStreamPaused = !isStreamPaused;
+      const btn = document.getElementById('pauseStreamBtn');
+      if (isStreamPaused) {
+        btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">play_arrow</span><span>Resume Stream</span>`;
+      } else {
+        btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">pause</span><span>Freeze Stream</span>`;
+      }
+    }
+
+    function clearStreamFilter() {
+      showToast('Filters cleared, streaming live logs', 'filter_alt');
+    }
+
+    // Background simulated audit log tick
+    const dummyEvents = [
+      'POLICY_EVAL_PASS: Geofencing within BLR-EAST-01 zone',
+      'TELEMETRY_SAMPLE: Rain sensor array 42mm threshold verified',
+      'ENCLAVE_HEARTBEAT: Cryptographic nonce sequence #441209 passed',
+      'SESSION_PING: Keep-alive acknowledged for priya.sharma',
+      'API_GATEWAY_INGEST: 140 settlement pulses routed to IRDAI mirror'
+    ];
+
+    setInterval(() => {
+      if (!isStreamPaused && Math.random() > 0.6) {
+        const randEvent = dummyEvents[Math.floor(Math.random() * dummyEvents.length)];
+        appendLog(randEvent);
+      }
+    }, 4500);
+  </script>
+</div></main></div></body></html>

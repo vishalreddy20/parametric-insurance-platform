@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_blank" name="shell-type"/><title>ParaShield Secure Access</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline": "#747686", "surface-dim": "#d3daef", "surface-container-highest": "#dce2f7", "inverse-primary": "#b7c4ff", "inverse-on-surface": "#edf0ff", "surface-container": "#e9edff", "on-primary-fixed": "#001551", "surface-container-lowest": "#ffffff", "background": "#f9f9ff", "on-surface-variant": "#434655", "tertiary-fixed-dim": "#ffb59c", "on-tertiary": "#ffffff", "surface-tint": "#2151da", "primary": "#0037b0", "on-error": "#ffffff", "on-tertiary-fixed": "#390c00", "on-secondary-fixed-variant": "#3e4755", "secondary": "#555f6d", "on-background": "#141b2b", "error-container": "#ffdad6", "primary-fixed": "#dce1ff", "tertiary": "#7f2500", "on-secondary-fixed": "#121c28", "surface-bright": "#f9f9ff", "on-primary": "#ffffff", "secondary-fixed": "#d9e3f4", "error": "#ba1a1a", "primary-fixed-dim": "#b7c4ff", "on-primary-fixed-variant": "#0039b5", "on-surface": "#141b2b", "surface-variant": "#dce2f7", "secondary-fixed-dim": "#bdc7d8", "secondary-container": "#d6e0f1", "tertiary-fixed": "#ffdbcf", "on-error-container": "#93000a", "on-secondary": "#ffffff", "on-primary-container": "#cad3ff", "on-tertiary-container": "#ffc9b7", "surface": "#f9f9ff", "on-tertiary-fixed-variant": "#832700", "surface-container-low": "#f1f3ff", "on-secondary-container": "#596372", "inverse-surface": "#293040", "primary-container": "#1d4ed8", "outline-variant": "#c4c5d7", "surface-container-high": "#e1e8fd", "tertiary-container": "#a73400" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-xl": "2rem", "space-sm": "0.5rem", "gutter-desktop": "1.5rem", "space-lg": "1.5rem", "margin-desktop": "2rem", "gutter": "1rem", "space-xs": "0.25rem", "space-md": "1rem", "margin": "1rem" }, "fontFamily": { "headline-lg": ["Inter"], "body-lg": ["Inter"], "body-md": ["Inter"], "headline-xl": ["Inter"], "headline-xl-mobile": ["Inter"], "mono-data": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "label-sm": ["Inter"], "headline-md": ["Inter"] }, "fontSize": { "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "mono-data": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col justify-between"><div class="py-space-md px-space-lg flex items-center justify-between"><a class="flex items-center gap-space-xs text-primary font-headline-md" data-path="overview" href="#"><span class="material-symbols-outlined text-[24px]">shield</span><span class="font-headline-md text-headline-md text-on-surface">ParaShield</span></a><div class="flex items-center gap-space-xs text-on-surface-variant font-mono-data text-body-sm"><span>Security Clearance: LEVEL 2</span></div></div><main class="w-full flex-1 flex items-center justify-center px-margin py-space-lg"><div class="flex flex-col w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<!-- Top Utility Context Bar -->
+<div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-7 h-7 rounded bg-primary-fixed text-primary font-mono-data text-body-sm font-semibold">
+        01
+      </div>
+<div>
+<span class="text-on-surface-variant font-mono-data text-body-sm tracking-wider uppercase">Portal Initializer</span>
+<span class="text-outline-variant mx-2">/</span>
+<span class="text-on-surface font-label-md text-label-md">Delivery Partner Registration</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high text-on-surface-variant font-mono-data text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+        Idempotency Key: <span class="text-on-surface font-semibold">IDEM-88219-B4A</span>
+</span>
+</div>
+</div>
+<!-- Primary Asymmetric Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 pt-8 items-start">
+<!-- Left Column: Registration Form (7 Cols) -->
+<div class="lg:col-span-7 flex flex-col space-y-6">
+<div>
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container text-primary font-mono-data text-body-sm uppercase tracking-wider mb-2">
+          Step 1 of 5 • Identity Creation
+        </div>
+<h1 class="text-on-surface font-headline-xl text-headline-xl tracking-tight">Create Worker Account</h1>
+<p class="text-on-surface-variant font-body-md text-body-md mt-1">
+          Register your partner credentials to initialize your continuous parametric weather and demand indemnity coverage.
+        </p>
+</div>
+<!-- Registration Form -->
+<form class="space-y-5" id="worker-signup-form" onsubmit="event.preventDefault();">
+<!-- Platform Selection Radio Toggle -->
+<div class="space-y-2">
+<label class="block text-on-surface font-label-md text-label-md">
+            Active Delivery Partner Fleet <span class="text-error">*</span>
+</label>
+<div aria-label="Delivery Partner Fleet Selection" class="grid grid-cols-2 gap-3" role="radiogroup">
+<!-- Swiggy -->
+<label class="platform-option relative flex items-center justify-between p-3 rounded-lg bg-surface-container-lowest border border-outline cursor-pointer transition-all hover:bg-surface-container-low has-[:checked]:bg-surface-container has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
+<input checked="" class="sr-only" name="fleet_platform" onchange="updatePlatformSelection(this)" type="radio" value="swiggy"/>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded flex items-center justify-center bg-orange-500/10 text-orange-700">
+<span class="material-symbols-outlined text-[20px]">electric_moped</span>
+</div>
+<div>
+<div class="text-on-surface font-label-md text-label-md font-semibold">Swiggy</div>
+<div class="text-on-surface-variant font-body-sm text-body-sm">Fleet Instamart / Food</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px] check-indicator">check_circle</span>
+</label>
+<!-- Zomato -->
+<label class="platform-option relative flex items-center justify-between p-3 rounded-lg bg-surface-container-lowest border border-outline cursor-pointer transition-all hover:bg-surface-container-low has-[:checked]:bg-surface-container has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
+<input class="sr-only" name="fleet_platform" onchange="updatePlatformSelection(this)" type="radio" value="zomato"/>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded flex items-center justify-center bg-red-500/10 text-red-700">
+<span class="material-symbols-outlined text-[20px]">two_wheeler</span>
+</div>
+<div>
+<div class="text-on-surface font-label-md text-label-md font-semibold">Zomato</div>
+<div class="text-on-surface-variant font-body-sm text-body-sm">Blinkit / Zomato Fleet</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/40 text-[20px] check-indicator">radio_button_unchecked</span>
+</label>
+</div>
+</div>
+<!-- Worker Handle / Username -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="block text-on-surface font-label-md text-label-md" for="username">
+              Worker Handle / Username <span class="text-error">*</span>
+</label>
+<span class="text-on-surface-variant font-mono-data text-body-sm">Unique identifier</span>
+</div>
+<div class="relative">
+<input class="w-full h-10 px-3 rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md border border-[#6B7280] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors" id="username" name="username" placeholder="e.g. rohan_swiggy_blr" required="" type="text"/>
+<div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">badge</span>
+</div>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm">
+            Must match your municipal rider cluster shorthand for telemetry matching.
+          </p>
+</div>
+<!-- Password Field with Live Telemetry Validation -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="block text-on-surface font-label-md text-label-md" for="password">
+              Secure Keyphrase / Password <span class="text-error">*</span>
+</label>
+<span class="font-mono-data text-body-sm text-on-surface-variant" id="char-count">0 / 12 min</span>
+</div>
+<div class="relative">
+<input class="w-full h-10 pl-3 pr-10 rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md border border-[#6B7280] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors" id="password" minlength="12" name="password" oninput="evaluatePassword(this.value)" placeholder="Minimum 12 characters" required="" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-on-surface-variant hover:text-on-surface transition-colors focus:outline-none" id="toggle-password" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-[20px]" id="eye-icon">visibility</span>
+</button>
+</div>
+<!-- Strength Bar & Status Indicator -->
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between text-body-sm font-label-sm">
+<span class="text-on-surface-variant">Entropy score:</span>
+<span class="font-mono-data font-semibold text-secondary" id="strength-label">None</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden flex gap-1">
+<div class="h-full w-1/3 bg-outline-variant/50 transition-all duration-300" id="bar-1"></div>
+<div class="h-full w-1/3 bg-outline-variant/50 transition-all duration-300" id="bar-2"></div>
+<div class="h-full w-1/3 bg-outline-variant/50 transition-all duration-300" id="bar-3"></div>
+</div>
+<div class="flex items-center gap-2 pt-0.5">
+<span class="inline-flex items-center gap-1 font-mono-data text-body-sm text-on-surface-variant" id="rule-length">
+<span class="material-symbols-outlined text-[14px]">circle</span> 12+ chars
+              </span>
+<span class="inline-flex items-center gap-1 font-mono-data text-body-sm text-on-surface-variant" id="rule-complexity">
+<span class="material-symbols-outlined text-[14px]">circle</span> Mixed character set
+              </span>
+</div>
+</div>
+</div>
+<!-- Terms and Privacy Required Agreement -->
+<div class="pt-2">
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="flex items-center h-5">
+<input class="w-4 h-4 rounded text-primary border-outline focus:ring-primary focus:ring-offset-0 cursor-pointer" id="terms_agree" name="terms_agree" required="" type="checkbox"/>
+</div>
+<div class="text-on-surface-variant font-body-md text-body-md leading-snug">
+              I agree to the 
+              <button class="text-primary hover:underline font-label-md inline-flex items-center focus:outline-none" onclick="openModal('terms')" type="button">
+                Parametric Terms of Coverage
+              </button>
+              and acknowledge the 
+              <button class="text-primary hover:underline font-label-md inline-flex items-center focus:outline-none" onclick="openModal('privacy')" type="button">
+                Algorithmic Telemetry Privacy Notice
+              </button>.
+            </div>
+</label>
+</div>
+<!-- Action Buttons -->
+<div class="space-y-3 pt-2">
+<button class="w-full h-10 px-4 rounded bg-[#1D4ED8] hover:bg-[#1e40af] text-on-primary font-label-md text-label-md font-semibold tracking-wide flex items-center justify-center gap-2 transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2" type="submit">
+<span>Create account</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<div class="text-center pt-1">
+<span class="text-on-surface-variant font-body-md text-body-md">Already registered? </span>
+<a class="text-primary font-label-md text-label-md font-medium hover:underline inline-flex items-center gap-0.5" href="#">
+              Sign in to Partner Terminal
+              <span class="material-symbols-outlined text-[14px]">north_east</span>
+</a>
+</div>
+</div>
+</form>
+<!-- Post-Registration Wizard Advisory -->
+<div class="p-4 rounded-lg bg-surface-container-low border border-outline-variant/40 flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">info</span>
+<div class="space-y-1">
+<div class="text-on-surface font-label-md text-label-md font-semibold">Post-Account Enrollment Workflow</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm leading-relaxed">
+            Phone number, zone selection, weekly income &amp; hours, and UPI payment details will be collected during the 4-step onboarding wizard after account registration.
+          </p>
+</div>
+</div>
+</div>
+<!-- Right Column: Institutional Context & Shift Attestation Engine (5 Cols) -->
+<div class="lg:col-span-5 flex flex-col space-y-6">
+<!-- Attestation Context Card -->
+<div class="rounded-xl bg-surface-container-lowest border border-outline-variant/40 p-6 space-y-5 shadow-sm">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">hub</span>
+<span class="font-headline-md text-headline-md text-on-surface">Shift Verification Mesh</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-data text-body-sm">
+            v2.4-PROD
+          </span>
+</div>
+<div class="space-y-3">
+<p class="text-on-surface-variant font-body-md text-body-md leading-relaxed">
+            Your ParaShield worker account binds to high-frequency geo-pings and automated delivery platform shift attestations. In the event of severe urban inundation, heatwaves, or localized operational curfews, claim triggers execute automatically without document uploads.
+          </p>
+<div class="space-y-2 pt-2">
+<div class="flex items-center justify-between p-2.5 rounded bg-surface-container-low text-body-sm">
+<span class="text-on-surface-variant font-label-sm">Oracle Feed Verification</span>
+<span class="text-on-surface font-mono-data font-semibold">Open-Meteo &amp; IMD Grid</span>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded bg-surface-container-low text-body-sm">
+<span class="text-on-surface-variant font-label-sm">Disbursement Latency</span>
+<span class="text-on-surface font-mono-data font-semibold">&lt; 180 seconds via UPI</span>
+</div>
+</div>
+</div>
+<!-- Strict Personnel Notice Box -->
+<div class="p-3.5 rounded bg-amber-500/10 border-l-4 border-amber-600 space-y-1">
+<div class="flex items-center gap-1.5 text-amber-900 font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+            Restricted Partner Enrollment
+          </div>
+<p class="text-amber-950 font-body-sm text-body-sm leading-normal">
+            Staff accounts are issued by an administrator. This registration is strictly for active platform delivery partners.
+          </p>
+</div>
+<!-- Telemetry & Simulation Tags -->
+<div class="pt-2 border-t border-outline-variant/30 flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-secondary font-mono-data text-body-sm font-medium">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+            Payment rail: simulated
+          </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-secondary font-mono-data text-body-sm font-medium">
+<span class="material-symbols-outlined text-[14px]">sensors</span>
+            Oracle inputs: synthetic
+          </span>
+</div>
+</div>
+<!-- Quick Platform Assurance Card -->
+<div class="rounded-xl bg-surface-container-high/50 p-5 space-y-3">
+<div class="flex items-center gap-2 text-on-surface font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+          Institutional Non-Custodial Coverage
+        </div>
+<p class="text-on-surface-variant font-body-sm text-body-sm">
+          Protected by deterministic smart contracts. Once rainfall exceeeds 45mm/hr or wet-bulb heat index breaches 38°C in your operational ward, smart escrow transfers trigger automatically to your verified VPA.
+        </p>
+</div>
+</div>
+</div>
+<!-- Inline Modal Overlay for Legal/Privacy Review -->
+<div class="fixed inset-0 z-50 hidden bg-inverse-surface/60 backdrop-blur-sm flex items-center justify-center p-4" id="legal-modal">
+<div class="bg-surface-container-lowest max-w-xl w-full rounded-xl shadow-2xl border border-outline-variant flex flex-col max-h-[85vh] overflow-hidden">
+<div class="p-4 border-b border-outline-variant/30 flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface" id="modal-title">Legal Telemetry Terms</h3>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded focus:outline-none" onclick="closeModal()" type="button">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6 overflow-y-auto font-body-md text-body-md text-on-surface-variant space-y-4" id="modal-content">
+<!-- Injected via JavaScript -->
+</div>
+<div class="p-4 bg-surface-container-low border-t border-outline-variant/30 flex justify-end">
+<button class="h-9 px-4 rounded bg-primary text-on-primary font-label-md text-label-md" onclick="closeModal()" type="button">
+          Acknowledge &amp; Return
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function updatePlatformSelection(radioInput) {
+    document.querySelectorAll('.platform-option').forEach(label => {
+      const radio = label.querySelector('input[type="radio"]');
+      const icon = label.querySelector('.check-indicator');
+      if (radio.checked) {
+        icon.innerText = 'check_circle';
+        icon.classList.remove('text-on-surface-variant/40');
+        icon.classList.add('text-primary');
+      } else {
+        icon.innerText = 'radio_button_unchecked';
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-on-surface-variant/40');
+      }
+    });
+  }
+
+  function togglePasswordVisibility() {
+    const input = document.getElementById('password');
+    const icon = document.getElementById('eye-icon');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.innerText = 'visibility_off';
+    } else {
+      input.type = 'password';
+      icon.innerText = 'visibility';
+    }
+  }
+
+  function evaluatePassword(val) {
+    const charCount = document.getElementById('char-count');
+    const label = document.getElementById('strength-label');
+    const bar1 = document.getElementById('bar-1');
+    const bar2 = document.getElementById('bar-2');
+    const bar3 = document.getElementById('bar-3');
+    const ruleLen = document.getElementById('rule-length');
+    const ruleComp = document.getElementById('rule-complexity');
+
+    charCount.innerText = `${val.length} / 12 min`;
+
+    const hasLength = val.length >= 12;
+    const hasComplexity = /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val);
+
+    if (hasLength) {
+      charCount.classList.add('text-primary');
+      ruleLen.classList.add('text-primary');
+      ruleLen.querySelector('.material-symbols-outlined').innerText = 'check_circle';
+    } else {
+      charCount.classList.remove('text-primary');
+      ruleLen.classList.remove('text-primary');
+      ruleLen.querySelector('.material-symbols-outlined').innerText = 'circle';
+    }
+
+    if (hasComplexity) {
+      ruleComp.classList.add('text-primary');
+      ruleComp.querySelector('.material-symbols-outlined').innerText = 'check_circle';
+    } else {
+      ruleComp.classList.remove('text-primary');
+      ruleComp.querySelector('.material-symbols-outlined').innerText = 'circle';
+    }
+
+    // Reset bars
+    bar1.className = 'h-full w-1/3 bg-outline-variant/40 transition-all duration-300';
+    bar2.className = 'h-full w-1/3 bg-outline-variant/40 transition-all duration-300';
+    bar3.className = 'h-full w-1/3 bg-outline-variant/40 transition-all duration-300';
+
+    if (val.length === 0) {
+      label.innerText = 'None';
+      label.className = 'font-mono-data font-semibold text-secondary';
+      return;
+    }
+
+    let strength = 0;
+    if (val.length >= 8) strength++;
+    if (hasLength) strength++;
+    if (hasComplexity) strength++;
+
+    if (strength === 1) {
+      label.innerText = 'Weak';
+      label.className = 'font-mono-data font-semibold text-error';
+      bar1.classList.remove('bg-outline-variant/40');
+      bar1.classList.add('bg-error');
+    } else if (strength === 2) {
+      label.innerText = 'Medium';
+      label.className = 'font-mono-data font-semibold text-amber-600';
+      bar1.classList.remove('bg-outline-variant/40');
+      bar1.classList.add('bg-amber-500');
+      bar2.classList.remove('bg-outline-variant/40');
+      bar2.classList.add('bg-amber-500');
+    } else if (strength >= 3) {
+      label.innerText = 'Strong';
+      label.className = 'font-mono-data font-semibold text-emerald-600';
+      bar1.classList.remove('bg-outline-variant/40');
+      bar1.classList.add('bg-emerald-600');
+      bar2.classList.remove('bg-outline-variant/40');
+      bar2.classList.add('bg-emerald-600');
+      bar3.classList.remove('bg-outline-variant/40');
+      bar3.classList.add('bg-emerald-600');
+    }
+  }
+
+  function openModal(type) {
+    const modal = document.getElementById('legal-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+
+    if (type === 'terms') {
+      title.innerText = 'Parametric Terms of Coverage';
+      content.innerHTML = `
+        <p><strong>1. Automated Execution:</strong> All claim indemnification events are triggered strictly by objective, third-party oracle telemetry feeds (IMD, Open-Meteo, municipal water sensor relays). No manual subjective adjudication is performed.</p>
+        <p><strong>2. Synthetic Data Protocol:</strong> During the platform evaluation preview, all financial payouts are executed across simulated UPI sandbox rails.</p>
+        <p><strong>3. Rider Attestation:</strong> Accounts must maintain minimum active hours within verified geofenced delivery zones to maintain active claim eligibility.</p>
+      `;
+    } else {
+      title.innerText = 'Algorithmic Telemetry Privacy Notice';
+      content.innerHTML = `
+        <p><strong>1. Telemetry Aggregation:</strong> ParaShield periodically samples your operational shift status and general delivery cluster. Individual precision location history is scrubbed after trigger processing.</p>
+        <p><strong>2. Zero Personally Identifiable Data Reselling:</strong> Platform telemetry is processed strictly for the calculation of parametric risk coefficients and direct income protection settlements.</p>
+      `;
+    }
+    modal.classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('legal-modal').classList.add('hidden');
+  }
+</script></main><div class="py-space-md px-space-lg text-center text-on-surface-variant font-body-sm">© 2025 ParaShield Parametric Risk Infrastructure. Authorized personnel only.</div></body></html>
