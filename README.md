@@ -1,5 +1,34 @@
 # ZyroSafe: AI-Powered Parametric Insurance for India's Gig Workers
 
+## ParaShield DRUNIX network
+
+The ParaShield enrollment smoke test uses the upstream two-organization DRUNIX
+sample on channel `parashield`. Its identities and enrollment data are
+**SIMULATED**. The web app described below is still the ZyroSafe prototype
+and uses localStorage for insurance records.
+
+Prerequisites are Docker with Compose, Git, Make, Go 1.26.1 or later, and jq.
+The sample was tested from DRUNIX source revision
+`8090e0ce58802c8a0f13d23a6abe5a2d35456cc5`. Run the commands from ParaShield's
+repository root. Use a dedicated Docker environment because the upstream test
+network uses fixed resource names and its cleanup removes sample chaincode
+containers and images.
+
+```bash
+runtime_parent=$(mktemp -d /tmp/parashield-drunix.XXXXXX)
+git clone --no-hardlinks "$HOME/drunix" "$runtime_parent/drunix"
+export DRUNIX_RUNTIME="$runtime_parent/drunix"
+git -C "$DRUNIX_RUNTIME" checkout --detach 8090e0ce58802c8a0f13d23a6abe5a2d35456cc5
+(cd "$DRUNIX_RUNTIME" && make peer orderer configtxgen configtxlator osnadmin cryptogen discover ledgerutil)
+scripts/network-up.sh
+scripts/deploy-chaincode.sh
+scripts/smoke-test.sh
+```
+
+Use `scripts/network-down.sh` with the same `DRUNIX_RUNTIME` to tear down the
+sample and its ledger volumes. Start from a clean sample to deploy changed
+chaincode. [Phase status and topology gaps](PROGRESS.md).
+
 Guidewire DEVTrails 2026 submission project focused on protecting delivery partners from income loss caused by external disruptions.
 
 ## Problem Statement Alignment
