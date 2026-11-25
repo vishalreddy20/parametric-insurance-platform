@@ -12,7 +12,10 @@ export interface Account {
   createdAt: number;
 }
 
+export type AccountSummary = Pick<Account, 'id' | 'username' | 'role' | 'platformId'>;
+
 export interface AccountRepository {
+  listAccounts(after: string, platformId?: NonNullable<Account['platformId']>): Promise<AccountSummary[]>;
   insert(account: Account): Promise<boolean>;
   registration(key: string): Promise<{ fingerprint: string; passwordHash: string } | undefined>;
   register(account: Account, key: string, fingerprint: string): Promise<'created' | 'replay' | 'conflict'>;
@@ -189,6 +192,13 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
     this.database.prepare(`INSERT INTO worker_onboarding (accountId, txId, blockNumber) VALUES (?, ?, ?)
       ON CONFLICT(accountId) DO UPDATE SET draft = NULL, txId = excluded.txId, blockNumber = excluded.blockNumber
       WHERE worker_onboarding.txId IS NULL`).run(accountId, txId, blockNumber);
+  }
+
+  async listAccounts(after: string, platformId?: NonNullable<Account['platformId']>): Promise<AccountSummary[]> {
+    if (platformId) return this.database.prepare(`SELECT id, username, role, platformId FROM accounts
+      WHERE id > ? AND role = 'worker' AND platformId = ? ORDER BY id LIMIT 51`).all(after, platformId) as AccountSummary[];
+    return this.database.prepare(`SELECT id, username, role, platformId FROM accounts
+      WHERE id > ? ORDER BY id LIMIT 51`).all(after) as AccountSummary[];
   }
 
   async findByUsername(username: string): Promise<Account | undefined> {

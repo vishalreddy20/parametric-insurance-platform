@@ -72,6 +72,9 @@ export function ledgerProvider(base: string): DataProvider {
   }
 
   return {
+    directory: (session, after) => request('/auth/directory' + (after ? '?after=' + encodeURIComponent(after) : ''), session),
+    provisionStaff: (session, account) => request('/auth/admin/provision', session, account),
+    revokeAccount: (session, accountId) => request('/auth/admin/revoke', session, { accountId }),
     async signIn(username, password, mfa): Promise<SignInResult> {
       const result = await request<Exclude<SignInResult, { status: 'signed-in' }> |
         (Session & { csrfToken: string; recoveryCodes: string[] })>('/auth/login', undefined, { username, password, mfa });

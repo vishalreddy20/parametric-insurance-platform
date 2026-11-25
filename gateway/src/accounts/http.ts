@@ -164,6 +164,46 @@ export class AccountHttp {
   }
 
   mount(app: Express): void {
+    const page = z.strictObject({ after: z.uuid().optional() });
+    const forbidden = () => new ApiError('ERR_UNAUTHORIZED', 403, 'This account cannot perform the operation.');
+    app.get('/v1/auth/directory', async (request, response) => {
+      const { account } = await this.current(request);
+      if (account.role !== 'admin' && account.role !== 'platform') throw forbidden();
+      if (account.role === 'platform' && !account.platformId) throw forbidden();
+      const { after } = parse(page, request.query);
+      const records = await this.options.store.listAccounts(after ?? '', account.platformId ?? undefined);
+      response.json({ records: records.slice(0, 50), next: records.length > 50 ? records[49].id : null });
+    });
+    app.post('/v1/auth/admin/provision', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      if (account.role !== 'admin') throw forbidden();
+      this.attempts.hit('provision:' + account.id, 10, 60_000, response);
+      const body = parse(z.strictObject({
+        username, password: z.string().min(1).max(256),
+        role: z.enum(['platform', 'insurer', 'regulator', 'admin']),
+        platformId: z.enum(['zomato', 'swiggy']).nullable(),
+      }).refine(({ role, platformId }) => (role === 'platform') === (platformId !== null)), request.body);
+      const problem = passwordError(body.password, [body.username]);
+      if (problem) throw new ApiError('ERR_PASSWORD_POLICY', 400, problem);
+      const passwordHash = await this.options.hasher.hash(body.password);
+      const { role, platformId, username: name } = body;
+      if (!await this.options.store.insert({ id: randomUUID(), username: name, role, platformId, passwordHash, createdAt: Date.now() })) {
+        throw new ApiError('ERR_REGISTRATION', 409, 'Could not provision the account. Check that the username is available.');
+      }
+      response.sendStatus(201);
+    });
+    app.post('/v1/auth/admin/revoke', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      if (account.role !== 'admin') throw forbidden();
+      const { accountId } = parse(z.strictObject({ accountId: z.uuid() }), request.body);
+      if (accountId === account.id) throw new ApiError('ERR_VALIDATION', 400, 'Use Account security to end your own sessions.');
+      await this.options.sessions.revoke(accountId);
+      response.sendStatus(204);
+    });
     app.get('/v1/auth/csrf', (request, response) => {
       if (!(request.get('origin') === undefined && request.get('sec-fetch-site') === 'same-origin')) this.origin(request);
       const existing = cookies(request).get('ps_csrf');

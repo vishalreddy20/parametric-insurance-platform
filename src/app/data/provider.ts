@@ -112,7 +112,23 @@ export interface OnboardingDraft {
 
 export interface EnrollmentConfirmation { txId: string; blockNumber: string }
 
+export interface DirectoryAccount {
+  id: string;
+  username: string;
+  role: Session['role'];
+  platformId: Session['platformId'];
+}
+export interface StaffAccount {
+  username: string;
+  password: string;
+  role: Exclude<Session['role'], 'worker'>;
+  platformId: 'zomato' | 'swiggy' | null;
+}
+
 export interface DataProvider {
+  directory(session: Session, after?: string): Promise<{ records: DirectoryAccount[]; next: string | null }>;
+  provisionStaff(session: Session, account: StaffAccount): Promise<void>;
+  revokeAccount(session: Session, accountId: string): Promise<void>;
   signIn(username: string, password: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
   currentSession(): Promise<Session>;
   signOut(session: Session, everywhere?: boolean): Promise<void>;

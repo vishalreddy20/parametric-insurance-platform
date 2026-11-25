@@ -16,6 +16,7 @@ const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((modul
 const InsurerConsole = lazy(() => import('./pages/InsurerConsole').then((module) => ({ default: module.InsurerConsole })));
 const SurgeResults = lazy(() => import('./pages/SurgeResults').then((module) => ({ default: module.SurgeResults })));
 const RegulatorAudit = lazy(() => import('./pages/RegulatorAudit').then((module) => ({ default: module.RegulatorAudit })));
+const StaffDirectory = lazy(() => import('./pages/StaffDirectory').then((module) => ({ default: module.StaffDirectory })));
 const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
 const workspaces = {
   worker: { path: '/worker', label: 'Worker workspace' },
@@ -209,11 +210,20 @@ function AppViews() {
         <RegulatorAudit provider={provider} session={session} onExpired={sessionEnded} />
       </div>
     </AccountFrame>;
+    if (targetRole === 'admin' || targetRole === 'platform') return <AccountFrame session={session} onSignOut={logout} variant="workspace">
+      {message && <p role="alert">{message}</p>}
+      <div className="account-workspace insurer-workspace">
+        <aside className="account-sidebar"><nav aria-label={workspaces[targetRole].label}>
+          <Link to={workspaces[targetRole].path} aria-current="page"><LayoutGrid size={18} aria-hidden="true" /> {workspaces[targetRole].label}</Link>
+        </nav></aside>
+        <StaffDirectory provider={provider} session={session} onExpired={sessionEnded} />
+      </div>
+    </AccountFrame>;
   }
 
   if (session && protectedPage) return <AccountFrame session={session} onSignOut={logout} variant="workspace">
     <AccountWorkspace session={session} message={message} security={pathname === '/account/security'}
-      onExpired={sessionEnded} onSignedOut={signedOut} workspace={accountPage && !['admin', 'platform'].includes(session.role)
+      onExpired={sessionEnded} onSignedOut={signedOut} workspace={accountPage
       ? workspaces[session.role] : undefined} />
   </AccountFrame>;
 

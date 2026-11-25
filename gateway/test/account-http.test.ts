@@ -120,6 +120,38 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal(workerLogin.status, 200);
   const session = await workerLogin.json();
   assert.equal(session.role, 'worker');
+  const directoryPassword = await hasher.hash(password);
+  for (const [name, role, platformId] of [
+    ['platform-z', 'platform', 'zomato'],
+    ['other-worker', 'worker', 'swiggy'],
+    ['admin-z', 'admin', null],
+  ] as const) {
+    assert(await store.insert({ id: randomUUID(), username: name, role, platformId, passwordHash: directoryPassword, createdAt: Date.now() }));
+  }
+  const staffBrowser = async (name: string) => {
+    const client = browser();
+    await client.send('/auth/csrf');
+    const creds = { username: name, password };
+    const setup = await client.send('/auth/login', creds);
+    assert.equal(setup.status, 202);
+    const { setupKey } = await setup.json();
+    assert.equal((await client.send('/auth/login', { ...creds,
+      mfa: { recovery: false, code: authenticatorCode(setupKey, now) } })).status, 200);
+    return client;
+  };
+  const platform = await staffBrowser('platform-z');
+  const admin = await staffBrowser('admin-z');
+  assert.equal((await worker.send('/auth/directory')).status, 403);
+  const scoped = await (await platform.send('/auth/directory')).json();
+  assert.deepEqual(scoped.records, [{ id: session.workerId, username: credentials.username, role: 'worker', platformId: 'zomato' }]);
+  const provision = { username: 'new-regulator', password, role: 'regulator', platformId: null };
+  assert.equal((await platform.send('/auth/admin/provision', provision)).status, 403);
+  assert.equal((await admin.send('/auth/admin/provision', provision, false)).status, 403);
+  assert.equal((await admin.send('/auth/admin/provision', { ...provision, role: 'worker' })).status, 400);
+  assert.equal((await admin.send('/auth/admin/provision', provision)).status, 201);
+  const directory = await (await admin.send('/auth/directory')).json();
+  assert(directory.records.some((entry: { username: string }) => entry.username === provision.username));
+  assert(directory.records.every((entry: Record<string, unknown>) => !('passwordHash' in entry)));
   const draft = { step: 1, name: 'Test Worker', phone: '9876543210', upi: 'testing@sample',
     zone: 'mumbai', income: '5000', hours: '40', tier: 'standard' };
   assert.equal((await recover.send('/auth/onboarding')).status, 403);
