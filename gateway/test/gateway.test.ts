@@ -1,0 +1,122 @@
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { test } from 'node:test';
+import { CommitError, StatusCode } from '@hyperledger/fabric-gateway';
+import { createApp } from '../src/app.js';
+import { DemoAuth } from '../src/auth.js';
+import { ApiError, ledgerFailure, retry } from '../src/errors.js';
+import { retryableLedgerError, type Ledger, type Options } from '../src/ledger.js';
+import { Checkpoints, Fanout } from '../src/worker.js';
+
+test('retry is capped and delays use jitter, validation does not retry', async () => {
+  let calls = 0;
+  const waits: number[] = [];
+  const value = await retry(async () => {
+    if (++calls < 4) throw new Error('temporary');
+    return 'done';
+  }, () => true, () => {}, async (ms) => { waits.push(ms); }, () => 1);
+  assert.equal(value, 'done');
+  assert.deepEqual(waits, [150, 300, 600]);
+  await assert.rejects(retry(async () => {
+    throw new ApiError('ERR_VALIDATION', 400, 'invalid');
+  }, retryableLedgerError, () => assert.fail('validation was retried')));
+  const mvcc = new CommitError({ code: StatusCode.MVCC_READ_CONFLICT, transactionId: 'tx' });
+  assert(retryableLedgerError(mvcc));
+  assert.equal(ledgerFailure(new Error('ERR_VALIDATION: private input')).message, 'The ledger rejected the input.');
+});
+
+test('HTTP routes enforce worker ownership, schema validation and role scope', async (context) => {
+  const calls: { actor: string; name: string }[] = [];
+  const ledger: Ledger = {
+    async evaluate<T>(actor: string, name: string) {
+      calls.push({ actor, name });
+      return { id: 'worker-a', terms: { workerId: 'worker-a' } } as T;
+    },
+    async submit<T>(actor: string, name: string, options?: Options) {
+      calls.push({ actor, name });
+      assert(!JSON.stringify(options?.arguments).includes('SYNTHETIC PHONE'));
+      assert(Buffer.from(options?.transientData?.workerPII ?? []).toString().includes('SYNTHETIC PHONE'));
+      return { result: { id: 'worker-a' } as T, txId: 'tx', blockNumber: '2' };
+    },
+  };
+  const accessCode = 'test-only-access-code';
+  const auth = new DemoAuth([{ username: 'worker-a', role: 'worker', actor: 'platform-a', workerId: 'worker-a',
+    policyId: 'worker-a', platformId: 'zomato', accessCode }], Buffer.alloc(32, 1));
+  const logs: Record<string, unknown>[] = [];
+  const server = createApp({ ledger, auth, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
+    settlementEnabled: false, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
+  context.after(() => { server.close(); });
+  await once(server, 'listening');
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  const base = 'http://127.0.0.1:' + address.port;
+  const post = (token?: string, payload?: unknown) => ({
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: 'Bearer ' + token }) },
+    body: JSON.stringify(payload ?? {}),
+  });
+  const login = await fetch(base + '/v1/login', post(undefined, { username: 'worker-a', accessCode }));
+  assert.equal(login.status, 200);
+  const { token } = await login.json();
+  assert.equal((await fetch(base + '/v1/readings', post(token))).status, 403);
+  assert.equal((await fetch(base + '/v1/policies/other', { headers: { Authorization: 'Bearer ' + token } })).status, 403);
+  const invalid = await fetch(base + '/v1/policies', post(token, { policyId: 'other' }));
+  assert.equal(invalid.status, 400);
+  const error = await invalid.json();
+  assert.deepEqual(Object.keys(error).sort(), ['code', 'message', 'requestId']);
+  assert.equal(error.requestId, invalid.headers.get('x-request-id'));
+  const response = await fetch(base + '/v1/policies', post(token, {
+    policyId: 'worker-a', workerId: 'worker-a', zone: 'mumbai', tier: 'standard',
+    weeklyIncomePaise: 300000, weeklyMinutes: 2400, premiumPaise: 18000,
+    worker: { phone: 'SYNTHETIC PHONE', identity: 'SIMULATED', bank: 'SIMULATED' },
+  }));
+  assert.equal(response.status, 201);
+  assert.deepEqual(calls, [{ actor: 'platform-a', name: 'PolicyContract:CreatePolicy' }]);
+  assert(!JSON.stringify(logs).includes('SYNTHETIC PHONE'));
+  assert(!JSON.stringify(logs).includes(accessCode));
+});
+
+test('restart replays unfinished fan-out and resumes the saved page', async (context) => {
+  const directory = await mkdtemp(join(tmpdir(), 'gateway-checkpoint-'));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const job = { kind: 'fanout' as const, key: 'mumbai|severe_storm|1763985600', zone: 'mumbai', notBefore: 1, bookmark: '' };
+  let state = await Checkpoints.open(directory);
+  await state.enqueue(job);
+  const cursors: string[] = [];
+  const finished = new Set<string>();
+  let failOnce = true;
+  let active = 0;
+  let peak = 0;
+  const ledger: Ledger = {
+    async evaluate<T>(_actor: string, _name: string, args?: string[]) {
+      const bookmark = args?.at(-1) ?? '';
+      cursors.push(bookmark);
+      return (bookmark ? { policies: [{ id: '9' }], bookmark: '' }
+        : { policies: Array.from({ length: 9 }, (_, i) => ({ id: String(i) })), bookmark: 'next' }) as T;
+    },
+    async submit<T>(_actor: string, _name: string, options?: Options) {
+      active++;
+      peak = Math.max(peak, active);
+      try {
+        const id = options?.arguments?.[1] ?? '';
+        await new Promise((resolve) => setImmediate(resolve));
+        if (id === '3' && failOnce) { failOnce = false; throw new Error('simulated crash'); }
+        finished.add(id);
+        return { result: {} as T, txId: 'tx', blockNumber: '5' };
+      } finally { active--; }
+    },
+  };
+  let worker = new Fanout(ledger, 'insurer', state, undefined, () => {});
+  await assert.rejects(worker.process(job));
+  state = await Checkpoints.open(directory);
+  worker = new Fanout(ledger, 'insurer', state, undefined, () => {});
+  for await (const pending of state.pending()) await worker.process(pending);
+  for await (const pending of state.pending()) await worker.process(pending);
+  for await (const _pending of state.pending()) assert.fail('job was not marked complete');
+  assert.deepEqual(cursors, ['', '', 'next']);
+  assert.equal(finished.size, 10);
+  assert.equal(peak, 5);
+});

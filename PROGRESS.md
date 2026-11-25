@@ -22,3 +22,10 @@
 - Added paginated composite-key queries for event, policy, payout and reconciliation reads. Settlement failures release the reserved cap. Event and payout declarations include the originating transaction ID. The sample chaincode definition still uses both sample MSPs.
 - `cd chaincode && go vet ./... && go test ./... -cover` passed with 83.4% statement coverage. `npm test` passed all 13 tests from a temporary snapshot without a local environment file, including nine shared Go and TypeScript compensation vectors.
 - Mock tests cover contract behavior, serialization metadata registration and idempotency. Concurrent MVCC outcomes, private data propagation, role certificates and live state-database pagination await end-to-end verification against the gateway and running DRUNIX topology.
+
+## Phase 3 — Verified on DRUNIX
+
+- Added the Node 20 REST gateway using the Fabric Gateway SDK, certificate-attributed role identities, scoped demo JWTs, Zod validation, redacted structured logs, and bounded MVCC/endorsement retries. Submitted transactions wait for commit status and return transaction and block identifiers.
+- Added a persistent event cursor and batched, five-concurrent policy fan-out. Settlement jobs remain queued when mock UPI is disabled. Gateway proposal traffic uses the Lite Peers; committed events stream from a Committing Peer. The initial Lite Peer stream did not deliver the declared event, while the Committing Peer stream passed.
+- `npm --prefix gateway test` passed all 3 tests, including replay after a failed page. `DRUNIX_RUNTIME=... scripts/gateway-integration.sh` passed against chaincode 2.0 with authenticated enrollment, replay, premium, activity, pagination, role denial, two signed quorum readings and durable event intake.
+- The committed payout path was exercised in Go stub tests. The live integration queued a declared event but did not wait for the event window to close or settle a live payout. Demo role certificates are issued by the sample CAs and occupy the sample's two MSPs.

@@ -59,3 +59,18 @@ write. Phase 2 authorizes contract operations through certificate attributes
 (`role`, `platformId`, and `oracleId`). Only the fixed simulated enrollment
 fixture retains the two-MSP administrative smoke path. No separate bank or oracle
 MSP endorsement policy has been verified on the two-org sample.
+
+## Use the Fabric Gateway SDK and local durable checkpoints
+
+The API sends evaluated and submitted proposals to the DRUNIX Lite Peer
+endpoints. Event consumption uses the Committing Peer endpoint, where the
+sample stores committed blocks. The worker persists its event cursor only
+after writing a durable job. It checkpoints fan-out after a full page, so
+a restart can replay a partial page and rely on ledger idempotency. Each
+gateway instance requires its own persistent state directory.
+
+The demo identity utility issues role-attribute certificates under the
+ephemeral cryptogen sample CAs. Its credentials and manifest live outside
+the source tree. Workers authenticate to the gateway and use a platform
+actor behind it. Using production identities would require managed CAs,
+organizational onboarding and credential rotation.

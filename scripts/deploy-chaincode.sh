@@ -3,8 +3,9 @@ set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/drunix-env.sh"
 
 channel_joined || fail 'Run scripts/network-up.sh before deploying.'
-if committed >/dev/null 2>&1; then
-  printf '%s\n' 'parashield is already committed. Use a clean sample network to deploy changed source.'
+version=2.0
+if committed 2>/dev/null | jq -e --arg version "$version" '.version == $version' >/dev/null; then
+  printf '%s\n' "parashield $version is already committed."
   exit 0
 fi
 
@@ -21,7 +22,7 @@ for image in npcioss/drunix-ccenv:1.0 npcioss/drunix-baseos:1.0; do
 done
 
 ./network.sh deployCC -c "$channel" -ccn "$chaincode" -ccp "$build_dir/source" \
-  -ccl go -ccv 1.0 -ccep "AND('Org1MSP.peer','Org2MSP.peer')" \
+  -ccl go -ccv "$version" -ccep "AND('Org1MSP.peer','Org2MSP.peer')" \
   -cccg "$build_dir/collections.json" ||
     fail 'DRUNIX chaincode lifecycle deployment failed.'
-committed >/dev/null || fail 'The parashield chaincode definition was not found after deployment.'
+committed | jq -e --arg version "$version" '.version == $version' >/dev/null || fail 'The parashield chaincode definition was not found after deployment.'
