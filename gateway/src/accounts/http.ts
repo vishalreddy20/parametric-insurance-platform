@@ -1,11 +1,11 @@
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { Express, Request, Response } from 'express';
 import { z } from 'zod';
 import type { Principal } from '../auth.js';
 import { ApiError } from '../errors.js';
 import { Mfa } from './mfa.js';
 import { PasswordHasher, passwordError } from './password.js';
-import { SqliteAccounts, type Account } from './repository.js';
+import { type AccountRepository, type Account } from './repository.js';
 import { Sessions } from './sessions.js';
 
 const username = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$/);
@@ -17,6 +17,7 @@ const registration = z.strictObject({
   username, accessCode: z.string().min(1).max(256),
   platformId: z.enum(['zomato', 'swiggy']),
 });
+const idempotencyKey = z.uuid();
 const empty = z.strictObject({});
 const invalid = () => new ApiError('ERR_AUTHENTICATION', 401, 'Sign-in could not be completed.');
 const validCsrf = /^[A-Za-z0-9_-]{43}$/;
@@ -41,7 +42,8 @@ function parse<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 type Options = {
-  store: SqliteAccounts;
+  store: AccountRepository;
+  requestKey: Uint8Array;
   hasher: PasswordHasher;
   mfa: Mfa;
   sessions: Sessions;
@@ -51,23 +53,23 @@ type Options = {
 class Attempts {
   private readonly windows = new Map<string, { count: number; expiry: number }>();
 
-  hit(key: string, max: number, windowMs: number) {
+  hit(key: string, max: number, windowMs: number, response: Response) {
     const now = Date.now();
     if (this.windows.size >= 10_000) {
       for (const [entry, window] of this.windows) if (window.expiry <= now) this.windows.delete(entry);
-      if (this.windows.size >= 10_000 && !this.windows.has(key)) this.reject(windowMs);
+      if (this.windows.size >= 10_000 && !this.windows.has(key)) this.reject(windowMs, response);
     }
     const existing = this.windows.get(key);
     const window = existing && existing.expiry > now ? existing : { count: 0, expiry: now + windowMs };
-    if (window.count >= max) this.reject(window.expiry - now);
+    if (window.count >= max) this.reject(window.expiry - now, response);
     window.count++;
     this.windows.set(key, window);
   }
 
-  clear(key: string) { this.windows.delete(key); }
-
-  private reject(wait: number): never {
-    throw new ApiError('ERR_RATE_LIMIT', 429, 'Too many attempts. Try again in ' + Math.ceil(wait / 1000) + ' seconds.');
+  private reject(wait: number, response: Response): never {
+    const seconds = Math.ceil(wait / 1000);
+    response.set('Retry-After', String(seconds));
+    throw new ApiError('ERR_RATE_LIMIT', 429, 'Too many requests. Try again in ' + seconds + ' seconds.');
   }
 }
 
@@ -141,24 +143,50 @@ export class AccountHttp {
     });
     app.post('/v1/auth/register', async (request, response) => {
       this.csrf(request);
-      this.attempts.hit('register:' + request.ip, 5, 15 * 60_000);
+      const key = parse(idempotencyKey, request.get('idempotency-key'));
       const body = parse(registration, request.body);
+      const fingerprint = createHmac('sha256', this.options.requestKey)
+        .update(JSON.stringify(['registration', key, body.username.toLowerCase(), body.platformId]))
+        .digest('hex');
+      const conflict = () => new ApiError('ERR_REGISTRATION', 409, 'Registration could not be completed.');
+      const replay = async (existing: NonNullable<Awaited<ReturnType<AccountRepository['registration']>>>) => {
+        const matches = await this.options.hasher.verify(body.accessCode, existing.passwordHash);
+        if (!matches || !timingSafeEqual(Buffer.from(existing.fingerprint), Buffer.from(fingerprint))) throw conflict();
+      };
+      const existing = await this.options.store.registration(key);
+      if (existing) {
+        this.attempts.hit('register-retry:' + request.ip, 30, 60_000, response);
+        await replay(existing);
+        response.sendStatus(201);
+        return;
+      }
+      this.attempts.hit('register:' + request.ip, 5, 15 * 60_000, response);
       const problem = passwordError(body.accessCode, [body.username]);
       if (problem) throw new ApiError('ERR_ACCESS_CODE_POLICY', 400, problem);
       const passwordHash = await this.options.hasher.hash(body.accessCode);
-      const inserted = await this.options.store.insert({
+      const inserted = await this.options.store.register({
         id: randomUUID(), username: body.username, role: 'worker', platformId: body.platformId,
         passwordHash, createdAt: Date.now(),
-      });
-      if (!inserted) throw new ApiError('ERR_REGISTRATION', 409, 'Registration could not be completed.');
+      }, key, fingerprint);
+      if (inserted === 'conflict') throw conflict();
+      if (inserted === 'replay') {
+        const committed = await this.options.store.registration(key);
+        if (!committed) throw conflict();
+        await replay(committed);
+      }
       response.sendStatus(201);
     });
     app.post('/v1/auth/login', async (request, response) => {
       this.csrf(request);
       const body = parse(loginBody, request.body);
-      this.attempts.hit('login:' + request.ip, 30, 60_000);
-      const key = createHash('sha256').update(body.username.toLowerCase()).digest('hex');
-      this.attempts.hit('account:' + key, 8, 15 * 60_000);
+      this.attempts.hit('login:' + request.ip, 30, 60_000, response);
+      const key = createHmac('sha256', this.options.requestKey).update('login:' + body.username.toLowerCase()).digest('hex');
+      const wait = await this.options.store.reserveLoginAttempt(key, Date.now(), 8, 15 * 60_000);
+      if (wait > 0) {
+        const seconds = Math.ceil(wait / 1000);
+        response.set('Retry-After', String(seconds));
+        throw new ApiError('ERR_ACCOUNT_LOCKED', 423, 'Sign-in is temporarily locked. Try again in ' + seconds + ' seconds.');
+      }
       const account = await this.options.store.findByUsername(body.username);
       const matches = await this.options.hasher.verify(body.accessCode, account?.passwordHash);
       if (!matches || !account) throw invalid();
@@ -168,15 +196,22 @@ export class AccountHttp {
         response.status(202).json(result);
         return;
       }
-      this.attempts.clear('account:' + key);
+      await this.options.store.clearLoginAttempts(key);
       const session = await this.options.sessions.start(account.id);
       this.setTokens(response, session.access, session.refresh);
       this.setCookie(response, 'ps_csrf', session.csrf, 8 * 60 * 60_000);
       response.json({ ...this.publicAccount(account), csrfToken: session.csrf, recoveryCodes: result.recoveryCodes ?? [] });
     });
     app.get('/v1/auth/session', async (request, response) => {
-      const { account } = await this.current(request);
-      response.json(this.publicAccount(account));
+      try {
+        const { account } = await this.current(request);
+        response.json(this.publicAccount(account));
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401 && cookies(request).get('ps_refresh')) {
+          throw new ApiError('ERR_SESSION_EXPIRED', 401, 'Your session expired. Sign in again.');
+        }
+        throw error;
+      }
     });
     app.post('/v1/auth/refresh', async (request, response) => {
       const csrf = this.csrf(request);

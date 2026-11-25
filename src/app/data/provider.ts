@@ -6,6 +6,7 @@ export type PayoutStatus = 'RESERVED' | 'SETTLED' | 'FAILED';
 export type SimulationMode = 'normal' | 'offline' | 'disagree';
 
 export interface Session {
+  username: string;
   role: 'worker' | 'platform' | 'insurer' | 'admin' | 'regulator';
   policyId?: string;
   workerId?: string;
@@ -90,7 +91,7 @@ export interface DataProvider {
   signIn(username: string, accessCode: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
   currentSession(): Promise<Session>;
   signOut(session: Session): Promise<void>;
-  register(username: string, accessCode: string, platformId: 'zomato' | 'swiggy'): Promise<void>;
+  register(username: string, accessCode: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
   policy(session: Session): Promise<Policy | null>;
   enroll(session: Session, terms: Enroll): Promise<Policy>;
   payPremium(session: Session): Promise<{ status: 'PAID' | 'FAILED'; callbackStatus: string }>;

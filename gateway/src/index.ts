@@ -78,7 +78,8 @@ async function main() {
       const hasher = await PasswordHasher.create(pepper ? Buffer.from(pepper, 'hex') : undefined);
       const encryptionKey = createHmac('sha256', Buffer.from(settings.PARASHIELD_JWT_KEY, 'hex')).update('account-mfa-v1').digest();
       accountStore = new SqliteAccounts(settings.PARASHIELD_ACCOUNT_DB ?? join(settings.PARASHIELD_GATEWAY_STATE_DIR, 'accounts.sqlite'));
-      accounts = new AccountHttp({ origin: settings.PARASHIELD_ORIGIN, store: accountStore, hasher,
+      const requestKey = createHmac('sha256', Buffer.from(settings.PARASHIELD_JWT_KEY, 'hex')).update('account-request-v1').digest();
+      accounts = new AccountHttp({ origin: settings.PARASHIELD_ORIGIN, store: accountStore, hasher, requestKey,
         mfa: new Mfa(accountStore, encryptionKey), sessions: new Sessions(accountStore) });
     }
   } catch (error) {

@@ -1,12 +1,13 @@
-import { useRef, useState, type FormEvent } from 'react';
-import type { DataProvider, Session, SignInResult } from '../data/provider';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
+import { DataError, type DataProvider, type SignInResult } from '../data/provider';
 import { readableError } from '../data/use-resource';
 
-export function AuthPage({ provider, onSuccess, onBack, message, createAccount }: {
-  provider: DataProvider; onSuccess: (session: Session) => void; onBack: () => void; message: string; createAccount: boolean;
+export function AuthPage({ provider, onSuccess, onRegistered, message, createAccount: register, registered, initialUsername }: {
+  provider: DataProvider; onSuccess: () => Promise<void>; onRegistered: (username: string) => void;
+  message: string; createAccount: boolean; registered: boolean; initialUsername: string;
 }) {
-  const [register, setRegister] = useState(createAccount);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(initialUsername);
   const [platform, setPlatform] = useState<'zomato' | 'swiggy'>('zomato');
   const [code, setCode] = useState('');
   const [showCode, setShowCode] = useState(false);
@@ -14,24 +15,41 @@ export function AuthPage({ provider, onSuccess, onBack, message, createAccount }
   const [mfaCode, setMfaCode] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
   const [pendingSession, setPendingSession] = useState<Extract<SignInResult, { status: 'signed-in' }>>();
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState(message);
+  const [error, setError] = useState<{ heading: string; message: string }>();
+  const [notice, setNotice] = useState(registered ? 'Account created. Sign in to continue.' : message);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
   const [loading, setLoading] = useState(false);
   const busy = useRef(false);
+  const registrationKey = useRef<string>();
+  const resetKey = () => { registrationKey.current = undefined; };
+
+  function showError(failure: unknown) {
+    const titles: Record<string, string> = {
+      ERR_ACCOUNT_LOCKED: 'Sign-in temporarily locked',
+      ERR_RATE_LIMIT: 'Too many requests',
+      ERR_OFFLINE: 'Gateway unreachable',
+      ERR_SESSION_EXPIRED: 'Session expired',
+      ERR_AUTHENTICATION: challenge ? 'Verification failed' : 'Sign-in failed',
+    };
+    const heading = failure instanceof DataError ? titles[failure.code] : undefined;
+    setError({ heading: heading ?? (register ? 'Account creation failed' : 'Sign-in failed'),
+      message: failure instanceof DataError && failure.code === 'ERR_AUTHENTICATION' && !challenge
+        ? 'Check your username and access code, then try again.' : readableError(failure) });
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy.current) return;
     busy.current = true;
     setLoading(true);
-    setError('');
+    setError(undefined);
     setNotice('');
     try {
       if (register) {
-        await provider.register(username.trim(), code, platform);
-        setRegister(false);
-        setCode('');
-        setNotice('Account created. Sign in to continue.');
+        registrationKey.current ??= crypto.randomUUID();
+        await provider.register(username.trim(), code, platform, registrationKey.current);
+        onRegistered(username.trim());
         return;
       }
       const result = await provider.signIn(username.trim(), code, challenge ? { code: mfaCode.trim(), recovery: useRecovery } : undefined);
@@ -42,9 +60,9 @@ export function AuthPage({ provider, onSuccess, onBack, message, createAccount }
       setCode('');
       setMfaCode('');
       if (result.recoveryCodes.length) setPendingSession(result);
-      else onSuccess(result.session);
+      else await onSuccess();
     } catch (failure) {
-      setError(readableError(failure));
+      showError(failure);
     } finally {
       busy.current = false;
       setLoading(false);
@@ -52,52 +70,49 @@ export function AuthPage({ provider, onSuccess, onBack, message, createAccount }
   }
 
   return (
-    <main className="ps-auth">
-      <div className="ps-auth-frame">
-        <button type="button" className="btn-secondary" onClick={onBack}>Home</button>
-        <section className="ps-card">
-          <h1>{pendingSession ? 'Save your recovery codes' : challenge ? 'Two-factor authentication' : register ? 'Create a worker account' : 'Sign in'}</h1>
-          {error && <p className="ps-error" role="alert">{error}</p>}
-          {notice && <p role="status">{notice}</p>}
-          {pendingSession ? <>
-            <p>Store these one-time codes somewhere safe. They are shown once.</p>
-            <ul>{pendingSession.recoveryCodes.map((value) => <li key={value}><code>{value}</code></li>)}</ul>
-            <button type="button" className="btn-primary" onClick={() => onSuccess(pendingSession.session)}>Continue</button>
-          </> : <form onSubmit={submit} className="ps-form">
-            {challenge ? <>
-              {challenge.status === 'enrol' && <p>Enter this setup key in your authenticator app, then enter the six-digit code it displays. <code>{challenge.setupKey}</code></p>}
-              <label className="zs-label">{useRecovery ? 'Recovery code' : 'Authenticator code'}
-                <input key={String(useRecovery)} autoComplete="one-time-code" inputMode={useRecovery ? 'text' : 'numeric'} className="zs-input"
-                  value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} required maxLength={useRecovery ? 20 : 6} />
-              </label>
-              {challenge.status === 'challenge' && <button type="button" className="btn-secondary" disabled={loading}
-                onClick={() => { setUseRecovery(!useRecovery); setMfaCode(''); }}>{useRecovery ? 'Use an authenticator code' : 'Use a recovery code'}</button>}
-            </> : <>
-              <label className="zs-label">Username
-                <input autoComplete="username" className="zs-input" value={username} onChange={(event) => setUsername(event.target.value)} required minLength={3} maxLength={64} />
-              </label>
-              {register && <label className="zs-label">Platform
-                <select className="zs-input" value={platform} onChange={(event) => setPlatform(event.target.value === 'swiggy' ? 'swiggy' : 'zomato')}>
-                  <option value="zomato">Zomato</option><option value="swiggy">Swiggy</option>
-                </select>
-              </label>}
-              <label className="zs-label">Access code
-                <input autoComplete={register ? 'new-password' : 'current-password'} type={showCode ? 'text' : 'password'} className="zs-input"
-                  value={code} onChange={(event) => setCode(event.target.value)} required minLength={register ? 12 : undefined} maxLength={128}
-                  aria-describedby={register ? 'access-code-rules' : undefined} />
-              </label>
-              {register && <p id="access-code-rules">Use 12 or more characters. Choose a unique, hard-to-guess passphrase.</p>}
-              <button type="button" className="btn-secondary" onClick={() => setShowCode(!showCode)}>{showCode ? 'Hide access code' : 'Show access code'}</button>
-            </>}
-            <button className="btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Submitting…' : challenge ? 'Verify' : register ? 'Create account' : 'Sign in'}
-            </button>
-          </form>}
-          {!challenge && !pendingSession && <button type="button" className="btn-secondary" disabled={loading} onClick={() => {
-            setRegister(!register); setCode(''); setError(''); setNotice('');
-          }}>{register ? 'Sign in' : 'Create a worker account'}</button>}
-        </section>
-      </div>
-    </main>
+    <section className="account-card" aria-labelledby="sign-in-title">
+      <Link className="account-back" to="/">← Home</Link>
+      <h1 id="sign-in-title">{pendingSession ? 'Save your recovery codes' : challenge ? 'Two-factor authentication' : register ? 'Create a worker account' : 'Sign in'}</h1>
+      {error && <div ref={errorRef} className="account-message account-error" role="alert" tabIndex={-1}>
+        <strong>{error.heading}</strong><p>{error.message}</p>
+      </div>}
+      {notice && <p className="account-message" role="status">{notice}</p>}
+      {pendingSession ? <>
+        <p>Store these one-time codes somewhere safe. They are shown once.</p>
+        <ul>{pendingSession.recoveryCodes.map((value) => <li key={value}><code>{value}</code></li>)}</ul>
+        <button type="button" className="account-button" onClick={() => { void onSuccess().catch(showError); }}>Continue</button>
+      </> : <form onSubmit={submit} className="account-form">
+        {challenge ? <>
+          {challenge.status === 'enrol' && <p>Enter this setup key in your authenticator app, then enter the six-digit code it displays. <code>{challenge.setupKey}</code></p>}
+          <label className="account-field">{useRecovery ? 'Recovery code' : 'Authenticator code'}
+            <input key={String(useRecovery)} autoComplete="one-time-code" inputMode={useRecovery ? 'text' : 'numeric'} className="account-input"
+              value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} required maxLength={useRecovery ? 20 : 6} />
+          </label>
+          {challenge.status === 'challenge' && <button type="button" className="account-quiet" disabled={loading}
+            onClick={() => { setUseRecovery(!useRecovery); setMfaCode(''); }}>{useRecovery ? 'Use an authenticator code' : 'Use a recovery code'}</button>}
+        </> : <>
+          <label className="account-field">Username
+            <input autoComplete="username" className="account-input" value={username} onChange={(event) => { resetKey(); setUsername(event.target.value); }} required minLength={3} maxLength={64} />
+          </label>
+          {register && <label className="account-field">Platform
+            <select className="account-input" value={platform} onChange={(event) => { resetKey(); setPlatform(event.target.value === 'swiggy' ? 'swiggy' : 'zomato'); }}>
+              <option value="zomato">Zomato</option><option value="swiggy">Swiggy</option>
+            </select>
+          </label>}
+          <label className="account-field">Access code
+            <input autoComplete={register ? 'new-password' : 'current-password'} type={showCode ? 'text' : 'password'} className="account-input"
+              value={code} onChange={(event) => { resetKey(); setCode(event.target.value); }} required minLength={register ? 12 : undefined} maxLength={128}
+              aria-describedby={register ? 'access-code-rules' : undefined} />
+          </label>
+          {register && <p id="access-code-rules">Use 12 or more characters. Choose a unique, hard-to-guess passphrase.</p>}
+          <button type="button" className="account-quiet" onClick={() => setShowCode(!showCode)}>{showCode ? 'Hide access code' : 'Show access code'}</button>
+        </>}
+        <button className="account-button" type="submit" disabled={loading}>
+          {loading ? 'Submitting…' : challenge ? 'Verify' : register ? 'Create account' : 'Sign in'}
+        </button>
+      </form>}
+      {!challenge && !pendingSession && <Link className="account-back" to={register ? '/sign-in' : '/sign-up'}>
+        {register ? 'Already have an account? Sign in' : 'Create a worker account'}</Link>}
+    </section>
   );
 }

@@ -6,14 +6,14 @@ export function ledgerProvider(base: string): DataProvider {
   let refresh: Promise<void> | undefined;
   let generation = 0;
 
-  async function request<T>(path: string, session?: Session, body?: unknown, retry = true): Promise<T> {
+  async function request<T>(path: string, session?: Session, body?: unknown, retry = true, idempotencyKey?: string): Promise<T> {
     const sentGeneration = generation;
     let response: Response;
     try {
       response = await fetch(base.replace(/\/$/, '') + '/v1' + path, {
         method: body === undefined ? 'GET' : 'POST',
         credentials: 'include',
-        headers: body === undefined ? undefined : { 'Content-Type': 'application/json', 'X-CSRF-Token': await csrf() },
+        headers: body === undefined ? undefined : { 'Content-Type': 'application/json', 'X-CSRF-Token': await csrf(), ...(idempotencyKey && { 'Idempotency-Key': idempotencyKey }) },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: AbortSignal.timeout(path === '/simulations' ? 95_000 : 45_000),
       });
@@ -21,7 +21,8 @@ export function ledgerProvider(base: string): DataProvider {
       if (error instanceof DataError) throw error;
       throw new DataError('ERR_OFFLINE', 'The gateway is unreachable or taking longer than expected. Try again.');
     }
-    if (response.status === 401 && retry && (session || path === '/auth/session')) {
+    const value = response.status === 204 ? null : await response.json().catch(() => null);
+    if (response.status === 401 && retry && (session || (path === '/auth/session' && value?.code === 'ERR_SESSION_EXPIRED'))) {
       if (sentGeneration === generation) {
         refresh ??= request<void>('/auth/refresh', undefined, {}, false)
           .then(() => { generation++; }).finally(() => { refresh = undefined; });
@@ -33,10 +34,9 @@ export function ledgerProvider(base: string): DataProvider {
           throw error;
         }
       }
-      return request<T>(path, session, body, false);
+      return request<T>(path, session, body, false, idempotencyKey);
     }
     if (response.ok && (response.status === 201 || response.status === 204) && path.startsWith('/auth/')) return undefined as T;
-    const value = await response.json().catch(() => null);
     if (!response.ok) {
       if (response.status === 401 && session) throw new DataError('ERR_SESSION_EXPIRED', 'Your session expired. Sign in again.');
       throw new DataError(value?.code ?? 'ERR_GATEWAY', value?.message ?? 'The gateway could not complete the request.');
@@ -84,7 +84,7 @@ export function ledgerProvider(base: string): DataProvider {
       try { await request('/auth/logout', session, {}); }
       finally { csrfToken = undefined; }
     },
-    register: (username, accessCode, platformId) => request('/auth/register', undefined, { username, accessCode, platformId }),
+    register: (username, accessCode, platformId, key) => request('/auth/register', undefined, { username, accessCode, platformId }, true, key),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),
     enroll: async (session, terms) => (await request<{ result: Policy }>('/policies', session,
       { ...terms, policyId: session.policyId, workerId: session.workerId })).result,

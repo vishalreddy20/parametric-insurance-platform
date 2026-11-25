@@ -62,10 +62,10 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
     if (corsOrigin && request.get('origin') === corsOrigin) {
       response.set({
         'Access-Control-Allow-Origin': corsOrigin,
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-CSRF-Token',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-CSRF-Token, Idempotency-Key',
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-        'Access-Control-Expose-Headers': 'X-Request-Id',
+        'Access-Control-Expose-Headers': 'X-Request-Id, Retry-After',
         'Vary': 'Origin',
       });
       if (request.method === 'OPTIONS') { response.sendStatus(204); return; }

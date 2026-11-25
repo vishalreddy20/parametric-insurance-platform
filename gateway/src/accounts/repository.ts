@@ -14,6 +14,10 @@ export interface Account {
 
 export interface AccountRepository {
   insert(account: Account): Promise<boolean>;
+  registration(key: string): Promise<{ fingerprint: string; passwordHash: string } | undefined>;
+  register(account: Account, key: string, fingerprint: string): Promise<'created' | 'replay' | 'conflict'>;
+  reserveLoginAttempt(key: string, now: number, maximum: number, windowMs: number): Promise<number>;
+  clearLoginAttempts(key: string): Promise<void>;
   findByUsername(username: string): Promise<Account | undefined>;
   findById(id: string): Promise<Account | undefined>;
 }
@@ -54,6 +58,17 @@ const migrations = [
     hash TEXT NOT NULL,
     PRIMARY KEY (accountId, hash)
   ) STRICT;`,
+  `CREATE TABLE registration_requests (
+    key TEXT PRIMARY KEY,
+    fingerprint TEXT NOT NULL,
+    accountId TEXT NOT NULL REFERENCES accounts(id)
+  ) STRICT;
+  CREATE TABLE login_attempts (
+    key TEXT PRIMARY KEY,
+    count INTEGER NOT NULL,
+    expiresAt INTEGER NOT NULL
+  ) STRICT;
+  CREATE INDEX login_attempts_expiry ON login_attempts(expiresAt);`,
 ];
 
 export interface Session {
@@ -106,10 +121,45 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
   }
 
   async insert(account: Account): Promise<boolean> {
+    return this.insertAccount(account);
+  }
+
+  private insertAccount(account: Account): boolean {
     const result = this.database.prepare(`INSERT INTO accounts (id, username, role, passwordHash, platformId, createdAt)
       VALUES (@id, @username, @role, @passwordHash, @platformId, @createdAt)
       ON CONFLICT(username) DO NOTHING`).run(account);
     return result.changes === 1;
+  }
+
+  async registration(key: string): Promise<{ fingerprint: string; passwordHash: string } | undefined> {
+    return this.database.prepare(`SELECT fingerprint, passwordHash FROM registration_requests
+      JOIN accounts ON accounts.id = registration_requests.accountId WHERE key = ?`)
+      .get(key) as { fingerprint: string; passwordHash: string } | undefined;
+  }
+
+  async register(account: Account, key: string, fingerprint: string): Promise<'created' | 'replay' | 'conflict'> {
+    return this.database.transaction(() => {
+      if (this.database.prepare('SELECT 1 FROM registration_requests WHERE key = ?').get(key)) return 'replay';
+      if (!this.insertAccount(account)) return 'conflict';
+      this.database.prepare('INSERT INTO registration_requests VALUES (?, ?, ?)').run(key, fingerprint, account.id);
+      return 'created';
+    }).immediate();
+  }
+
+  async reserveLoginAttempt(key: string, now: number, maximum: number, windowMs: number): Promise<number> {
+    return this.database.transaction(() => {
+      this.database.prepare('DELETE FROM login_attempts WHERE expiresAt <= ?').run(now);
+      const current = this.database.prepare('SELECT count, expiresAt FROM login_attempts WHERE key = ?')
+        .get(key) as { count: number; expiresAt: number } | undefined;
+      if (current && current.count >= maximum) return current.expiresAt - now;
+      this.database.prepare(`INSERT INTO login_attempts VALUES (?, 1, ?)
+        ON CONFLICT(key) DO UPDATE SET count = count + 1`).run(key, now + windowMs);
+      return 0;
+    }).immediate();
+  }
+
+  async clearLoginAttempts(key: string): Promise<void> {
+    this.database.prepare('DELETE FROM login_attempts WHERE key = ?').run(key);
   }
 
   async findByUsername(username: string): Promise<Account | undefined> {

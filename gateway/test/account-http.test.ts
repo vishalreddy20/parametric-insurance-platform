@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import { AccountHttp } from '../src/accounts/http.js';
@@ -30,7 +30,7 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
     passwordHash: await hasher.hash(accessCode), createdAt: Date.now() });
   const origin = 'http://127.0.0.1:5173';
   const now = Date.now();
-  const accounts = new AccountHttp({ store, hasher, origin, mfa: new Mfa(store, Buffer.alloc(32, 1), () => now),
+  const accounts = new AccountHttp({ store, hasher, origin, requestKey: Buffer.alloc(32, 2), mfa: new Mfa(store, Buffer.alloc(32, 1), () => now),
     sessions: new Sessions(store) });
   const ledger: Ledger = {
     async evaluate<T>(actor: string, _operation: string, ids?: string[]) {
@@ -49,10 +49,10 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   function browser() {
     const jar = new Map<string, string>();
     let csrf = '';
-    async function send(path: string, body?: unknown, useCsrf = true, useOrigin = origin) {
+    async function send(path: string, body?: unknown, useCsrf = true, useOrigin = origin, registrationKey?: string) {
       const response = await fetch(base + path, {
         method: body === undefined ? 'GET' : 'POST',
-        headers: { Origin: useOrigin, Cookie: [...jar].map(([name, value]) => name + '=' + value).join('; '),
+        headers: { Origin: useOrigin, ...(registrationKey && { 'Idempotency-Key': registrationKey }), Cookie: [...jar].map(([name, value]) => name + '=' + value).join('; '),
           ...(body !== undefined && { 'Content-Type': 'application/json', ...(useCsrf && { 'X-CSRF-Token': csrf }) }) },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
@@ -105,8 +105,17 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   const worker = browser();
   await worker.send('/auth/csrf');
   const credentials = { username: 'worker-a', accessCode, platformId: 'zomato' };
-  assert.equal((await worker.send('/auth/register', { ...credentials, role: 'admin' })).status, 400);
-  assert.equal((await worker.send('/auth/register', credentials)).status, 201);
+  const registrationKey = randomUUID();
+  assert.equal((await worker.send('/auth/register', credentials)).status, 400);
+  assert.equal((await worker.send('/auth/register', { ...credentials, role: 'admin' }, true, origin, registrationKey)).status, 400);
+  const register = (body: unknown = credentials, key = registrationKey) =>
+    worker.send('/auth/register', body, true, origin, key);
+  const concurrent = await Promise.all([register(), register()]);
+  assert.deepEqual(concurrent.map((response) => response.status), [201, 201]);
+  assert.equal((await register()).status, 201);
+  assert.equal((await register({ ...credentials, platformId: 'swiggy' })).status, 409);
+  assert.equal((await register({ ...credentials, accessCode: 'Unique alternative access code!' })).status, 409);
+  assert.equal((await register(credentials, randomUUID())).status, 409);
   const workerLogin = await worker.send('/auth/login', { username: credentials.username, accessCode });
   assert.equal(workerLogin.status, 200);
   const session = await workerLogin.json();
@@ -117,4 +126,29 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal((await worker.send('/auth/logout-everywhere', {}, false)).status, 403);
   assert.equal((await worker.send('/auth/logout-everywhere', {})).status, 204);
   assert.equal((await worker.send('/auth/session')).status, 401);
+
+  const throttled = browser();
+  await throttled.send('/auth/csrf');
+  const attempt = (username: string) => throttled.send('/auth/login', { username, accessCode: 'wrong' });
+  const first = await attempt('worker-a');
+  const unknown = await attempt('unknown-worker');
+  assert.equal(first.status, 401);
+  assert.equal(unknown.status, 401);
+  const { code: firstCode, message: firstMessage } = await first.json();
+  const { code: unknownCode, message: unknownMessage } = await unknown.json();
+  assert.deepEqual([firstCode, firstMessage], [unknownCode, unknownMessage]);
+  for (let count = 1; count < 8; count++) assert.equal((await attempt('worker-a')).status, 401);
+  const locked = await attempt('WORKER-A');
+  assert.equal(locked.status, 423);
+  assert.equal((await locked.json()).code, 'ERR_ACCOUNT_LOCKED');
+  assert.ok(Number(locked.headers.get('retry-after')) > 0);
+  let limited: Response | undefined;
+  for (let count = 0; count < 30; count++) {
+    const response = await attempt('other-' + count);
+    if (response.status === 429) { limited = response; break; }
+    assert.equal(response.status, 401);
+  }
+  assert.ok(limited);
+  assert.equal((await limited.json()).code, 'ERR_RATE_LIMIT');
+  assert.ok(Number(limited.headers.get('retry-after')) > 0);
 });

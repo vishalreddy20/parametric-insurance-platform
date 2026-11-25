@@ -25,8 +25,10 @@ staff MFA and cookie sessions against temporary account databases.
 
 ## Current limitations
 
-Sign-in throttles by IP and account in memory, so limits reset on a gateway
-restart. SMTP reset, administrator reset codes, password change, worker MFA
+Sign-in rate limits by IP in memory. Account lockouts are stored in SQLite and
+survive gateway restarts. Known and unknown usernames share the same limits
+and credential errors. Registration stores its idempotency key atomically with
+the account. A retry with the same details confirms the existing registration. SMTP reset, administrator reset codes, password change, worker MFA
 management, account security screens, and the auth audit log remain pending.
 Workers and platforms must prove ownership of the payout before reading its
 indexed ledger proof. Regulators have event, audit and reconciliation access.
