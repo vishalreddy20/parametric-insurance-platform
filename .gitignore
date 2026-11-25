@@ -17,3 +17,10 @@ production/
 *.key
 *.p12
 *.pfx
+
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

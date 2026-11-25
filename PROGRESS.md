@@ -56,3 +56,9 @@
 - Fresh verification passed the frontend build and 13 tests, `go vet` and 82.8% chaincode coverage, 3 gateway tests, 2 mock UPI tests, the live gateway and simulator integration scripts, and the one-policy prepared demo. Chromium displayed an actual settled payout with its reservation transaction ID, committed block number and quorum, plus the measured 32-policy benchmark.
 - The fresh source checkout stayed clean after the full run. Source control contains no current environment files, dependency trees, generated build artifacts or sample credentials. The owner-accepted historical finding is unchanged. The root npm audit still reported 19 vulnerabilities.
 - The remaining operational gaps are independent bank/oracle/regulator MSPs and the corresponding transaction-specific endorsements, verified four-Lite-Peer scaling or 1,000-policy measurements, Falcon, failover and production integrations.
+
+## UI and authentication overhaul
+
+- The interface foundations, role navigation and page states are specified in `docs/DESIGN.md`.
+- The gateway has a migrated SQLite account repository, access-code policy and Argon2id verifier, TOTP counter verification, and an interactive provisioning command. These components are groundwork. The running gateway still uses the previous authentication path.
+- Before frontend changes, the live smoke test requires a working DRUNIX runtime. The retained sample ledger rejected credentials from a fresh runtime with `access denied: channel [parashield] creator org unknown, creator is malformed`.
