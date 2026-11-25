@@ -6,6 +6,7 @@ import { DemoAuth, requireRole } from './auth.js';
 import type { Principal } from './auth.js';
 import { ApiError } from './errors.js';
 import type { Ledger } from './ledger.js';
+import { checkPolicyOwner, checkWorkerPolicy, type PolicyOwner } from './policy.js';
 import * as schema from './schema.js';
 
 type Context = {
@@ -22,7 +23,6 @@ type Context = {
   runSimulation?: (authorization: string, body: unknown) => Promise<unknown>;
   log?: (fields: Record<string, unknown>) => void;
 };
-type PolicyOwner = { terms?: { workerId: string; premiumPaise: number }; term?: number; status?: string };
 
 function parse<T>(validator: ZodType<T>, value: unknown): T {
   const result = validator.safeParse(value);
@@ -37,12 +37,6 @@ function protect(auth: DemoAuth, roles: schema.Role[],
     requireRole(principal, roles);
     await handler(request, response, principal);
   };
-}
-
-function enforceWorker(user: Principal, policyId: string, workerId?: string) {
-  if (user.role === 'worker' && (policyId !== user.policyId || (workerId && workerId !== user.workerId))) {
-    throw new ApiError('ERR_UNAUTHORIZED', 403, 'This identity cannot access the policy.');
-  }
 }
 
 export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
@@ -87,7 +81,7 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
 
   app.post('/v1/policies', protect(auth, ['worker', 'platform'], async (request, response, user) => {
     const { worker, policyId, ...terms } = parse(schema.enroll, request.body);
-    enforceWorker(user, policyId, terms.workerId);
+    checkWorkerPolicy(user, policyId, terms.workerId);
     const salt = createHmac('sha256', saltKey).update('workerPII\0').update(policyId).digest('hex');
     response.status(201).json(await ledger.submit(user.actor, 'PolicyContract:CreatePolicy', {
       arguments: [policyId],
@@ -100,9 +94,9 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   app.post('/v1/policies/:id/premium-simulation', protect(auth, ['worker', 'platform'], async (request, response, user) => {
     if (!simulatePremium) throw new ApiError('ERR_MOCK_UPI', 503, 'Simulated premium processing is unavailable.');
     const id = parse(schema.id, request.params.id);
-    enforceWorker(user, id);
+    checkWorkerPolicy(user, id);
     const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [id]);
-    enforceWorker(user, id, policy.terms?.workerId);
+    checkPolicyOwner(user, id, policy);
     if (!policy.terms || !policy.term || !['PENDING_PREMIUM', 'ACTIVE'].includes(policy.status ?? '')) {
       throw new ApiError('ERR_STATE', 409, 'The policy term cannot accept a simulated payment.');
     }
@@ -145,17 +139,17 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   const policyReaders: schema.Role[] = ['worker', 'platform', 'insurer', 'bank', 'regulator'];
   app.get('/v1/policies/:id', protect(auth, policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
-    enforceWorker(user, id);
+    checkWorkerPolicy(user, id);
     const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [id]);
-    enforceWorker(user, id, policy.terms?.workerId);
+    checkPolicyOwner(user, id, policy);
     response.json(policy);
   }));
   const policyPayouts = protect(auth, policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
-    enforceWorker(user, id);
-    if (user.role === 'worker') {
+    checkWorkerPolicy(user, id);
+    if (user.role === 'worker' || user.role === 'platform') {
       const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [id]);
-      enforceWorker(user, id, policy.terms?.workerId);
+      checkPolicyOwner(user, id, policy);
     }
     const page = parse(schema.page, request.query);
     response.json(await ledger.evaluate(user.actor, 'PayoutContract:ListPayouts', [id, String(page.size), page.bookmark]));

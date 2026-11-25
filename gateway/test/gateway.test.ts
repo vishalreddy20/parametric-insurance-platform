@@ -31,9 +31,12 @@ test('retry is capped and delays use jitter, validation does not retry', async (
 test('HTTP routes enforce worker ownership, schema validation and role scope', async (context) => {
   const calls: { actor: string; name: string }[] = [];
   const ledger: Ledger = {
-    async evaluate<T>(actor: string, name: string) {
+    async evaluate<T>(actor: string, name: string, args?: string[]) {
       calls.push({ actor, name });
-      return { id: 'worker-a', terms: { workerId: 'worker-a' } } as T;
+      const id = args?.[0];
+      return { id, term: 1, status: 'PENDING_PREMIUM', terms: {
+        workerId: id, platform: id === 'worker-b' ? 'swiggy' : 'zomato', premiumPaise: 18000,
+      } } as T;
     },
     async submit<T>(actor: string, name: string, options?: Options) {
       calls.push({ actor, name });
@@ -44,10 +47,11 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   };
   const accessCode = 'test-only-access-code';
   const auth = new DemoAuth([{ username: 'worker-a', role: 'worker', actor: 'platform-a', workerId: 'worker-a',
-    policyId: 'worker-a', platformId: 'zomato', accessCode }], Buffer.alloc(32, 1));
+    policyId: 'worker-a', platformId: 'zomato', accessCode },
+    { username: 'platform-a', role: 'platform', actor: 'platform-a', platformId: 'zomato', accessCode }], Buffer.alloc(32, 1));
   const logs: Record<string, unknown>[] = [];
   const server = createApp({ ledger, auth, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
-    settlementEnabled: false, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
+    settlementEnabled: false, simulatePremium: async (payment) => payment, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
   context.after(() => { server.close(); });
   await once(server, 'listening');
   const address = server.address();
@@ -75,6 +79,18 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   }));
   assert.equal(response.status, 201);
   assert.deepEqual(calls, [{ actor: 'platform-a', name: 'PolicyContract:CreatePolicy' }]);
+  const platformLogin = await fetch(base + '/v1/login', post(undefined, { username: 'platform-a', accessCode }));
+  assert.equal(platformLogin.status, 200);
+  const { token: platformToken } = await platformLogin.json();
+  const get = (path: string, credential: string) => fetch(base + path, { headers: { Authorization: 'Bearer ' + credential } });
+  assert.equal((await get('/v1/policies/worker-a', token)).status, 200);
+  assert.equal((await get('/v1/policies/worker-a/payouts', platformToken)).status, 200);
+  for (const suffix of ['', '/payouts', '/claims']) {
+    assert.equal((await get('/v1/policies/worker-b' + suffix, platformToken)).status, 403);
+  }
+  assert.equal((await fetch(base + '/v1/policies/worker-b/premium-simulation', post(platformToken))).status, 403);
+  assert.equal((await fetch(base + '/v1/policies/worker-a/premium-simulation', post(platformToken))).status, 200);
+
   assert(!JSON.stringify(logs).includes('SYNTHETIC PHONE'));
   assert(!JSON.stringify(logs).includes(accessCode));
 });
