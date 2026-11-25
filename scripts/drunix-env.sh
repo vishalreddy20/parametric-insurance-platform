@@ -10,6 +10,9 @@ fail() {
 
 runtime_root=$(cd -- "$DRUNIX_RUNTIME" && pwd -P) ||
   fail 'DRUNIX_RUNTIME is not an accessible checkout.'
+if [[ "$runtime_root" == "$repo_root" || "$runtime_root" == "$repo_root/"* ]]; then
+  fail 'DRUNIX_RUNTIME must be outside the ParaShield source tree.'
+fi
 if [[ -d "$HOME/drunix" && "$runtime_root" -ef "$HOME/drunix" ]]; then
   fail 'DRUNIX_RUNTIME must be separate from the read-only $HOME/drunix reference.'
 fi

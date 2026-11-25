@@ -2,10 +2,10 @@
 
 ## Phase 0 — Verified
 
-- Branch: `parashield-drunix`. The active UI loads `src/app/pages/*` through `src/app/App.tsx`. Application records are stored through `src/app/services/mock-db.ts` in localStorage. The active UI uses Supabase Auth; its Edge Function has no active UI caller.
+- The branch is `parashield-drunix`. The active UI loads `src/app/pages/*` through `src/app/App.tsx`. Application records are stored through `src/app/services/mock-db.ts` in localStorage. The active UI uses Supabase Auth. Its Edge Function has no active UI caller.
 - `git ls-files -- .env dist node_modules` produced no paths. The staged removals of previously tracked `.env` and `dist/` are included in this phase. `git check-ignore` confirmed the local environment file and generated artifacts are ignored.
-- Secret scan, owner-accepted result: `.env` present in history only, no other secrets reported. The owner is handling rotation.
-- Existing verification: `npm ci && npm test && npm run build` passed on Node 20.20.2. Vitest passed all 4 tests in 2 files. npm reported 19 dependency vulnerabilities (1 low, 5 moderate, 9 high, 4 critical). Build output was generated in ignored `dist/`. The same commands also passed in a temporary archive of the Phase 0 commit with no local environment file.
+- The owner accepted the secret scan result of `.env` present in history only, no other secrets reported. The owner is handling rotation.
+- `npm ci && npm test && npm run build` passed on Node 20.20.2. Vitest passed all 4 tests in 2 files. npm reported 19 dependency vulnerabilities (1 low, 5 moderate, 9 high, 4 critical). Build output was generated in ignored `dist/`. The same commands also passed in a temporary archive of the Phase 0 commit with no local environment file.
 
 ## Phase 1 — Verified on the two-organization DRUNIX sample
 
@@ -26,7 +26,7 @@
 ## Phase 3 — Verified on DRUNIX
 
 - Added the Node 20 REST gateway using the Fabric Gateway SDK, certificate-attributed role identities, scoped demo JWTs, Zod validation, redacted structured logs, and bounded MVCC/endorsement retries. Submitted transactions wait for commit status and return transaction and block identifiers.
-- Added a persistent event cursor and batched, five-concurrent policy fan-out. Settlement jobs remain queued when mock UPI is disabled. Gateway proposal traffic uses the Lite Peers; committed events stream from a Committing Peer. The initial Lite Peer stream did not deliver the declared event, while the Committing Peer stream passed.
+- Added a persistent event cursor and batched, five-concurrent policy fan-out. Settlement jobs remain queued when mock UPI is disabled. Gateway proposal traffic uses the Lite Peers. Committed events stream from a Committing Peer. The initial Lite Peer stream did not deliver the declared event, while the Committing Peer stream passed.
 - `npm --prefix gateway test` passed all 3 tests, including replay after a failed page. `DRUNIX_RUNTIME=... scripts/gateway-integration.sh` passed against chaincode 2.0 with authenticated enrollment, replay, premium, activity, pagination, role denial, two signed quorum readings and durable event intake.
 - The committed payout path was exercised in Go stub tests. The live integration queued a declared event but did not wait for the event window to close or settle a live payout. Demo role certificates are issued by the sample CAs and occupy the sample's two MSPs.
 
@@ -34,12 +34,12 @@
 
 - Added the insurer-only oracle simulation service and persistent mock UPI service. The oracle adapters reuse the prototype's weather, social, traffic and platform scenario logic, and each submits with a distinct signed identity. All service responses mark simulation explicitly.
 - `npm --prefix mock-upi test` passed both tests, covering concurrent duplicate requests, conflicting data, stored failed outcomes and callback recovery across restart. The gateway's 3 tests passed and the oracle build succeeded.
-- `DRUNIX_RUNTIME=... scripts/services-integration.sh` passed against the running sample. Normal and disagreement storms each submitted 3 authenticated readings. The offline scenario declared with 2. The simulated premium callback moved the policy to ACTIVE on DRUNIX and returned the same result on replay. Payout settlement callbacks were tested against a fake receiver in this phase; live payout settlement still awaits an eligible closed event.
+- `DRUNIX_RUNTIME=... scripts/services-integration.sh` passed against the running sample. Normal and disagreement storms each submitted 3 authenticated readings. The offline scenario declared with 2. The simulated premium callback moved the policy to ACTIVE on DRUNIX and returned the same result on replay. Payout settlement callbacks were tested against a fake receiver in this phase. Live payout settlement still awaits an eligible closed event.
 
 ## Phase 5 — Browser and build verification passed
 
 - The active frontend now defaults to the ledger provider. It includes worker onboarding, simulated premium collection, policy and payout state, quorum and block proof, insurer and read-only regulator views, and a measured benchmark panel. Prototype-local claim automation is isolated under `src/app/legacy`.
-- `npm test` passed all 13 frontend tests; `npm run build` and the gateway's 3 tests passed. The root test runner only collects frontend tests; gateway and UPI tests remain in their packages.
+- `npm test` passed all 13 frontend tests. `npm run build` and the gateway's 3 tests passed. The root test runner only collects frontend tests. Gateway and UPI tests remain in their packages.
 - Chromium against DRUNIX verified login routing, enrollment, premium confirmation, empty claims, gateway offline/retry, insurer simulation, regulator reconciliation, and session expiry. Chromium also verified local fixture mode without gateway requests. The walkthrough is in `docs/DEMO.md`. This run did not include a settled payout proof.
 
 ## Phase 6 — Surge verification passed on two Lite Peers
@@ -48,3 +48,11 @@
 - A fresh `scripts/surge-test 32` run on 3.1 passed. All 32 policies settled across two fan-out pages. There were zero failures, duplicates, and MVCC retries. Ledger and simulated UPI each reconciled to 1,920,000 paise. The gateway verified an actual reserved payout block number from the committed event stream.
 - End-to-end time 80,026.34 ms, storm-to-terminal time 48,781.98 ms, 0.66 settled payouts/s, p50 41,302.74 ms and p95 48,778.42 ms under the recorded workload. Environment, methodology and JSON are in `docs/BENCHMARKS.md` and `docs/benchmark-latest.json`. The documented sample has two Lite Peers. Four peers and a 1,000-policy run were not exercised.
 - `go vet` and the Go suite passed at 82.8% statement coverage. Frontend build and 13 tests, three gateway tests, two mock UPI tests, and the chaincode 3.1 smoke test also passed.
+
+## Phase 7 — Fresh checkout and submitted demo workflow verified
+
+- Added the one-command quickstart, measured benchmark dashboard setup, architecture and threat model, real/simulated inventory, edge-case matrix and recording checklist. Preserved LICENSE and ATTRIBUTIONS.md.
+- Started from a fresh Git checkout of the release candidate and empty sample ledger. `scripts/demo-up.sh` rebuilt the pinned DRUNIX binaries, installed packages, created the channel, deployed chaincode 3.1 and passed the smoke test. An initial teardown check failed with `invalid spec: :/host/var/run/docker.sock: empty section between colons`. Passing the same Docker socket value as upstream fixed the check. Teardown was verified again.
+- Fresh verification passed the frontend build and 13 tests, `go vet` and 82.8% chaincode coverage, 3 gateway tests, 2 mock UPI tests, the live gateway and simulator integration scripts, and the one-policy prepared demo. Chromium displayed an actual settled payout with its reservation transaction ID, committed block number and quorum, plus the measured 32-policy benchmark.
+- The fresh source checkout stayed clean after the full run. Source control contains no current environment files, dependency trees, generated build artifacts or sample credentials. The owner-accepted historical finding is unchanged. The root npm audit still reported 19 vulnerabilities.
+- The remaining operational gaps are independent bank/oracle/regulator MSPs and the corresponding transaction-specific endorsements, verified four-Lite-Peer scaling or 1,000-policy measurements, Falcon, failover and production integrations.

@@ -5,6 +5,29 @@ http://127.0.0.1:5173. The launcher prints the path to the external demo
 credentials manifest. Select the matching access code locally and keep it
 out of screenshots, material shared with judges, and terminal logs.
 
+## Prepare a settled record for recording
+
+Run this once on a clean sample **before enrolling the worker through the UI**.
+Export `DRUNIX_RUNTIME` and `PARASHIELD_DEMO_STATE` using the paths printed by
+the launcher. The command prepares the default worker, signs a synthetic storm
+and a unanimous demo window close, and waits for a real ledger settlement.
+It writes a separate local validation report so the committed benchmark stays
+untouched.
+
+```bash
+report_dir=$(mktemp -d)
+PARASHIELD_PREPARE_WORKER=demo-worker \
+PARASHIELD_BENCHMARK_REPORT="$report_dir/demo.json" \
+PARASHIELD_BENCHMARK_TABLE="$report_dir/demo.md" \
+scripts/surge-test 1
+```
+
+The prepared onboarding and payout state is explicitly **SIMULATED** for
+identity, oracle inputs and UPI. The settlement transaction and its proof
+are committed DRUNIX data. Use a fresh zone for any further simulation.
+For a clean enrollment demonstration, skip preparation and show the
+payout proof using the prepared recording.
+
 ## Five-minute walkthrough
 
 1. Start on the landing page. Sign in as `demo-worker` with the simulated
@@ -15,7 +38,7 @@ out of screenshots, material shared with judges, and terminal logs.
 3. Sign out, then sign in as `insurer`. Choose a fresh zone and select
    **One offline** under **Simulate a storm**. Verify `DECLARED` and two
    threshold breaches. Demonstrate **One disagrees** in a different unused zone.
-4. Sign in as `regulator`. Verify that the policy, event and weekly
+4. Sign in as `regulator`. Select the worker’s coverage zone and verify that the policy, event and weekly
    reconciliation are visible. The regulator view has no simulation or
    settlement controls.
 5. For a prepared eligible, settled event, sign back in as the worker and open

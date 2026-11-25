@@ -129,3 +129,11 @@ application cursor. An additional read partition preserves indexes written
 by older versions. It rejects an overfull partition explicitly. New activity
 attestations also write worker-and-hour markers so payout eligibility can
 use a point read instead of depending on the sample's default range size.
+
+## Keep reproducible quickstart state outside the source tree
+
+The quickstart uses the pinned upstream revision in a writable clone,
+leaves the reference checkout untouched, and provisions external demo
+identities, runtime keys and durable job state. The app stack can restart
+with the same ledger and state. Restarting with a new MSP or wiping the
+ledger requires a new demo state directory. Dotenv files are ignored.

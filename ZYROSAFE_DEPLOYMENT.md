@@ -1,4 +1,7 @@
-# ZyroSafe - Deployment & Configuration Guide
+# Archived ZyroSafe prototype deployment guide
+
+This page describes the earlier simulated prototype. For the current ParaShield
+application and DRUNIX deployment, use [README.md](README.md).
 
 ## System Overview
 
