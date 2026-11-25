@@ -410,3 +410,39 @@
     border-inline-end: 0;
   }
 }
+
+.account-panel.security-credentials,
+.account-panel.security-sessions { padding: 0; overflow: hidden; }
+.security-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--account-subtle);
+  border-bottom: 1px solid var(--account-divider);
+}
+.security-panel-heading p, .security-caption { font-size: 14px; color: var(--account-muted); }
+.security-panel-body { padding: 16px 24px; }
+.security-panel-body .auth-note { margin-top: 12px; }
+.account-shell .security-danger { color: var(--account-danger); }
+.security-session-list { list-style: none; margin: 0; padding: 0; }
+.security-session-list li {
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(100px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) auto;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--account-divider);
+}
+.security-caption { display: block; }
+.security-session-list time { font-variant-numeric: tabular-nums; }
+.security-current { display: block; color: var(--account-success); font-size: 14px; }
+@media (max-width: 900px) {
+  .security-session-list li { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .security-session-list li { grid-template-columns: minmax(0, 1fr); }
+  .security-panel-heading, .security-panel-body, .security-session-list li { padding-inline: 16px; }
+}

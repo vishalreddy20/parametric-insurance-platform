@@ -213,6 +213,22 @@ export class AccountHttp {
         throw error;
       }
     });
+    app.get('/v1/auth/security', async (request, response) => {
+      const { account, session } = await this.current(request);
+      const [sessions, authenticatorEnrolled] = await Promise.all([
+        this.options.sessions.list(account.id, session.id), this.options.mfa.isEnrolled(account.id),
+      ]);
+      response.json({ sessions, authenticatorEnrolled });
+    });
+    app.post('/v1/auth/security/revoke', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { sessionId } = parse(z.strictObject({ sessionId: z.uuid() }), request.body);
+      const { account, session } = await this.current(request);
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      if (sessionId === session.id) throw new ApiError('ERR_VALIDATION', 400, 'Use Sign out to end this session.');
+      await this.options.sessions.revoke(account.id, sessionId);
+      response.sendStatus(204);
+    });
     app.post('/v1/auth/refresh', async (request, response) => {
       const csrf = this.csrf(request);
       parse(empty, request.body);

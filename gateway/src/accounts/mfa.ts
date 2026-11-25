@@ -42,6 +42,11 @@ export class Mfa {
     return createHmac('sha256', this.key).update('recovery:' + accountId + ':' + code).digest('hex');
   }
 
+  async isEnrolled(accountId: string): Promise<boolean> {
+    const record = await this.store.getMfa(accountId);
+    return record !== undefined && record.lastCounter >= 0;
+  }
+
   async verify(account: Account, supplied?: { code: string; recovery: boolean }) {
     let record = await this.store.getMfa(account.id);
     if (!record && account.role === 'worker') return { status: 'verified' } as const;

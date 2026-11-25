@@ -48,6 +48,13 @@ export class Sessions {
     return validToken(csrf) && timingSafeEqual(Buffer.from(session.csrfHash), Buffer.from(hash(csrf)));
   }
 
+  async list(accountId: string, currentId: string) {
+    const sessions = await this.store.listActiveSessions(accountId, this.clock());
+    return sessions.map(({ id, idleExpiresAt, absoluteExpiresAt }) => ({
+      id, current: id === currentId, idleExpiresAt, absoluteExpiresAt,
+    }));
+  }
+
   revoke(accountId: string, sessionId?: string): Promise<void> {
     return this.store.revokeSessions(accountId, this.clock(), sessionId);
   }

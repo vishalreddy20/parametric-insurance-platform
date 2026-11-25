@@ -83,12 +83,15 @@ export interface Session {
   revokedAt: number | null;
 }
 
+export type ActiveSession = Pick<Session, 'id' | 'idleExpiresAt' | 'absoluteExpiresAt'>;
+
 export type SessionRotation = 'rotated' | 'reuse' | 'invalid';
 
 export interface SessionRepository {
   insertSession(session: Session): Promise<void>;
   useAccess(hash: string, now: number, idleUntil: number): Promise<Session | undefined>;
   rotateRefresh(oldHash: string, csrfHash: string, next: Pick<Session, 'accessHash' | 'refreshHash' | 'accessExpiresAt' | 'idleExpiresAt'>, now: number): Promise<SessionRotation>;
+  listActiveSessions(accountId: string, now: number): Promise<ActiveSession[]>;
   revokeSessions(accountId: string, now: number, id?: string): Promise<void>;
 }
 
@@ -232,6 +235,12 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
       this.database.prepare('INSERT INTO used_refresh_tokens VALUES (?, ?)').run(oldHash, session.id);
       return 'rotated';
     }).immediate();
+  }
+
+  async listActiveSessions(accountId: string, now: number): Promise<ActiveSession[]> {
+    return this.database.prepare(`SELECT id, idleExpiresAt, absoluteExpiresAt FROM sessions
+      WHERE accountId = ? AND revokedAt IS NULL AND idleExpiresAt > ? AND absoluteExpiresAt > ?
+      ORDER BY idleExpiresAt DESC, id`).all(accountId, now, now) as ActiveSession[];
   }
 
   async revokeSessions(accountId: string, now: number, id?: string): Promise<void> {

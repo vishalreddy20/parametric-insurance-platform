@@ -81,10 +81,12 @@ export function ledgerProvider(base: string): DataProvider {
       return { status: 'signed-in', session, recoveryCodes };
     },
     currentSession: () => request('/auth/session'),
-    async signOut(session) {
-      try { await request('/auth/logout', session, {}); }
+    async signOut(session, everywhere) {
+      try { await request(everywhere ? '/auth/logout-everywhere' : '/auth/logout', session, {}); }
       finally { csrfToken = undefined; }
     },
+    security: (session) => request('/auth/security', session),
+    revokeSession: (session, sessionId) => request('/auth/security/revoke', session, { sessionId }),
     register: (username, password, platformId, key) => request('/auth/register', undefined, { username, password, platformId }, true, key),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),
     enroll: async (session, terms) => (await request<{ result: Policy }>('/policies', session,

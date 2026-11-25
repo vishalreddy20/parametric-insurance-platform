@@ -1,7 +1,8 @@
-import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ArrowRight, KeyRound, LayoutGrid, Moon, Shield, Sun, UserRound } from 'lucide-react';
 import { Button } from './components/ui/button';
+import { AccountSecurity } from './pages/AccountSecurity';
 import { AccountNotice } from './pages/AccountNotice';
 import { DataError, type Session } from './data/provider';
 import { ledgerProvider } from './data/ledger-provider';
@@ -37,7 +38,7 @@ function AccountFrame({ session, onSignOut, variant, children }: {
           <a href="#how-it-works">How it works</a><a href="#claims-proof">Claims and proof</a>
         </nav>}
         <nav aria-label="Account">
-          {session && <Link to="/account">My account</Link>}
+          {session && <><Link to="/account">My account</Link><Link to="/account/security">Account security</Link></>}
           {variant === 'home' && <><Link to="/sign-in">Sign in</Link><Link to="/sign-up" className="account-nav-primary">Create account</Link></>}
           <Button variant="ghost" className="account-theme" aria-label={theme === 'dark' ? 'Light theme' : 'Dark theme'}
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
@@ -52,21 +53,24 @@ function AccountFrame({ session, onSignOut, variant, children }: {
   </div>;
 }
 
-function AccountWorkspace({ session, workspace, message }: {
+function AccountWorkspace({ session, workspace, message, security, onExpired, onSignedOut }: {
   session: Session; workspace?: { path: string; label: string }; message: string;
+  security: boolean; onExpired: () => void; onSignedOut: () => void;
 }) {
   return <div className="account-workspace">
     <aside className="account-sidebar"><nav aria-label="Workspace">
-      <Link to="/account" aria-current="page"><UserRound size={18} aria-hidden="true" /> My account</Link>
+      <Link to="/account" aria-current={security ? undefined : 'page'}><UserRound size={18} aria-hidden="true" /> My account</Link>
+      <Link to="/account/security" aria-current={security ? 'page' : undefined}><KeyRound size={18} aria-hidden="true" /> Account security</Link>
       {workspace && <Link to={workspace.path}><LayoutGrid size={18} aria-hidden="true" /> {workspace.label}</Link>}
     </nav></aside>
     <div className="account-workspace-body">
       <section className="account-panel account-profile" aria-labelledby="account-title">
         <div className="account-icon"><UserRound aria-hidden="true" /></div>
-        <div><h1 id="account-title">My account</h1><p>{session.username} <span className="account-role">{session.role}</span></p></div>
+        <div><h1 id="account-title">{security ? 'Account security' : 'My account'}</h1><p>{session.username} <span className="account-role">{session.role}</span></p></div>
         {workspace && <Button asChild className="account-button"><Link to={workspace.path}>{workspace.label} <ArrowRight aria-hidden="true" /></Link></Button>}
       </section>
       {message && <p role="alert" className="account-message account-error">{message}</p>}
+      {security ? <AccountSecurity provider={provider} session={session} onExpired={onExpired} onSignedOut={onSignedOut} /> : <>
       <div className="account-workspace-label"><UserRound size={18} aria-hidden="true" /> Account overview</div>
       <div className="account-workspace-grid">
         <section className="account-panel">
@@ -76,7 +80,7 @@ function AccountWorkspace({ session, workspace, message }: {
           </dl>
         </section>
         <section className="account-panel"><h2>Sign-in assistance</h2><p>Password resets are handled by an administrator.</p></section>
-      </div>
+      </div></>}
     </div>
   </div>;
 }
@@ -101,15 +105,16 @@ function AppViews() {
   const [sessionCheck, setSessionCheck] = useState(0);
   const [sessionRedirect, setSessionRedirect] = useState<{ path: string; returnPath?: string }>();
   const targetRole = (Object.keys(workspaces) as (keyof typeof workspaces)[]).find((role) => workspaces[role].path === pathname);
-  const protectedPage = pathname === '/account' || Boolean(targetRole);
+  const accountPage = pathname === '/account' || pathname === '/account/security';
+  const protectedPage = accountPage || Boolean(targetRole);
   const returnPath = typeof state?.returnPath === 'string' &&
-    ['/account', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
+    ['/account', '/account/security', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
 
-  function sessionEnded() {
+  const sessionEnded = useCallback(() => {
     setSession(null);
     setMessage('Your session expired. Sign in again.');
     setSessionRedirect({ path: '/sign-in', returnPath: pathname });
-  }
+  }, [pathname]);
 
   useEffect(() => {
     let active = true;
@@ -126,13 +131,15 @@ function AppViews() {
     if (sessionRedirect?.path === pathname) setSessionRedirect(undefined);
   }, [pathname, sessionRedirect]);
 
+  function signedOut() {
+    setSession(null);
+    setSessionRedirect({ path: '/' });
+  }
+
   function logout() {
     if (!session) return;
     setMessage('');
-    void provider.signOut(session).then(() => {
-      setSession(null);
-      setSessionRedirect({ path: '/' });
-    })
+    void provider.signOut(session).then(signedOut)
       .catch((error) => {
         if (error instanceof DataError && error.code === 'ERR_SESSION_EXPIRED') sessionEnded();
         else setMessage(readableError(error));
@@ -176,7 +183,8 @@ function AppViews() {
   }
 
   if (session && protectedPage) return <AccountFrame session={session} onSignOut={logout} variant="workspace">
-    <AccountWorkspace session={session} message={message} workspace={pathname === '/account' && !['admin', 'platform'].includes(session.role)
+    <AccountWorkspace session={session} message={message} security={pathname === '/account/security'}
+      onExpired={sessionEnded} onSignedOut={signedOut} workspace={accountPage && !['admin', 'platform'].includes(session.role)
       ? workspaces[session.role] : undefined} />
   </AccountFrame>;
 

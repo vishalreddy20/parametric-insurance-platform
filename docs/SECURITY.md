@@ -29,10 +29,14 @@ Sign-in rate limits by IP in memory. Account lockouts are stored in SQLite and
 survive gateway restarts. Known and unknown usernames share the same limits
 and credential errors. Registration stores its idempotency key atomically with
 the account. A retry with the same details confirms the existing registration. SMTP reset, administrator reset codes, password change, worker MFA
-management, account security screens, and the auth audit log remain pending.
+management and the auth audit log remain pending.
 Workers and platforms must prove ownership of the payout before reading its
 indexed ledger proof. Regulators have event, audit and reconciliation access.
 Individual policies, claims, and payouts are excluded from their API access.
 The ownership review for the remaining routes is in progress. The gateway currently targets one node. Host the
 frontend and API on the same site when deploying with Strict cookies, use TLS
 outside loopback, protect the database and runtime key, and back them up together.
+
+The account security page lists active sessions and their expiry times, and
+allows individual revocation and sign out everywhere. It displays authenticator
+enrolment status without exposing setup keys or recovery codes.

@@ -87,10 +87,17 @@ export type SignInResult =
   | { status: 'challenge' }
   | { status: 'signed-in'; session: Session; recoveryCodes: string[] };
 
+export interface AccountSecurity {
+  authenticatorEnrolled: boolean;
+  sessions: { id: string; current: boolean; idleExpiresAt: number; absoluteExpiresAt: number }[];
+}
+
 export interface DataProvider {
   signIn(username: string, password: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
   currentSession(): Promise<Session>;
-  signOut(session: Session): Promise<void>;
+  signOut(session: Session, everywhere?: boolean): Promise<void>;
+  security(session: Session): Promise<AccountSecurity>;
+  revokeSession(session: Session, sessionId: string): Promise<void>;
   register(username: string, password: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
   policy(session: Session): Promise<Policy | null>;
   enroll(session: Session, terms: Enroll): Promise<Policy>;
