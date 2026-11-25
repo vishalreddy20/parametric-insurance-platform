@@ -1,7 +1,7 @@
 import { status as grpcStatus, credentials, Client } from '@grpc/grpc-js';
 import { CommitError, EndorseError, StatusCode, connect, signers } from '@hyperledger/fabric-gateway';
 import type { Gateway, Network } from '@hyperledger/fabric-gateway';
-import { createPrivateKey } from 'node:crypto';
+import { createPrivateKey, X509Certificate } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { ledgerFailure, retry } from './errors.js';
 
@@ -31,6 +31,12 @@ export function retryableLedgerError(error: unknown): boolean {
     (error instanceof EndorseError && error.code === grpcStatus.DEADLINE_EXCEEDED);
 }
 
+export class LedgerIdentityValidationError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+  }
+}
+
 export class FabricLedger implements Ledger {
   private readonly peers = new Map<string, { gateway: Gateway; client: Client }>();
   private mvccRetries = 0;
@@ -44,6 +50,11 @@ export class FabricLedger implements Ledger {
         const [cert, key, ca] = await Promise.all([
           readFile(identity.certificate), readFile(identity.privateKey), readFile(identity.tlsCertificate),
         ]);
+        const privateKey = createPrivateKey(key);
+        if (!new X509Certificate(cert).checkPrivateKey(privateKey)) {
+          throw new LedgerIdentityValidationError('ERR_LEDGER_IDENTITY_KEY',
+            'A gateway Fabric certificate does not match its private key. Reissue the runtime identities.');
+        }
         const client = new Client(identity.endpoint, credentials.createSsl(ca), {
           'grpc.ssl_target_name_override': identity.tlsHost,
           'grpc.default_authority': identity.tlsHost,
@@ -52,7 +63,7 @@ export class FabricLedger implements Ledger {
           const gateway = connect({
             client,
             identity: { mspId: identity.mspId, credentials: cert },
-            signer: signers.newPrivateKeySigner(createPrivateKey(key)),
+            signer: signers.newPrivateKeySigner(privateKey),
             evaluateOptions: deadline(evaluateTimeoutMs),
             endorseOptions: deadline(12000),
             submitOptions: deadline(8000),
@@ -68,6 +79,28 @@ export class FabricLedger implements Ledger {
     } catch (error) {
       ledger.close();
       throw error;
+    }
+  }
+
+  async validateIdentities(): Promise<void> {
+    // A signed query checks channel trust against the running peer, including after a sample reset.
+    for (const [actor] of this.peers) {
+      try {
+        await this.network(actor).getContract('qscc').evaluate('GetChainInfo', {
+          arguments: [this.channel],
+        });
+      } catch (error) {
+        const failure = error as { code?: number; message?: string; details?: { message?: string }[] };
+        const messages = [failure.message, ...(Array.isArray(failure.details) ? failure.details.map(({ message }) => message) : [])];
+        const rejected = failure.code === grpcStatus.PERMISSION_DENIED || failure.code === grpcStatus.UNAUTHENTICATED ||
+          messages.some((message) => /creator org unknown|creator is malformed|unknown authority|certificate verify failed|failed to verify certificate/i.test(message ?? ''));
+        if (rejected) {
+          throw new LedgerIdentityValidationError('ERR_LEDGER_MSP_MISMATCH',
+            'The running DRUNIX network rejected a gateway identity or its TLS trust. Use fresh runtime identities issued from the current network crypto.');
+        }
+        throw new LedgerIdentityValidationError('ERR_LEDGER_IDENTITY_CHECK',
+          'Could not validate gateway identities against DRUNIX. Verify peer connectivity, TLS trust and channel membership.');
+      }
     }
   }
 

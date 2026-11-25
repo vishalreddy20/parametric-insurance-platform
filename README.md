@@ -44,8 +44,11 @@ outside ParaShield.
 From a fresh ParaShield checkout, run this command in the repository root.
 
 ```bash
-scripts/demo-up.sh
+scripts/dev-up.sh
 ```
+
+`scripts/demo-up.sh` forwards to the same launcher for compatibility. See the [runbook](docs/RUNBOOK.md) for startup and network reset recovery.
+
 
 The command builds the DRUNIX binaries, installs pinned application
 dependencies, starts the sample, deploys chaincode, runs a ledger smoke test,

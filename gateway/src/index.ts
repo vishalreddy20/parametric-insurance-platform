@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createApp } from './app.js';
 import { ApiError } from './errors.js';
 import { DemoAuth, principalSchema } from './auth.js';
-import { FabricLedger } from './ledger.js';
+import { FabricLedger, LedgerIdentityValidationError } from './ledger.js';
 import { callMockUPI, Checkpoints, consumeEvents, Fanout, mockSettlement } from './worker.js';
 import { id } from './schema.js';
 
@@ -54,6 +54,12 @@ async function main() {
   if (Boolean(upiURL) !== Boolean(upiAuth)) throw new Error('Incomplete mock UPI configuration.');
   const state = await Checkpoints.open(settings.PARASHIELD_GATEWAY_STATE_DIR);
   const ledger = await FabricLedger.open(config.identities, 'parashield', 'parashield', settings.PARASHIELD_EVALUATE_TIMEOUT_MS);
+  try {
+    await ledger.validateIdentities();
+  } catch (error) {
+    ledger.close();
+    throw error;
+  }
   const settlement = upiURL && upiAuth ? mockSettlement(upiURL, upiAuth) : undefined;
   const app = createApp({ ledger, auth, saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
     readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
@@ -115,7 +121,11 @@ async function main() {
 
 try {
   process.exitCode = await main();
-} catch {
-  log({ action: 'startup_failed', code: 'ERR_GATEWAY_START' });
+} catch (error) {
+  if (error instanceof LedgerIdentityValidationError) {
+    log({ action: 'startup_failed', code: error.code, message: error.message });
+  } else {
+    log({ action: 'startup_failed', code: 'ERR_GATEWAY_START' });
+  }
   process.exitCode = 1;
 }
