@@ -27,9 +27,46 @@ const migrations = [
     createdAt INTEGER NOT NULL,
     CHECK ((role IN ('worker', 'platform')) = (platformId IS NOT NULL))
   ) STRICT;`,
+  `CREATE TABLE sessions (
+    id TEXT PRIMARY KEY,
+    accountId TEXT NOT NULL REFERENCES accounts(id),
+    accessHash TEXT NOT NULL UNIQUE,
+    refreshHash TEXT NOT NULL UNIQUE,
+    csrfHash TEXT NOT NULL,
+    accessExpiresAt INTEGER NOT NULL,
+    idleExpiresAt INTEGER NOT NULL,
+    absoluteExpiresAt INTEGER NOT NULL,
+    revokedAt INTEGER
+  ) STRICT;
+  CREATE INDEX sessions_account_id ON sessions(accountId);
+  CREATE TABLE used_refresh_tokens (
+    hash TEXT PRIMARY KEY,
+    sessionId TEXT NOT NULL REFERENCES sessions(id)
+  ) STRICT;`,
 ];
 
-export class SqliteAccounts implements AccountRepository {
+export interface Session {
+  id: string;
+  accountId: string;
+  accessHash: string;
+  refreshHash: string;
+  csrfHash: string;
+  accessExpiresAt: number;
+  idleExpiresAt: number;
+  absoluteExpiresAt: number;
+  revokedAt: number | null;
+}
+
+export type SessionRotation = 'rotated' | 'reuse' | 'invalid';
+
+export interface SessionRepository {
+  insertSession(session: Session): Promise<void>;
+  useAccess(hash: string, now: number, idleUntil: number): Promise<Session | undefined>;
+  rotateRefresh(oldHash: string, csrfHash: string, next: Pick<Session, 'accessHash' | 'refreshHash' | 'accessExpiresAt' | 'idleExpiresAt'>, now: number): Promise<SessionRotation>;
+  revokeSessions(accountId: string, now: number, id?: string): Promise<void>;
+}
+
+export class SqliteAccounts implements AccountRepository, SessionRepository {
   private readonly database: Database.Database;
 
   constructor(path: string) {
@@ -60,6 +97,47 @@ export class SqliteAccounts implements AccountRepository {
   async findByUsername(username: string): Promise<Account | undefined> {
     return this.database.prepare(`SELECT id, username, role, passwordHash, platformId, createdAt
       FROM accounts WHERE username = ?`).get(username) as Account | undefined;
+  }
+
+  async insertSession(session: Session): Promise<void> {
+    this.database.prepare(`INSERT INTO sessions
+      VALUES (@id, @accountId, @accessHash, @refreshHash, @csrfHash, @accessExpiresAt,
+        @idleExpiresAt, @absoluteExpiresAt, @revokedAt)`).run(session);
+  }
+
+  async useAccess(hash: string, now: number, idleUntil: number): Promise<Session | undefined> {
+    return this.database.prepare(`UPDATE sessions SET idleExpiresAt = MIN(absoluteExpiresAt, ?)
+      WHERE accessHash = ? AND revokedAt IS NULL AND accessExpiresAt > ?
+        AND idleExpiresAt > ? AND absoluteExpiresAt > ?
+      RETURNING *`).get(idleUntil, hash, now, now, now) as Session | undefined;
+  }
+
+  async rotateRefresh(
+    oldHash: string,
+    csrfHash: string,
+    next: Pick<Session, 'accessHash' | 'refreshHash' | 'accessExpiresAt' | 'idleExpiresAt'>,
+    now: number,
+  ): Promise<SessionRotation> {
+    return this.database.transaction((): SessionRotation => {
+      const reused = this.database.prepare(`UPDATE sessions SET revokedAt = ?
+        WHERE id = (SELECT sessionId FROM used_refresh_tokens WHERE hash = ?)
+          AND csrfHash = ? AND revokedAt IS NULL AND absoluteExpiresAt > ?`).run(now, oldHash, csrfHash, now);
+      if (reused.changes) return 'reuse';
+      const session = this.database.prepare(`UPDATE sessions SET accessHash = @accessHash, refreshHash = @refreshHash,
+          accessExpiresAt = MIN(absoluteExpiresAt, @accessExpiresAt),
+          idleExpiresAt = MIN(absoluteExpiresAt, @idleExpiresAt)
+        WHERE refreshHash = @oldHash AND csrfHash = @csrfHash AND revokedAt IS NULL
+          AND idleExpiresAt > @now AND absoluteExpiresAt > @now RETURNING id`)
+        .get({ ...next, oldHash, csrfHash, now }) as Pick<Session, 'id'> | undefined;
+      if (!session) return 'invalid';
+      this.database.prepare('INSERT INTO used_refresh_tokens VALUES (?, ?)').run(oldHash, session.id);
+      return 'rotated';
+    }).immediate();
+  }
+
+  async revokeSessions(accountId: string, now: number, id?: string): Promise<void> {
+    this.database.prepare(`UPDATE sessions SET revokedAt = ? WHERE accountId = ? AND revokedAt IS NULL
+      AND (? IS NULL OR id = ?)`).run(now, accountId, id ?? null, id ?? null);
   }
 
   close(): void {
