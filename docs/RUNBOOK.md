@@ -51,3 +51,10 @@ codes once the run starts.
 
 Set `PARASHIELD_BENCHMARK_REPORT` and `PARASHIELD_BENCHMARK_TABLE` to new paths
 to preserve recorded benchmark artefacts.
+
+A successful `/ready` checks both a ledger read through the Lite Peer and
+the configured Committing Peer. HTTP 503 `ERR_LEDGER_NOT_READY` means one of
+those checks failed. Inspect both peer types before a walkthrough. A
+Committing Peer can exit after its SQL state database times out during a
+block commit. Recover the affected sample containers and rerun the smoke
+test and readiness checks before attempting another write.

@@ -15,6 +15,7 @@ type Context = {
   accounts?: AccountHttp;
   saltKey: Uint8Array;
   readinessActor: string;
+  checkCommitPeer?: () => Promise<void>;
   settlementEnabled: boolean;
   simulatePremium?: (payment: { reference: string; policyId: string; term: number; amountPaise: number }) => Promise<unknown>;
   corsOrigin?: string;
@@ -40,7 +41,7 @@ function protect(auth: ServiceAuthentication, accounts: AccountHttp | undefined,
   };
 }
 
-export function createApp({ ledger, auth, accounts, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
+export function createApp({ ledger, auth, accounts, saltKey, readinessActor, checkCommitPeer, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
   const app = express();
   const allow = (roles: schema.Role[], handler: Parameters<typeof protect>[3]) =>
     protect(auth, accounts, roles, handler);
@@ -77,7 +78,11 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
   accounts?.mount(app);
   app.get('/health', (_request, response) => { response.json({ status: 'ok' }); });
   app.get('/ready', async (_request, response) => {
-    await ledger.evaluate(readinessActor, 'ConfigContract:GetConfig');
+    try {
+      await Promise.all([ledger.evaluate(readinessActor, 'ConfigContract:GetConfig'), checkCommitPeer?.()]);
+    } catch {
+      throw new ApiError('ERR_LEDGER_NOT_READY', 503, 'The ledger read or commit path is unavailable.');
+    }
     response.json({ status: 'ready', settlementEnabled });
   });
   app.post('/v1/service-token', async (request, response) => {

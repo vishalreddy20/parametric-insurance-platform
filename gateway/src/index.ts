@@ -89,7 +89,8 @@ async function main() {
   }
   const app = createApp({ ledger, auth, accounts,
     saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
-    readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
+    readinessActor: config.insurer, checkCommitPeer: () => ledger.checkChannel(config.eventActor),
+    settlementEnabled: Boolean(settlement),
     simulatePremium: upiURL && upiAuth ? (payment) => callMockUPI(upiURL, upiAuth, '/v1/premiums', payment) : undefined,
     corsOrigin: settings.PARASHIELD_ORIGIN,
     deploymentMetrics: () => ledger.metrics(),

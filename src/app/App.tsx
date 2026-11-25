@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Link, Navigate, useLocation, useNavigate } from 'react-router';
-import { ArrowRight, KeyRound, LayoutGrid, Moon, Shield, Sun, UserRound } from 'lucide-react';
+import { ArrowRight, BarChart3, KeyRound, LayoutGrid, Moon, Shield, Sun, UserRound } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { AccountSecurity } from './pages/AccountSecurity';
 import { AccountNotice } from './pages/AccountNotice';
@@ -13,6 +13,8 @@ const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
 const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow').then((module) => ({ default: module.OnboardingFlow })));
 const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((module) => ({ default: module.WorkerDashboard })));
+const InsurerConsole = lazy(() => import('./pages/InsurerConsole').then((module) => ({ default: module.InsurerConsole })));
+const SurgeResults = lazy(() => import('./pages/SurgeResults').then((module) => ({ default: module.SurgeResults })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then((module) => ({ default: module.AdminPanel })));
 const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
 const workspaces = {
@@ -107,11 +109,12 @@ function AppViews() {
   const [sessionCheck, setSessionCheck] = useState(0);
   const [sessionRedirect, setSessionRedirect] = useState<{ path: string; returnPath?: string }>();
   const onboarding = pathname === '/worker/onboarding';
-  const targetRole = onboarding ? 'worker' : (Object.keys(workspaces) as (keyof typeof workspaces)[]).find((role) => workspaces[role].path === pathname);
+  const surge = pathname === '/insurer/surge';
+  const targetRole = onboarding ? 'worker' : surge ? 'insurer' : (Object.keys(workspaces) as (keyof typeof workspaces)[]).find((role) => workspaces[role].path === pathname);
   const accountPage = pathname === '/account' || pathname === '/account/security';
   const protectedPage = accountPage || Boolean(targetRole);
   const returnPath = typeof state?.returnPath === 'string' &&
-    ['/account', '/account/security', '/worker/onboarding', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
+    ['/account', '/account/security', '/worker/onboarding', '/insurer/surge', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
 
   const sessionEnded = useCallback(() => {
     setSession(null);
@@ -187,7 +190,17 @@ function AppViews() {
         <WorkerDashboard provider={provider} session={session} onExpired={sessionEnded} />
       </AccountFrame>;
     }
-    if (targetRole === 'insurer' || targetRole === 'regulator') {
+    if (targetRole === 'insurer') return <AccountFrame session={session} onSignOut={logout} variant="workspace">
+      {message && <p role="alert">{message}</p>}
+      <div className="account-workspace insurer-workspace">
+        <aside className="account-sidebar"><nav aria-label="Insurer workspace">
+          <Link to="/insurer" aria-current={!surge ? 'page' : undefined}><Shield size={18} aria-hidden="true" /> Insurer console</Link>
+          <Link to="/insurer/surge" aria-current={surge ? 'page' : undefined}><BarChart3 size={18} aria-hidden="true" /> Surge results</Link>
+        </nav></aside>
+        {surge ? <SurgeResults /> : <InsurerConsole provider={provider} session={session} onExpired={sessionEnded} />}
+      </div>
+    </AccountFrame>;
+    if (targetRole === 'regulator') {
       return <>{message && <p role="alert">{message}</p>}<AdminPanel provider={provider} session={session} onExpired={sessionEnded} logout={logout} /></>;
     }
   }

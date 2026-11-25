@@ -82,13 +82,15 @@ export class FabricLedger implements Ledger {
     }
   }
 
+  async checkChannel(actor: string): Promise<void> {
+    await this.network(actor).getContract('qscc').evaluate('GetChainInfo', { arguments: [this.channel] });
+  }
+
   async validateIdentities(): Promise<void> {
     // A signed query checks channel trust against the running peer, including after a sample reset.
     for (const [actor] of this.peers) {
       try {
-        await this.network(actor).getContract('qscc').evaluate('GetChainInfo', {
-          arguments: [this.channel],
-        });
+        await this.checkChannel(actor);
       } catch (error) {
         const failure = error as { code?: number; message?: string; details?: { message?: string }[] };
         const messages = [failure.message, ...(Array.isArray(failure.details) ? failure.details.map(({ message }) => message) : [])];

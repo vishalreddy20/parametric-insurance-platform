@@ -551,3 +551,40 @@
   .worker-details > div { grid-template-columns: minmax(0, 1fr); }
   .worker-proof-header [data-slot=sheet-title] { font-size: 20px; }
 }
+
+.insurer-console { display: grid; gap: 20px; min-width: 0; }
+.insurer-title { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+.insurer-title h1 { margin-block: 4px; }
+.insurer-title p:not(.account-kicker) { color: var(--account-muted); }
+.insurer-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)); gap: 12px; padding: 12px 16px; }
+.insurer-metrics > div { background: var(--account-surface); border: 1px solid var(--account-divider); border-bottom: 3px solid var(--account-accent); }
+.insurer-tabs [data-slot=tabs-list] { grid-template-columns: repeat(2, minmax(0, 200px)); }
+.insurer-data { display: grid; gap: 12px; }
+.insurer-policies, .insurer-event ul, .insurer-simulation-result ul { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.insurer-policies li { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 10px; align-items: center; padding: 12px; background: var(--account-subtle); }
+.insurer-policies li > div { display: grid; gap: 4px; }
+.insurer-policies code, .insurer-simulation-result code { overflow-wrap: anywhere; }
+.insurer-event { background: var(--account-subtle); padding: 12px; display: grid; gap: 8px; }
+.insurer-event header { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px; }
+.insurer-event h3 { text-transform: capitalize; }
+.insurer-event summary { cursor: pointer; color: var(--account-accent); }
+.insurer-event li { padding-block-start: 6px; }
+.account-panel.insurer-simulation { padding: 0; overflow: hidden; }
+.insurer-simulation-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; padding: 16px; }
+.insurer-simulation-form { display: grid; gap: 16px; align-content: start; }
+.insurer-scenario { display: flex; align-items: start; gap: 10px; padding: 12px; background: var(--account-subtle); border: 1px solid var(--account-divider); border-radius: var(--account-radius); cursor: pointer; }
+.insurer-scenario:has([data-state=checked]) { border-color: var(--account-accent); }
+.insurer-scenario span { display: grid; }
+.insurer-scenario small { color: var(--account-muted); }
+.insurer-simulation-result { min-width: 0; display: grid; align-content: start; gap: 10px; padding: 16px; border-radius: var(--account-radius); background: #202a3c; color: #f9fafb; }
+.insurer-simulation-result p { color: inherit; }
+.insurer-simulation-result h3, .insurer-simulation-result p svg { display: inline-flex; gap: 8px; align-items: center; }
+.insurer-simulation-result li { padding-top: 8px; border-top: 1px solid #51617b; }
+.insurer-simulation-result li code { display: block; font-size: 12px; }
+.insurer-run-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.insurer-run { display: grid; align-content: start; gap: 8px; }
+@media (max-width: 760px) {
+  .insurer-simulation-grid, .insurer-run-grid { grid-template-columns: minmax(0, 1fr); }
+  .insurer-policies li { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .insurer-policies li > div { grid-column: 1 / -1; }
+}

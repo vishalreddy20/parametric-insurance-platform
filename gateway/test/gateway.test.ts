@@ -69,7 +69,9 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
     async login() { throw new Error('The fixture injects authenticated principals directly.'); },
   };
   const logs: Record<string, unknown>[] = [];
+  let commitReady = true;
   const server = createApp({ ledger, auth, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
+    checkCommitPeer: async () => { if (!commitReady) throw new Error('test commit peer unavailable'); },
     settlementEnabled: false, findProof: async () => ({ blockNumber: '2' }), simulatePremium: async (payment) => payment, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
   context.after(() => { server.close(); });
   await once(server, 'listening');
@@ -121,6 +123,12 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
   assert.equal((await get('/v1/policies/worker-a', 'regulator')).status, 403);
   assert.equal((await get('/v1/summary/bangalore', 'regulator')).status, 403);
   assert.equal((await get(proof, 'regulator')).status, 200);
+
+  assert.equal((await fetch(base + '/ready')).status, 200);
+  commitReady = false;
+  const unavailable = await fetch(base + '/ready');
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.json()).code, 'ERR_LEDGER_NOT_READY');
 
   assert(!JSON.stringify(logs).includes('SYNTHETIC PHONE'));
   assert(!JSON.stringify(logs).includes(accessCode));

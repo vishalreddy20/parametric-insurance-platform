@@ -78,6 +78,12 @@ export interface Benchmark {
   environment: { network: string };
   metrics: { tps?: number; p50Ms?: number | null; p95Ms?: number | null; failures?: number; mvccRetries?: number };
 }
+export interface SimulationResult {
+  event: DisruptionEvent;
+  offlineOracle: string | null;
+  readings: { oracleId: string; submittedValue: number; txId: string; blockNumber: string }[];
+}
+
 export interface Reconciliation {
   reservedCount: number; settledCount: number; failedCount: number;
   reservedPaise: number; settledPaise: number; failedPaise: number;
@@ -126,7 +132,7 @@ export interface DataProvider {
   policies(session: Session, zone: Zone, status: PolicyStatus): Promise<Policy[]>;
   benchmark(session: Session): Promise<Benchmark | null>;
   reconciliation(session: Session, zone: Zone, week: string): Promise<Reconciliation | null>;
-  simulate(session: Session, zone: Zone, mode: SimulationMode): Promise<{ event: DisruptionEvent }>;
+  simulate(session: Session, zone: Zone, mode: SimulationMode): Promise<SimulationResult>;
 }
 
 export class DataError extends Error {
