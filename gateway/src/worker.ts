@@ -173,15 +173,26 @@ export async function consumeEvents(ledger: FabricLedger, actor: string, state: 
   }
 }
 
-export function mockSettlement(url: string, authorization: string): Settlement {
-  return async (job) => {
-    const response = await fetch(new URL('/v1/payouts', url), {
+export async function callMockUPI(url: string, authorization: string, path: string, input: unknown): Promise<unknown> {
+  try {
+    const response = await fetch(new URL(path, url), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: authorization },
-      body: JSON.stringify({ payoutId: job.key, reference: 'pay-' + job.key.slice(0, 60), amountPaise: job.amountPaise }),
-      signal: AbortSignal.timeout(8000),
+      body: JSON.stringify(input),
+      signal: AbortSignal.timeout(38_000),
     });
-    if (!response.ok) throw new ApiError('ERR_MOCK_UPI', 503, 'Simulated settlement is unavailable.');
+    if (response.ok) return await response.json();
     await response.body?.cancel();
+  } catch {
+    // The request may have completed; callers reuse the deterministic reference.
+  }
+  throw new ApiError('ERR_MOCK_UPI', 503, 'Simulated payment processing is unavailable.');
+}
+
+export function mockSettlement(url: string, authorization: string): Settlement {
+  return async (job) => {
+    await callMockUPI(url, authorization, '/v1/payouts', {
+      payoutId: job.key, reference: 'pay-' + job.key.slice(0, 60), amountPaise: job.amountPaise,
+    });
   };
 }

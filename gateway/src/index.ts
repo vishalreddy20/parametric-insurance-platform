@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createApp } from './app.js';
 import { DemoAuth, principalSchema } from './auth.js';
 import { FabricLedger } from './ledger.js';
-import { Checkpoints, consumeEvents, Fanout, mockSettlement } from './worker.js';
+import { callMockUPI, Checkpoints, consumeEvents, Fanout, mockSettlement } from './worker.js';
 import { id } from './schema.js';
 
 const configSchema = z.strictObject({
@@ -48,7 +48,9 @@ async function main() {
   const ledger = await FabricLedger.open(config.identities, 'parashield', 'parashield');
   const settlement = upiURL && upiAuth ? mockSettlement(upiURL, upiAuth) : undefined;
   const app = createApp({ ledger, auth, saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
-    readinessActor: config.insurer, settlementEnabled: Boolean(settlement), corsOrigin: settings.PARASHIELD_ORIGIN, log });
+    readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
+    simulatePremium: upiURL && upiAuth ? (payment) => callMockUPI(upiURL, upiAuth, '/v1/premiums', payment) : undefined,
+    corsOrigin: settings.PARASHIELD_ORIGIN, log });
   const abort = new AbortController();
   const server = app.listen(settings.PARASHIELD_GATEWAY_PORT, settings.PARASHIELD_GATEWAY_HOST);
   try {

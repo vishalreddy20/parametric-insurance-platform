@@ -74,3 +74,22 @@ ephemeral cryptogen sample CAs. Its credentials and manifest live outside
 the source tree. Workers authenticate to the gateway and use a platform
 actor behind it. Using production identities would require managed CAs,
 organizational onboarding and credential rotation.
+
+## Give each simulator its own signed oracle identity
+
+Three simulated sources reuse the prototype disruption scenarios and give
+each oracle a deterministic noise seed. Each submits through a separate
+role-certificate identity. All readings are signed and stored by DRUNIX.
+Only an insurer session can start a simulation. An offline run omits the
+third submitter, and a disagreement run submits the dissent first so the
+immutable declaration can retain it. Use a fresh zone/hour for each mode
+because the first reading for an oracle and event key is authoritative.
+
+## Persist simulated UPI results before invoking the ledger callback
+
+Mock UPI uses one service instance and one persistent directory. The
+reference fixes the outcome and binds it to a request payload. Retrying
+delivery after a process failure uses the same reference at the gateway
+and chaincode. The premium proxy assigns one reference per policy term,
+and failed simulated premiums leave that term unpaid. No payment rail is
+contacted.

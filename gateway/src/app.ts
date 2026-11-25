@@ -1,4 +1,4 @@
-import { createHmac, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
 import express from 'express';
 import type { ErrorRequestHandler, Request, RequestHandler, Response } from 'express';
 import type { ZodType } from 'zod';
@@ -14,10 +14,11 @@ type Context = {
   saltKey: Uint8Array;
   readinessActor: string;
   settlementEnabled: boolean;
+  simulatePremium?: (payment: { reference: string; policyId: string; term: number; amountPaise: number }) => Promise<unknown>;
   corsOrigin?: string;
   log?: (fields: Record<string, unknown>) => void;
 };
-type PolicyOwner = { terms?: { workerId: string } };
+type PolicyOwner = { terms?: { workerId: string; premiumPaise: number }; term?: number; status?: string };
 
 function parse<T>(validator: ZodType<T>, value: unknown): T {
   const result = validator.safeParse(value);
@@ -40,7 +41,7 @@ function enforceWorker(user: Principal, policyId: string, workerId?: string) {
   }
 }
 
-export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, corsOrigin, log = () => {} }: Context) {
+export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, log = () => {} }: Context) {
   const app = express();
   app.disable('x-powered-by');
   app.use((request, response, next) => {
@@ -76,6 +77,10 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
     response.json(await auth.login(body.username, body.accessCode));
   });
 
+  app.get('/v1/session', protect(auth, [...schema.roles], async (_request, response, user) => {
+    response.json({ role: user.role, policyId: user.policyId, workerId: user.workerId, simulated: true });
+  }));
+
   app.post('/v1/policies', protect(auth, ['worker', 'platform'], async (request, response, user) => {
     const { worker, policyId, ...terms } = parse(schema.enroll, request.body);
     enforceWorker(user, policyId, terms.workerId);
@@ -87,6 +92,18 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
         policyTerms: Buffer.from(JSON.stringify({ ...terms, platform: user.platformId })),
       },
     }));
+  }));
+  app.post('/v1/policies/:id/premium-simulation', protect(auth, ['worker', 'platform'], async (request, response, user) => {
+    if (!simulatePremium) throw new ApiError('ERR_MOCK_UPI', 503, 'Simulated premium processing is unavailable.');
+    const id = parse(schema.id, request.params.id);
+    enforceWorker(user, id);
+    const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [id]);
+    enforceWorker(user, id, policy.terms?.workerId);
+    if (!policy.terms || !policy.term || !['PENDING_PREMIUM', 'ACTIVE'].includes(policy.status ?? '')) {
+      throw new ApiError('ERR_STATE', 409, 'The policy term cannot accept a simulated payment.');
+    }
+    const reference = 'pre-' + createHash('sha256').update(id + ':' + policy.term).digest('hex').slice(0, 60);
+    response.json(await simulatePremium({ reference, policyId: id, term: policy.term, amountPaise: policy.terms.premiumPaise }));
   }));
   app.post('/v1/callbacks/premium', protect(auth, ['bank'], async (request, response, user) => {
     const body = parse(schema.premium, request.body);

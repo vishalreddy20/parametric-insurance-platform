@@ -29,3 +29,9 @@
 - Added a persistent event cursor and batched, five-concurrent policy fan-out. Settlement jobs remain queued when mock UPI is disabled. Gateway proposal traffic uses the Lite Peers; committed events stream from a Committing Peer. The initial Lite Peer stream did not deliver the declared event, while the Committing Peer stream passed.
 - `npm --prefix gateway test` passed all 3 tests, including replay after a failed page. `DRUNIX_RUNTIME=... scripts/gateway-integration.sh` passed against chaincode 2.0 with authenticated enrollment, replay, premium, activity, pagination, role denial, two signed quorum readings and durable event intake.
 - The committed payout path was exercised in Go stub tests. The live integration queued a declared event but did not wait for the event window to close or settle a live payout. Demo role certificates are issued by the sample CAs and occupy the sample's two MSPs.
+
+## Phase 4 — Verified on DRUNIX
+
+- Added the insurer-only oracle simulation service and persistent mock UPI service. The oracle adapters reuse the prototype's weather, social, traffic and platform scenario logic, and each submits with a distinct signed identity. All service responses mark simulation explicitly.
+- `npm --prefix mock-upi test` passed both tests, covering concurrent duplicate requests, conflicting data, stored failed outcomes and callback recovery across restart. The gateway's 3 tests passed and the oracle build succeeded.
+- `DRUNIX_RUNTIME=... scripts/services-integration.sh` passed against the running sample. Normal and disagreement storms each submitted 3 authenticated readings. The offline scenario declared with 2. The simulated premium callback moved the policy to ACTIVE on DRUNIX and returned the same result on replay. Payout settlement callbacks were tested against a fake receiver in this phase; live payout settlement still awaits an eligible closed event.
