@@ -40,3 +40,8 @@ outside loopback, protect the database and runtime key, and back them up togethe
 The account security page lists active sessions and their expiry times, and
 allows individual revocation and sign out everywhere. It displays authenticator
 enrolment status without exposing setup keys or recovery codes.
+
+Worker onboarding drafts are encrypted in SQLite and scoped to the
+authenticated account. Successful enrollment clears the draft and stores the
+gateway-confirmed transaction and block. Profile fields go to the existing
+ledger private collection. Keep the runtime key with the database backup.

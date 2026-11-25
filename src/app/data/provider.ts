@@ -92,6 +92,19 @@ export interface AccountSecurity {
   sessions: { id: string; current: boolean; idleExpiresAt: number; absoluteExpiresAt: number }[];
 }
 
+export interface OnboardingDraft {
+  step: number;
+  name: string;
+  phone: string;
+  upi: string;
+  zone: Zone | '';
+  income: string;
+  hours: string;
+  tier: Tier;
+}
+
+export interface EnrollmentConfirmation { txId: string; blockNumber: string }
+
 export interface DataProvider {
   signIn(username: string, password: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
   currentSession(): Promise<Session>;
@@ -100,7 +113,9 @@ export interface DataProvider {
   revokeSession(session: Session, sessionId: string): Promise<void>;
   register(username: string, password: string, platformId: 'zomato' | 'swiggy', idempotencyKey: string): Promise<void>;
   policy(session: Session): Promise<Policy | null>;
-  enroll(session: Session, terms: Enroll): Promise<Policy>;
+  onboarding(session: Session): Promise<{ draft: OnboardingDraft | null; confirmation: EnrollmentConfirmation | null }>;
+  saveOnboarding(session: Session, draft: OnboardingDraft): Promise<void>;
+  enroll(session: Session, terms: Enroll): Promise<{ result: Policy } & EnrollmentConfirmation>;
   payPremium(session: Session): Promise<{ status: 'PAID' | 'FAILED'; callbackStatus: string }>;
   events(session: Session, zone: Zone): Promise<DisruptionEvent[]>;
   payouts(session: Session): Promise<Payout[]>;

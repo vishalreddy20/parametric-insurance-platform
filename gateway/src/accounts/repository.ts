@@ -18,6 +18,9 @@ export interface AccountRepository {
   register(account: Account, key: string, fingerprint: string): Promise<'created' | 'replay' | 'conflict'>;
   reserveLoginAttempt(key: string, now: number, maximum: number, windowMs: number): Promise<number>;
   clearLoginAttempts(key: string): Promise<void>;
+  onboarding(accountId: string): Promise<{ draft: string | null; txId: string | null; blockNumber: string | null } | undefined>;
+  saveOnboarding(accountId: string, draft: string): Promise<boolean>;
+  recordEnrollment(accountId: string, txId: string, blockNumber: string): Promise<void>;
   findByUsername(username: string): Promise<Account | undefined>;
   findById(id: string): Promise<Account | undefined>;
 }
@@ -69,6 +72,12 @@ const migrations = [
     expiresAt INTEGER NOT NULL
   ) STRICT;
   CREATE INDEX login_attempts_expiry ON login_attempts(expiresAt);`,
+  `CREATE TABLE worker_onboarding (
+    accountId TEXT PRIMARY KEY REFERENCES accounts(id),
+    draft TEXT,
+    txId TEXT,
+    blockNumber TEXT
+  ) STRICT;`,
 ];
 
 export interface Session {
@@ -163,6 +172,23 @@ export class SqliteAccounts implements AccountRepository, SessionRepository, Mfa
 
   async clearLoginAttempts(key: string): Promise<void> {
     this.database.prepare('DELETE FROM login_attempts WHERE key = ?').run(key);
+  }
+
+  async onboarding(accountId: string): Promise<{ draft: string | null; txId: string | null; blockNumber: string | null } | undefined> {
+    return this.database.prepare('SELECT draft, txId, blockNumber FROM worker_onboarding WHERE accountId = ?')
+      .get(accountId) as { draft: string | null; txId: string | null; blockNumber: string | null } | undefined;
+  }
+
+  async saveOnboarding(accountId: string, draft: string): Promise<boolean> {
+    return this.database.prepare(`INSERT INTO worker_onboarding (accountId, draft) VALUES (?, ?)
+      ON CONFLICT(accountId) DO UPDATE SET draft = excluded.draft WHERE worker_onboarding.txId IS NULL`)
+      .run(accountId, draft).changes === 1;
+  }
+
+  async recordEnrollment(accountId: string, txId: string, blockNumber: string): Promise<void> {
+    this.database.prepare(`INSERT INTO worker_onboarding (accountId, txId, blockNumber) VALUES (?, ?, ?)
+      ON CONFLICT(accountId) DO UPDATE SET draft = NULL, txId = excluded.txId, blockNumber = excluded.blockNumber
+      WHERE worker_onboarding.txId IS NULL`).run(accountId, txId, blockNumber);
   }
 
   async findByUsername(username: string): Promise<Account | undefined> {

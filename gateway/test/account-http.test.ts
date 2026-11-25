@@ -120,6 +120,24 @@ test('browser account endpoints enforce CSRF, MFA enrolment, replay, rotation, r
   assert.equal(workerLogin.status, 200);
   const session = await workerLogin.json();
   assert.equal(session.role, 'worker');
+  const draft = { step: 1, name: 'Test Worker', phone: '9876543210', upi: 'testing@sample',
+    zone: 'mumbai', income: '5000', hours: '40', tier: 'standard' };
+  assert.equal((await recover.send('/auth/onboarding')).status, 403);
+  assert.equal((await worker.send('/auth/onboarding', draft, false)).status, 403);
+  assert.equal((await worker.send('/auth/onboarding', { ...draft, txId: 'client-written' })).status, 400);
+  assert.equal((await worker.send('/auth/onboarding', draft)).status, 204);
+  const storedDraft = await store.onboarding(session.workerId);
+  assert(storedDraft?.draft);
+  assert(!storedDraft.draft.includes(draft.phone) && !storedDraft.draft.includes(draft.upi));
+  assert.deepEqual(await (await worker.send('/auth/onboarding')).json(), { draft, confirmation: null });
+  const committed = await worker.send('/policies', {
+    policyId: session.policyId, workerId: session.workerId, zone: draft.zone, tier: draft.tier,
+    weeklyIncomePaise: 500000, weeklyMinutes: 2400, premiumPaise: 30000,
+    worker: { identity: draft.name, phone: draft.phone, bank: draft.upi },
+  });
+  assert.equal(committed.status, 201);
+  assert.deepEqual(await (await worker.send('/auth/onboarding')).json(), { draft: null, confirmation: { txId: 'test', blockNumber: '2' } });
+  assert.equal((await worker.send('/auth/onboarding', draft)).status, 409);
   assert.equal((await worker.send('/policies/' + session.policyId)).status, 200);
   assert.equal((await worker.send('/policies/another-worker')).status, 403);
   assert.equal((await worker.send('/metrics')).status, 403);

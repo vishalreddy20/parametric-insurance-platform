@@ -3,7 +3,7 @@ import { Activity, CreditCard, FileText, RefreshCw, Shield } from 'lucide-react'
 import { DataError } from '../data/provider';
 import type { DataProvider, Payout, Session } from '../data/provider';
 import { readableError, useResource } from '../data/use-resource';
-import { OnboardingFlow } from './OnboardingFlow';
+import { Link } from 'react-router';
 import { SessionHeader } from './SessionHeader';
 
 export const money = (paise: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(paise / 100);
@@ -95,7 +95,10 @@ export function WorkerDashboard({ provider, session, onExpired, logout }: {
           <button className="btn-secondary" onClick={refresh} disabled={loading}><RefreshCw size={15} /> Refresh</button></div>
         {loading && !value && <p role="status">Loading policy and settlement records…</p>}
         {error && <p className="ps-error" role="alert">{error} <button className="btn-secondary" onClick={refresh}>Retry</button></p>}
-        {value && !policy && <OnboardingFlow provider={provider} session={session} onDone={refresh} onExpired={onExpired} />}
+        {value && !policy && <section className="glass-card ps-card"><h3>Set up your policy</h3>
+          <p>Enter your profile and review the plan before activating coverage.</p>
+          <Link className="btn-primary" to="/worker/onboarding">Start onboarding</Link>
+        </section>}
         {policy && value && <>
           {policy.status === 'PENDING_PREMIUM' && <section className="glass-card ps-card">
             <h3>Premium due</h3><p>{money(policy.terms.premiumPaise)} · {policy.terms.tier} plan</p>

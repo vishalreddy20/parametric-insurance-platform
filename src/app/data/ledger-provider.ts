@@ -1,5 +1,5 @@
 import { DataError } from './provider';
-import type { Benchmark, DataProvider, DisruptionEvent, LedgerProof, Payout, Policy, Reconciliation, Session, SignInResult } from './provider';
+import type { Benchmark, DataProvider, DisruptionEvent, LedgerProof, Payout, Policy, Reconciliation, Session, SignInResult, EnrollmentConfirmation } from './provider';
 
 export function ledgerProvider(base: string): DataProvider {
   let csrfToken: string | undefined;
@@ -89,8 +89,10 @@ export function ledgerProvider(base: string): DataProvider {
     revokeSession: (session, sessionId) => request('/auth/security/revoke', session, { sessionId }),
     register: (username, password, platformId, key) => request('/auth/register', undefined, { username, password, platformId }, true, key),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),
-    enroll: async (session, terms) => (await request<{ result: Policy }>('/policies', session,
-      { ...terms, policyId: session.policyId, workerId: session.workerId })).result,
+    onboarding: (session) => request('/auth/onboarding', session),
+    saveOnboarding: (session, draft) => request('/auth/onboarding', session, draft),
+    enroll: (session, terms) => request<{ result: Policy } & EnrollmentConfirmation>('/policies', session,
+      { ...terms, policyId: session.policyId, workerId: session.workerId }),
     payPremium: (session) => request(byPolicy(session.policyId) + '/premium-simulation', session, {}),
     events: (session, zone) => all<DisruptionEvent>('/events/' + zone, session, 'records'),
     payouts: (session) => all<Payout>(byPolicy(session.policyId) + '/payouts', session, 'records'),

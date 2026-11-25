@@ -68,3 +68,4 @@
 - Regulator routes now exclude individual worker policies, claims and payouts. Worker and platform ledger-proof reads validate the referenced payout and policy ownership. Route tests and the live gateway integration passed.
 - Slice 1 uses the new account shell for signup, sign-in, account overview, and the wrong-role 403. The live gateway persists account lockouts and atomically handles signup retries. The existing local reset was verified with the smoke test before changes.
 - Slice 2 adds Account security with live authenticator status, active sessions, individual revocation and sign out everywhere. Session listings and mutations are scoped to the authenticated account.
+- Slice 3 adds the worker onboarding profile, plan, review and activation routes, with encrypted server drafts, the existing premium calculation and a gateway-confirmed enrollment receipt.

@@ -1,7 +1,8 @@
-import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { Express, Request, Response } from 'express';
 import { z } from 'zod';
 import type { Principal } from '../auth.js';
+import { zone } from '../schema.js';
 import { ApiError } from '../errors.js';
 import { Mfa } from './mfa.js';
 import { PasswordHasher, passwordError } from './password.js';
@@ -16,6 +17,12 @@ const loginBody = z.strictObject({
 const registration = z.strictObject({
   username, password: z.string().min(1).max(256),
   platformId: z.enum(['zomato', 'swiggy']),
+});
+const onboardingDraft = z.strictObject({
+  step: z.number().int().min(0).max(2),
+  name: z.string().max(120), phone: z.string().max(32), upi: z.string().max(120),
+  zone: zone.or(z.literal('')), income: z.string().max(12), hours: z.string().max(8),
+  tier: z.enum(['basic', 'standard', 'premium']),
 });
 const idempotencyKey = z.uuid();
 const empty = z.strictObject({});
@@ -76,8 +83,10 @@ class Attempts {
 export class AccountHttp {
   private readonly attempts = new Attempts();
   private readonly secure: boolean;
+  private readonly draftKey: Buffer;
 
   constructor(private readonly options: Options) {
+    this.draftKey = createHmac('sha256', options.requestKey).update('onboarding-draft-v1').digest();
     const url = new URL(options.origin);
     this.secure = url.protocol === 'https:' || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   }
@@ -131,6 +140,27 @@ export class AccountHttp {
     const platformId = account.platformId ?? undefined;
     return { username: account.username, role: account.role, actor: platformId ?? account.role,
       platformId, ...(account.role === 'worker' && { policyId: account.id, workerId: account.id }) };
+  }
+
+  async recordEnrollment(accountId: string, txId: string, blockNumber: string): Promise<void> {
+    if (!await this.options.store.findById(accountId)) return;
+    await this.options.store.recordEnrollment(accountId, txId, blockNumber);
+  }
+
+  private sealDraft(accountId: string, draft: string): string {
+    const nonce = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.draftKey, nonce);
+    cipher.setAAD(Buffer.from(accountId));
+    const encrypted = Buffer.concat([cipher.update(draft, 'utf8'), cipher.final()]);
+    return Buffer.concat([nonce, cipher.getAuthTag(), encrypted]).toString('base64url');
+  }
+
+  private openDraft(accountId: string, sealed: string) {
+    const bytes = Buffer.from(sealed, 'base64url');
+    const decipher = createDecipheriv('aes-256-gcm', this.draftKey, bytes.subarray(0, 12));
+    decipher.setAAD(Buffer.from(accountId));
+    decipher.setAuthTag(bytes.subarray(12, 28));
+    return onboardingDraft.parse(JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]).toString('utf8')));
   }
 
   mount(app: Express): void {
@@ -212,6 +242,24 @@ export class AccountHttp {
         }
         throw error;
       }
+    });
+    app.get('/v1/auth/onboarding', async (request, response) => {
+      const { account } = await this.current(request);
+      if (account.role !== 'worker') throw new ApiError('ERR_UNAUTHORIZED', 403, 'This operation requires a worker account.');
+      const entry = await this.options.store.onboarding(account.id);
+      response.json({ draft: entry?.draft ? this.openDraft(account.id, entry.draft) : null,
+        confirmation: entry?.txId ? { txId: entry.txId, blockNumber: entry.blockNumber } : null });
+    });
+    app.post('/v1/auth/onboarding', async (request, response) => {
+      const csrf = this.csrf(request);
+      const { account, session } = await this.current(request);
+      if (account.role !== 'worker') throw new ApiError('ERR_UNAUTHORIZED', 403, 'This operation requires a worker account.');
+      if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+      const draft = parse(onboardingDraft, request.body);
+      if (!await this.options.store.saveOnboarding(account.id, this.sealDraft(account.id, JSON.stringify(draft)))) {
+        throw new ApiError('ERR_STATE', 409, 'Your policy has already been created.');
+      }
+      response.sendStatus(204);
     });
     app.get('/v1/auth/security', async (request, response) => {
       const { account, session } = await this.current(request);

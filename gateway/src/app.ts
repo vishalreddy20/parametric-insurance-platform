@@ -93,13 +93,17 @@ export function createApp({ ledger, auth, accounts, saltKey, readinessActor, set
     const { worker, policyId, ...terms } = parse(schema.enroll, request.body);
     checkWorkerPolicy(user, policyId, terms.workerId);
     const salt = createHmac('sha256', saltKey).update('workerPII\0').update(policyId).digest('hex');
-    response.status(201).json(await ledger.submit(user.actor, 'PolicyContract:CreatePolicy', {
+    const committed = await ledger.submit(user.actor, 'PolicyContract:CreatePolicy', {
       arguments: [policyId],
       transientData: {
         workerPII: Buffer.from(JSON.stringify({ ...worker, salt })),
         policyTerms: Buffer.from(JSON.stringify({ ...terms, platform: user.platformId })),
       },
-    }));
+    });
+    if (user.role === 'worker' && user.workerId) {
+      await accounts?.recordEnrollment(user.workerId, committed.txId, committed.blockNumber);
+    }
+    response.status(201).json(committed);
   }));
   app.post('/v1/policies/:id/premium-simulation', allow(['worker', 'platform'], async (request, response, user) => {
     if (!simulatePremium) throw new ApiError('ERR_MOCK_UPI', 503, 'Simulated premium processing is unavailable.');

@@ -11,6 +11,7 @@ import './account.css';
 
 const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
+const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow').then((module) => ({ default: module.OnboardingFlow })));
 const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((module) => ({ default: module.WorkerDashboard })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then((module) => ({ default: module.AdminPanel })));
 const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
@@ -62,6 +63,7 @@ function AccountWorkspace({ session, workspace, message, security, onExpired, on
       <Link to="/account" aria-current={security ? undefined : 'page'}><UserRound size={18} aria-hidden="true" /> My account</Link>
       <Link to="/account/security" aria-current={security ? 'page' : undefined}><KeyRound size={18} aria-hidden="true" /> Account security</Link>
       {workspace && <Link to={workspace.path}><LayoutGrid size={18} aria-hidden="true" /> {workspace.label}</Link>}
+      {workspace && session.role === 'worker' && <Link to="/worker/onboarding"><Shield size={18} aria-hidden="true" /> Set up coverage</Link>}
     </nav></aside>
     <div className="account-workspace-body">
       <section className="account-panel account-profile" aria-labelledby="account-title">
@@ -104,11 +106,12 @@ function AppViews() {
   const [sessionFailure, setSessionFailure] = useState<DataError>();
   const [sessionCheck, setSessionCheck] = useState(0);
   const [sessionRedirect, setSessionRedirect] = useState<{ path: string; returnPath?: string }>();
-  const targetRole = (Object.keys(workspaces) as (keyof typeof workspaces)[]).find((role) => workspaces[role].path === pathname);
+  const onboarding = pathname === '/worker/onboarding';
+  const targetRole = onboarding ? 'worker' : (Object.keys(workspaces) as (keyof typeof workspaces)[]).find((role) => workspaces[role].path === pathname);
   const accountPage = pathname === '/account' || pathname === '/account/security';
   const protectedPage = accountPage || Boolean(targetRole);
   const returnPath = typeof state?.returnPath === 'string' &&
-    ['/account', '/account/security', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
+    ['/account', '/account/security', '/worker/onboarding', ...Object.values(workspaces).map(({ path }) => path) ].includes(state.returnPath) ? state.returnPath : '/account';
 
   const sessionEnded = useCallback(() => {
     setSession(null);
@@ -175,6 +178,10 @@ function AppViews() {
   </AccountFrame>;
   if (session && targetRole) {
     if (targetRole === 'worker' && session.policyId && session.workerId) {
+      if (onboarding) return <AccountFrame session={session} onSignOut={logout} variant="workspace">
+        {message && <p role="alert">{message}</p>}
+        <OnboardingFlow provider={provider} session={session} onExpired={sessionEnded} />
+      </AccountFrame>;
       return <>{message && <p role="alert">{message}</p>}<WorkerDashboard provider={provider} session={session} onExpired={sessionEnded} logout={logout} /></>;
     }
     if (targetRole === 'insurer' || targetRole === 'regulator') {
