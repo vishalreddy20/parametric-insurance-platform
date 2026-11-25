@@ -1,19 +1,41 @@
 import { DataError } from './provider';
-import type { Benchmark, DataProvider, DisruptionEvent, LedgerProof, Payout, Policy, Reconciliation, Session } from './provider';
+import type { Benchmark, DataProvider, DisruptionEvent, LedgerProof, Payout, Policy, Reconciliation, Session, SignInResult } from './provider';
 
 export function ledgerProvider(base: string): DataProvider {
-  async function request<T>(path: string, session?: Session, body?: unknown): Promise<T> {
+  let csrfToken: string | undefined;
+  let refresh: Promise<void> | undefined;
+  let generation = 0;
+
+  async function request<T>(path: string, session?: Session, body?: unknown, retry = true): Promise<T> {
+    const sentGeneration = generation;
     let response: Response;
     try {
       response = await fetch(base.replace(/\/$/, '') + '/v1' + path, {
         method: body === undefined ? 'GET' : 'POST',
-        headers: { ...(session && { Authorization: 'Bearer ' + session.token }), ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+        credentials: 'include',
+        headers: body === undefined ? undefined : { 'Content-Type': 'application/json', 'X-CSRF-Token': await csrf() },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: AbortSignal.timeout(path === '/simulations' ? 95_000 : 45_000),
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof DataError) throw error;
       throw new DataError('ERR_OFFLINE', 'The gateway is unreachable or taking longer than expected. Try again.');
     }
+    if (response.status === 401 && retry && (session || path === '/auth/session')) {
+      if (sentGeneration === generation) {
+        refresh ??= request<void>('/auth/refresh', undefined, {}, false)
+          .then(() => { generation++; }).finally(() => { refresh = undefined; });
+        try { await refresh; }
+        catch (error) {
+          if (error instanceof DataError && error.code === 'ERR_AUTHENTICATION') {
+            throw new DataError('ERR_SESSION_EXPIRED', 'Your session expired. Sign in again.');
+          }
+          throw error;
+        }
+      }
+      return request<T>(path, session, body, false);
+    }
+    if (response.ok && (response.status === 201 || response.status === 204) && path.startsWith('/auth/')) return undefined as T;
     const value = await response.json().catch(() => null);
     if (!response.ok) {
       if (response.status === 401 && session) throw new DataError('ERR_SESSION_EXPIRED', 'Your session expired. Sign in again.');
@@ -21,6 +43,11 @@ export function ledgerProvider(base: string): DataProvider {
     }
     if (value === null) throw new DataError('ERR_GATEWAY', 'The gateway returned an invalid response.');
     return value as T;
+  }
+
+  async function csrf(): Promise<string> {
+    csrfToken ??= (await request<{ csrfToken: string }>('/auth/csrf')).csrfToken;
+    return csrfToken;
   }
   const optional = async <T,>(work: Promise<T>): Promise<T | null> => {
     try { return await work; }
@@ -44,8 +71,20 @@ export function ledgerProvider(base: string): DataProvider {
   }
 
   return {
-    mode: 'ledger',
-    signIn: (username, accessCode) => request('/login', undefined, { username, accessCode }),
+    async signIn(username, accessCode, mfa): Promise<SignInResult> {
+      const result = await request<Exclude<SignInResult, { status: 'signed-in' }> |
+        (Session & { csrfToken: string; recoveryCodes: string[] })>('/auth/login', undefined, { username, accessCode, mfa });
+      if ('status' in result) return result;
+      const { csrfToken: nextCsrf, recoveryCodes, ...session } = result;
+      csrfToken = nextCsrf;
+      return { status: 'signed-in', session, recoveryCodes };
+    },
+    currentSession: () => request('/auth/session'),
+    async signOut(session) {
+      try { await request('/auth/logout', session, {}); }
+      finally { csrfToken = undefined; }
+    },
+    register: (username, accessCode, platformId) => request('/auth/register', undefined, { username, accessCode, platformId }),
     policy: (session) => optional(request<Policy>(byPolicy(session.policyId), session)),
     enroll: async (session, terms) => (await request<{ result: Policy }>('/policies', session,
       { ...terms, policyId: session.policyId, workerId: session.workerId })).result,

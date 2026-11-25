@@ -49,10 +49,10 @@ class HttpError extends Error {
   constructor(public status: number, public code: string) { super(code); }
 }
 
-async function gateway(path: string, authorization?: string, body?: unknown) {
+async function gateway(path: string, credentials?: Record<string, string> | string, body?: unknown) {
   const response = await fetch(new URL(path, settings.PARASHIELD_GATEWAY_URL), {
     method: body === undefined ? 'GET' : 'POST',
-    headers: { ...(authorization && { Authorization: authorization }), ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+    headers: { ...(typeof credentials === 'string' ? { Authorization: credentials } : credentials), ...(body !== undefined && { 'Content-Type': 'application/json' }) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(40_000),
   });
@@ -68,9 +68,11 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '4kb' }));
 app.get('/health', (_request, response) => { response.json({ status: 'ok', simulated: true }); });
 app.post('/v1/simulations', async (request, response) => {
+  const cookie = request.get('cookie');
   const authorization = request.get('authorization');
-  if (!authorization) throw new HttpError(401, 'ERR_AUTHENTICATION');
-  const session = await gateway('/v1/session', authorization);
+  const credentials = cookie ? { Cookie: cookie } : authorization;
+  if (!credentials) throw new HttpError(401, 'ERR_AUTHENTICATION');
+  const session = await gateway('/v1/session', credentials);
   if (session.role !== 'insurer') throw new HttpError(403, 'ERR_UNAUTHORIZED');
   const parsed = scenario.safeParse(request.body);
   if (!parsed.success) throw new HttpError(400, 'ERR_VALIDATION');
@@ -78,7 +80,7 @@ app.post('/v1/simulations', async (request, response) => {
   const input = parsed.data;
   if (input.closeWindow && input.mode === 'offline') throw new HttpError(400, 'ERR_VALIDATION');
   if (input.closeWindow) {
-    const config = await gateway('/v1/config', authorization);
+    const config = await gateway('/v1/config', credentials);
     if (!config.demoClose || config.oracles.length !== 3 ||
         !['oracle-1', 'oracle-2', 'oracle-3'].every((id) => config.oracles.includes(id))) {
       throw new HttpError(409, 'ERR_DEMO_WINDOW');

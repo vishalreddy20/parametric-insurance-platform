@@ -4,6 +4,7 @@ import type { ErrorRequestHandler, Request, RequestHandler, Response } from 'exp
 import type { ZodType } from 'zod';
 import { DemoAuth, requireRole } from './auth.js';
 import type { Principal } from './auth.js';
+import type { AccountHttp } from './accounts/http.js';
 import { ApiError } from './errors.js';
 import type { Ledger } from './ledger.js';
 import { checkPolicyOwner, checkWorkerPolicy, type PolicyOwner } from './policy.js';
@@ -12,6 +13,8 @@ import * as schema from './schema.js';
 type Context = {
   ledger: Ledger;
   auth: DemoAuth;
+  accounts?: AccountHttp;
+  testFixtureAuth?: boolean;
   saltKey: Uint8Array;
   readinessActor: string;
   settlementEnabled: boolean;
@@ -20,7 +23,7 @@ type Context = {
   findProof?: (txId: string) => Promise<unknown>;
   loadBenchmark?: () => Promise<unknown>;
   deploymentMetrics?: () => { mvccRetries: number };
-  runSimulation?: (authorization: string, body: unknown) => Promise<unknown>;
+  runSimulation?: (credentials: Record<string, string>, body: unknown) => Promise<unknown>;
   log?: (fields: Record<string, unknown>) => void;
 };
 
@@ -30,22 +33,29 @@ function parse<T>(validator: ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-function protect(auth: DemoAuth, roles: schema.Role[],
+function protect(auth: DemoAuth, accounts: AccountHttp | undefined, allowFixture: boolean, roles: schema.Role[],
   handler: (request: Request, response: Response, user: Principal) => Promise<unknown>): RequestHandler {
   return async (request, response) => {
-    const principal = await auth.authenticate(request.get('authorization'));
+    const principal = await accounts?.principal(request) ?? await auth.authenticate(request.get('authorization'), !allowFixture);
     requireRole(principal, roles);
     await handler(request, response, principal);
   };
 }
 
-export function createApp({ ledger, auth, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
+export function createApp({ ledger, auth, accounts, testFixtureAuth = false, saltKey, readinessActor, settlementEnabled, simulatePremium, corsOrigin, findProof, loadBenchmark, deploymentMetrics, runSimulation, log = () => {} }: Context) {
   const app = express();
+  const allow = (roles: schema.Role[], handler: Parameters<typeof protect>[4]) =>
+    protect(auth, accounts, testFixtureAuth, roles, handler);
   app.disable('x-powered-by');
   app.use((request, response, next) => {
     const requestId = randomUUID();
     response.locals.requestId = requestId;
-    response.set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' });
+    response.set({
+      'X-Request-Id': requestId, 'Cache-Control': 'no-store',
+      'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+      'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
+    });
+    if (request.secure) response.set('Strict-Transport-Security', 'max-age=31536000');
     const start = process.hrtime.bigint();
     response.once('finish', () => log({
       requestId, method: request.method, status: response.statusCode,
@@ -54,7 +64,8 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
     if (corsOrigin && request.get('origin') === corsOrigin) {
       response.set({
         'Access-Control-Allow-Origin': corsOrigin,
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-CSRF-Token',
+        'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
         'Access-Control-Expose-Headers': 'X-Request-Id',
         'Vary': 'Origin',
@@ -65,6 +76,7 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   });
   app.use(express.json({ limit: '16kb' }));
 
+  accounts?.mount(app);
   app.get('/health', (_request, response) => { response.json({ status: 'ok' }); });
   app.get('/ready', async (_request, response) => {
     await ledger.evaluate(readinessActor, 'ConfigContract:GetConfig');
@@ -72,14 +84,14 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   });
   app.post('/v1/login', async (request, response) => {
     const body = parse(schema.login, request.body);
-    response.json(await auth.login(body.username, body.accessCode));
+    response.json(await auth.login(body.username, body.accessCode, !testFixtureAuth));
   });
 
-  app.get('/v1/session', protect(auth, [...schema.roles], async (_request, response, user) => {
-    response.json({ role: user.role, policyId: user.policyId, workerId: user.workerId, simulated: true });
+  app.get('/v1/session', allow([...schema.roles], async (_request, response, user) => {
+    response.json({ role: user.role, policyId: user.policyId, workerId: user.workerId });
   }));
 
-  app.post('/v1/policies', protect(auth, ['worker', 'platform'], async (request, response, user) => {
+  app.post('/v1/policies', allow(['worker', 'platform'], async (request, response, user) => {
     const { worker, policyId, ...terms } = parse(schema.enroll, request.body);
     checkWorkerPolicy(user, policyId, terms.workerId);
     const salt = createHmac('sha256', saltKey).update('workerPII\0').update(policyId).digest('hex');
@@ -91,7 +103,7 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
       },
     }));
   }));
-  app.post('/v1/policies/:id/premium-simulation', protect(auth, ['worker', 'platform'], async (request, response, user) => {
+  app.post('/v1/policies/:id/premium-simulation', allow(['worker', 'platform'], async (request, response, user) => {
     if (!simulatePremium) throw new ApiError('ERR_MOCK_UPI', 503, 'Simulated premium processing is unavailable.');
     const id = parse(schema.id, request.params.id);
     checkWorkerPolicy(user, id);
@@ -103,33 +115,33 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
     const reference = 'pre-' + createHash('sha256').update(id + ':' + policy.term).digest('hex').slice(0, 60);
     response.json(await simulatePremium({ reference, policyId: id, term: policy.term, amountPaise: policy.terms.premiumPaise }));
   }));
-  app.post('/v1/callbacks/premium', protect(auth, ['bank'], async (request, response, user) => {
+  app.post('/v1/callbacks/premium', allow(['bank'], async (request, response, user) => {
     const body = parse(schema.premium, request.body);
     response.json(await ledger.submit(user.actor, 'PolicyContract:RecordPremiumPaid', {
       arguments: [body.policyId, String(body.term), String(body.amountPaise), body.reference, body.requestId],
     }));
   }));
-  app.post('/v1/callbacks/settlement', protect(auth, ['bank'], async (request, response, user) => {
+  app.post('/v1/callbacks/settlement', allow(['bank'], async (request, response, user) => {
     const body = parse(schema.settlement, request.body);
     response.json(await ledger.submit(user.actor, 'PayoutContract:RecordSettlement', {
       arguments: [body.payoutId, body.status, body.reference, body.requestId],
     }));
   }));
-  app.post('/v1/activity', protect(auth, ['platform'], async (request, response, user) => {
+  app.post('/v1/activity', allow(['platform'], async (request, response, user) => {
     const { requestId, ...activity } = parse(schema.activity, request.body);
     if (activity.platformId !== user.platformId) throw new ApiError('ERR_UNAUTHORIZED', 403, 'Platform identity mismatch.');
     response.json(await ledger.submit(user.actor, 'ActivityContract:RecordActivityAttestation', {
       arguments: [JSON.stringify(activity), requestId],
     }));
   }));
-  app.post('/v1/readings', protect(auth, ['oracle'], async (request, response, user) => {
+  app.post('/v1/readings', allow(['oracle'], async (request, response, user) => {
     const body = parse(schema.observation, request.body);
     response.json(await ledger.submit(user.actor, 'OracleQuorumContract:SubmitReading', {
       arguments: [JSON.stringify(body)],
     }));
   }));
 
-  app.post('/v1/reading-window-close', protect(auth, ['oracle'], async (request, response, user) => {
+  app.post('/v1/reading-window-close', allow(['oracle'], async (request, response, user) => {
     const { zone, windowStart } = parse(schema.demoWindow, request.body);
     response.json(await ledger.submit(user.actor, 'OracleQuorumContract:CloseDemoWindow', {
       arguments: [zone, String(windowStart)],
@@ -137,14 +149,14 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   }));
 
   const policyReaders: schema.Role[] = ['worker', 'platform', 'insurer', 'bank', 'regulator'];
-  app.get('/v1/policies/:id', protect(auth, policyReaders, async (request, response, user) => {
+  app.get('/v1/policies/:id', allow(policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
     checkWorkerPolicy(user, id);
     const policy = await ledger.evaluate<PolicyOwner>(user.actor, 'PolicyContract:GetPolicy', [id]);
     checkPolicyOwner(user, id, policy);
     response.json(policy);
   }));
-  const policyPayouts = protect(auth, policyReaders, async (request, response, user) => {
+  const policyPayouts = allow(policyReaders, async (request, response, user) => {
     const id = parse(schema.id, request.params.id);
     checkWorkerPolicy(user, id);
     if (user.role === 'worker' || user.role === 'platform') {
@@ -156,50 +168,54 @@ export function createApp({ ledger, auth, saltKey, readinessActor, settlementEna
   });
   app.get('/v1/policies/:id/payouts', policyPayouts);
   app.get('/v1/policies/:id/claims', policyPayouts);
-  app.get('/v1/payouts/:id', protect(auth, ['insurer', 'regulator'], async (request, response, user) => {
+  app.get('/v1/payouts/:id', allow(['insurer', 'regulator'], async (request, response, user) => {
     const id = parse(schema.payoutID, request.params.id);
     response.json(await ledger.evaluate(user.actor, 'PayoutContract:GetPayout', [id]));
   }));
-  app.get('/v1/events/detail', protect(auth, [...policyReaders, 'oracle'], async (request, response, user) => {
+  app.get('/v1/events/detail', allow([...policyReaders, 'oracle'], async (request, response, user) => {
     const key = parse(schema.eventKey, request.query.key);
     response.json(await ledger.evaluate(user.actor, 'OracleQuorumContract:GetEvent', [key]));
   }));
-  app.get('/v1/ledger-proof/:id', protect(auth, policyReaders, async (request, response) => {
+  app.get('/v1/ledger-proof/:id', allow(policyReaders, async (request, response) => {
     const txId = parse(schema.payoutID, request.params.id);
     const proof = await findProof?.(txId);
     if (!proof) throw new ApiError('ERR_NOT_FOUND', 404, 'Ledger proof has not reached the event index.');
     response.json(proof);
   }));
-  app.get('/v1/metrics', protect(auth, ['insurer', 'regulator'], async (_request, response) => {
+  app.get('/v1/metrics', allow(['insurer', 'regulator'], async (_request, response) => {
     response.json(deploymentMetrics?.() ?? { mvccRetries: 0 });
   }));
-  app.get('/v1/benchmarks/latest', protect(auth, ['insurer', 'regulator'], async (_request, response) => {
+  app.get('/v1/benchmarks/latest', allow(['insurer', 'regulator'], async (_request, response) => {
     response.json({ run: await loadBenchmark?.() ?? null });
   }));
-  app.post('/v1/simulations', protect(auth, ['insurer'], async (request, response) => {
+  app.post('/v1/simulations', allow(['insurer'], async (request, response) => {
     if (!runSimulation) throw new ApiError('ERR_ORACLE_UNAVAILABLE', 503, 'The simulated oracle service is unavailable.');
     const input = parse(schema.simulation, request.body);
-    response.json(await runSimulation(request.get('authorization')!, input));
+    const accessCookie = request.get('cookie')?.match(/(?:^|;\s*)ps_access=[A-Za-z0-9_-]{43}(?=;|$)/)?.[0].replace(/^;\s*/, '');
+    const credentials: Record<string, string> = accessCookie
+      ? { Cookie: accessCookie }
+      : { Authorization: request.get('authorization')! };
+    response.json(await runSimulation(credentials, input));
   }));
-  app.get('/v1/events/:zone', protect(auth, [...policyReaders, 'oracle'], async (request, response, user) => {
+  app.get('/v1/events/:zone', allow([...policyReaders, 'oracle'], async (request, response, user) => {
     const zone = parse(schema.zone, request.params.zone);
     const page = parse(schema.page, request.query);
     response.json(await ledger.evaluate(user.actor, 'OracleQuorumContract:ListEvents', [zone, String(page.size), page.bookmark]));
   }));
-  app.get('/v1/summary/:zone', protect(auth, ['insurer', 'regulator'], async (request, response, user) => {
+  app.get('/v1/summary/:zone', allow(['insurer', 'regulator'], async (request, response, user) => {
     const zone = parse(schema.zone, request.params.zone);
     const page = parse(schema.policyList, request.query);
     response.json(await ledger.evaluate(user.actor, 'PolicyContract:ListPoliciesByZone', [zone, page.status, String(page.size), page.bookmark]));
   }));
-  app.get('/v1/reconciliation/:zone', protect(auth, ['regulator'], async (request, response, user) => {
+  app.get('/v1/reconciliation/:zone', allow(['regulator'], async (request, response, user) => {
     const zone = parse(schema.zone, request.params.zone);
     const page = parse(schema.reconciliation, request.query);
     response.json(await ledger.evaluate(user.actor, 'AuditContract:Reconcile', [page.week, zone, String(page.size), page.bookmark]));
   }));
-  app.get('/v1/config', protect(auth, ['insurer', 'regulator'], async (_request, response, user) => {
+  app.get('/v1/config', allow(['insurer', 'regulator'], async (_request, response, user) => {
     response.json(await ledger.evaluate(user.actor, 'ConfigContract:GetConfig'));
   }));
-  app.put('/v1/config', protect(auth, ['insurer'], async (request, response, user) => {
+  app.put('/v1/config', allow(['insurer'], async (request, response, user) => {
     const { config, requestId } = parse(schema.configUpdate, request.body);
     response.json(await ledger.submit(user.actor, 'ConfigContract:SetConfig', { arguments: [JSON.stringify(config), requestId] }));
   }));

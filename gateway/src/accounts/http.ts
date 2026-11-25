@@ -1,0 +1,203 @@
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import type { Express, Request, Response } from 'express';
+import { z } from 'zod';
+import type { Principal } from '../auth.js';
+import { ApiError } from '../errors.js';
+import { Mfa } from './mfa.js';
+import { PasswordHasher, passwordError } from './password.js';
+import { SqliteAccounts, type Account } from './repository.js';
+import { Sessions } from './sessions.js';
+
+const username = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$/);
+const loginBody = z.strictObject({
+  username, accessCode: z.string().min(1).max(256),
+  mfa: z.strictObject({ code: z.string().regex(/^(\d{6}|[A-Za-z0-9_-]{20})$/), recovery: z.boolean() }).optional(),
+});
+const registration = z.strictObject({
+  username, accessCode: z.string().min(1).max(256),
+  platformId: z.enum(['zomato', 'swiggy']),
+});
+const empty = z.strictObject({});
+const invalid = () => new ApiError('ERR_AUTHENTICATION', 401, 'Sign-in could not be completed.');
+const validCsrf = /^[A-Za-z0-9_-]{43}$/;
+
+function cookies(request: Request): Map<string, string> {
+  const entries = new Map<string, string>();
+  for (const item of (request.get('cookie') ?? '').split(';')) {
+    const index = item.indexOf('=');
+    if (index < 1) continue;
+    const name = item.slice(0, index).trim();
+    if (!['ps_access', 'ps_refresh', 'ps_csrf'].includes(name)) continue;
+    if (entries.has(name)) throw invalid();
+    entries.set(name, item.slice(index + 1).trim());
+  }
+  return entries;
+}
+
+function parse<T>(schema: z.ZodType<T>, value: unknown): T {
+  const result = schema.safeParse(value);
+  if (!result.success) throw new ApiError('ERR_VALIDATION', 400, 'The request did not match the expected schema.');
+  return result.data;
+}
+
+type Options = {
+  store: SqliteAccounts;
+  hasher: PasswordHasher;
+  mfa: Mfa;
+  sessions: Sessions;
+  origin: string;
+};
+
+class Attempts {
+  private readonly windows = new Map<string, { count: number; expiry: number }>();
+
+  hit(key: string, max: number, windowMs: number) {
+    const now = Date.now();
+    if (this.windows.size >= 10_000) {
+      for (const [entry, window] of this.windows) if (window.expiry <= now) this.windows.delete(entry);
+      if (this.windows.size >= 10_000 && !this.windows.has(key)) this.reject(windowMs);
+    }
+    const existing = this.windows.get(key);
+    const window = existing && existing.expiry > now ? existing : { count: 0, expiry: now + windowMs };
+    if (window.count >= max) this.reject(window.expiry - now);
+    window.count++;
+    this.windows.set(key, window);
+  }
+
+  clear(key: string) { this.windows.delete(key); }
+
+  private reject(wait: number): never {
+    throw new ApiError('ERR_RATE_LIMIT', 429, 'Too many attempts. Try again in ' + Math.ceil(wait / 1000) + ' seconds.');
+  }
+}
+
+export class AccountHttp {
+  private readonly attempts = new Attempts();
+  private readonly secure: boolean;
+
+  constructor(private readonly options: Options) {
+    const url = new URL(options.origin);
+    this.secure = url.protocol === 'https:' || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  }
+
+  private origin(request: Request): void {
+    if (request.get('origin') !== this.options.origin) this.rejectCsrf();
+  }
+
+  private rejectCsrf(): never {
+    throw new ApiError('ERR_CSRF', 403, 'The request could not be verified.');
+  }
+
+  private csrf(request: Request): string {
+    this.origin(request);
+    const header = request.get('x-csrf-token') ?? '';
+    const stored = cookies(request).get('ps_csrf') ?? '';
+    if (!validCsrf.test(header) || !validCsrf.test(stored) ||
+      !timingSafeEqual(Buffer.from(header), Buffer.from(stored))) this.rejectCsrf();
+    return header;
+  }
+
+  private setCookie(response: Response, name: string, value: string, maxAge: number): void {
+    response.cookie(name, value, { httpOnly: true, sameSite: 'strict', secure: this.secure, path: '/', maxAge });
+  }
+
+  private setTokens(response: Response, access: string, refresh: string): void {
+    this.setCookie(response, 'ps_access', access, 5 * 60_000);
+    this.setCookie(response, 'ps_refresh', refresh, 8 * 60 * 60_000);
+  }
+
+  private async current(request: Request) {
+    const access = cookies(request).get('ps_access');
+    const session = access && await this.options.sessions.authenticate(access);
+    if (!session) throw invalid();
+    const account = await this.options.store.findById(session.accountId);
+    if (!account) throw invalid();
+    return { session, account };
+  }
+
+  private publicAccount(account: Account) {
+    return { role: account.role, username: account.username, platformId: account.platformId,
+      ...(account.role === 'worker' && { workerId: account.id, policyId: account.id }) };
+  }
+
+  async principal(request: Request): Promise<Principal | undefined> {
+    if (!cookies(request).has('ps_access')) return undefined;
+    const { session, account } = await this.current(request);
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
+      !this.options.sessions.checkCsrf(session, this.csrf(request))) this.rejectCsrf();
+    if (account.role === 'admin') throw new ApiError('ERR_UNAUTHORIZED', 403, 'This role cannot perform the ledger operation.');
+    const platformId = account.platformId ?? undefined;
+    return { username: account.username, role: account.role, actor: platformId ?? account.role,
+      platformId, ...(account.role === 'worker' && { policyId: account.id, workerId: account.id }) };
+  }
+
+  mount(app: Express): void {
+    app.get('/v1/auth/csrf', (request, response) => {
+      if (!(request.get('origin') === undefined && request.get('sec-fetch-site') === 'same-origin')) this.origin(request);
+      const existing = cookies(request).get('ps_csrf');
+      const token = existing && validCsrf.test(existing) ? existing : randomBytes(32).toString('base64url');
+      this.setCookie(response, 'ps_csrf', token, 8 * 60 * 60_000);
+      response.json({ csrfToken: token });
+    });
+    app.post('/v1/auth/register', async (request, response) => {
+      this.csrf(request);
+      this.attempts.hit('register:' + request.ip, 5, 15 * 60_000);
+      const body = parse(registration, request.body);
+      const problem = passwordError(body.accessCode, [body.username]);
+      if (problem) throw new ApiError('ERR_ACCESS_CODE_POLICY', 400, problem);
+      const passwordHash = await this.options.hasher.hash(body.accessCode);
+      const inserted = await this.options.store.insert({
+        id: randomUUID(), username: body.username, role: 'worker', platformId: body.platformId,
+        passwordHash, createdAt: Date.now(),
+      });
+      if (!inserted) throw new ApiError('ERR_REGISTRATION', 409, 'Registration could not be completed.');
+      response.sendStatus(201);
+    });
+    app.post('/v1/auth/login', async (request, response) => {
+      this.csrf(request);
+      const body = parse(loginBody, request.body);
+      this.attempts.hit('login:' + request.ip, 30, 60_000);
+      const key = createHash('sha256').update(body.username.toLowerCase()).digest('hex');
+      this.attempts.hit('account:' + key, 8, 15 * 60_000);
+      const account = await this.options.store.findByUsername(body.username);
+      const matches = await this.options.hasher.verify(body.accessCode, account?.passwordHash);
+      if (!matches || !account) throw invalid();
+      const result = await this.options.mfa.verify(account, body.mfa);
+      if (result.status === 'invalid') throw invalid();
+      if (result.status === 'enrol' || result.status === 'challenge') {
+        response.status(202).json(result);
+        return;
+      }
+      this.attempts.clear('account:' + key);
+      const session = await this.options.sessions.start(account.id);
+      this.setTokens(response, session.access, session.refresh);
+      this.setCookie(response, 'ps_csrf', session.csrf, 8 * 60 * 60_000);
+      response.json({ ...this.publicAccount(account), csrfToken: session.csrf, recoveryCodes: result.recoveryCodes ?? [] });
+    });
+    app.get('/v1/auth/session', async (request, response) => {
+      const { account } = await this.current(request);
+      response.json(this.publicAccount(account));
+    });
+    app.post('/v1/auth/refresh', async (request, response) => {
+      const csrf = this.csrf(request);
+      parse(empty, request.body);
+      const refresh = cookies(request).get('ps_refresh');
+      if (!refresh) throw invalid();
+      const rotated = await this.options.sessions.refresh(refresh, csrf);
+      if (!rotated.access || !rotated.refresh) throw invalid();
+      this.setTokens(response, rotated.access, rotated.refresh);
+      response.sendStatus(204);
+    });
+    for (const [route, everywhere] of [['logout', false], ['logout-everywhere', true]] as const) {
+      app.post('/v1/auth/' + route, async (request, response) => {
+        const csrf = this.csrf(request);
+        parse(empty, request.body);
+        const { account, session } = await this.current(request);
+        if (!this.options.sessions.checkCsrf(session, csrf)) this.rejectCsrf();
+        await this.options.sessions.revoke(account.id, everywhere ? undefined : session.id);
+        for (const cookie of ['ps_access', 'ps_refresh', 'ps_csrf']) this.setCookie(response, cookie, '', 0);
+        response.sendStatus(204);
+      });
+    }
+  }
+}

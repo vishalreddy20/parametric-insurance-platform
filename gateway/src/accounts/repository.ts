@@ -15,6 +15,7 @@ export interface Account {
 export interface AccountRepository {
   insert(account: Account): Promise<boolean>;
   findByUsername(username: string): Promise<Account | undefined>;
+  findById(id: string): Promise<Account | undefined>;
 }
 
 const migrations = [
@@ -43,6 +44,16 @@ const migrations = [
     hash TEXT PRIMARY KEY,
     sessionId TEXT NOT NULL REFERENCES sessions(id)
   ) STRICT;`,
+  `CREATE TABLE account_mfa (
+    accountId TEXT PRIMARY KEY REFERENCES accounts(id),
+    secret TEXT NOT NULL,
+    lastCounter INTEGER NOT NULL DEFAULT -1
+  ) STRICT;
+  CREATE TABLE recovery_codes (
+    accountId TEXT NOT NULL REFERENCES accounts(id),
+    hash TEXT NOT NULL,
+    PRIMARY KEY (accountId, hash)
+  ) STRICT;`,
 ];
 
 export interface Session {
@@ -66,7 +77,14 @@ export interface SessionRepository {
   revokeSessions(accountId: string, now: number, id?: string): Promise<void>;
 }
 
-export class SqliteAccounts implements AccountRepository, SessionRepository {
+export interface MfaRepository {
+  getMfa(accountId: string): Promise<{ secret: string; lastCounter: number } | undefined>;
+  prepareMfa(accountId: string, secret: string): Promise<void>;
+  acceptTotp(accountId: string, secret: string, counter: number, recoveryHashes: string[]): Promise<boolean>;
+  consumeRecovery(accountId: string, hash: string): Promise<boolean>;
+}
+
+export class SqliteAccounts implements AccountRepository, SessionRepository, MfaRepository {
   private readonly database: Database.Database;
 
   constructor(path: string) {
@@ -97,6 +115,37 @@ export class SqliteAccounts implements AccountRepository, SessionRepository {
   async findByUsername(username: string): Promise<Account | undefined> {
     return this.database.prepare(`SELECT id, username, role, passwordHash, platformId, createdAt
       FROM accounts WHERE username = ?`).get(username) as Account | undefined;
+  }
+
+  async findById(id: string): Promise<Account | undefined> {
+    return this.database.prepare(`SELECT id, username, role, passwordHash, platformId, createdAt
+      FROM accounts WHERE id = ?`).get(id) as Account | undefined;
+  }
+
+  async getMfa(accountId: string): Promise<{ secret: string; lastCounter: number } | undefined> {
+    return this.database.prepare('SELECT secret, lastCounter FROM account_mfa WHERE accountId = ?')
+      .get(accountId) as { secret: string; lastCounter: number } | undefined;
+  }
+
+  async prepareMfa(accountId: string, secret: string): Promise<void> {
+    this.database.prepare('INSERT INTO account_mfa (accountId, secret) VALUES (?, ?) ON CONFLICT(accountId) DO NOTHING')
+      .run(accountId, secret);
+  }
+
+  async acceptTotp(accountId: string, secret: string, counter: number, recoveryHashes: string[]): Promise<boolean> {
+    return this.database.transaction(() => {
+      const result = this.database.prepare(`UPDATE account_mfa SET lastCounter = ?
+        WHERE accountId = ? AND secret = ? AND lastCounter < ?`).run(counter, accountId, secret, counter);
+      if (result.changes !== 1) return false;
+      const insert = this.database.prepare('INSERT INTO recovery_codes VALUES (?, ?)');
+      for (const hash of recoveryHashes) insert.run(accountId, hash);
+      return true;
+    }).immediate();
+  }
+
+  async consumeRecovery(accountId: string, hash: string): Promise<boolean> {
+    return this.database.prepare('DELETE FROM recovery_codes WHERE accountId = ? AND hash = ?')
+      .run(accountId, hash).changes === 1;
   }
 
   async insertSession(session: Session): Promise<void> {

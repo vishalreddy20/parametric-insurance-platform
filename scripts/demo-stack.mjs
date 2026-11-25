@@ -63,7 +63,7 @@ async function main() {
     if (error.code !== 'ENOENT') throw error;
     const command = spawnSync(process.execPath, ['scripts/demo-identities.mjs'], {
       cwd: repo, stdio: 'inherit',
-      env: { ...process.env, PARASHIELD_DEMO_IDENTITY_DIR: identityDir, PARASHIELD_DEMO_MASTER: keys.master },
+      env: { ...process.env, PARASHIELD_DEMO_IDENTITY_DIR: identityDir, PARASHIELD_DEMO_MASTER: keys.master, PARASHIELD_SERVICE_IDENTITIES_ONLY: '1' },
     });
     if (command.status !== 0) throw new Error('Simulated identity provisioning failed.');
   }
@@ -83,6 +83,8 @@ async function main() {
       .map((key) => [key, process.env[key]])),
     PARASHIELD_GATEWAY_CONFIG: configPath,
     PARASHIELD_GATEWAY_STATE_DIR: join(state, 'gateway'),
+    PARASHIELD_ACCOUNT_DB: process.env.PARASHIELD_ACCOUNT_DB ?? join(state, 'gateway', 'accounts.sqlite'),
+    ...(process.env.PARASHIELD_PASSWORD_PEPPER && { PARASHIELD_PASSWORD_PEPPER: process.env.PARASHIELD_PASSWORD_PEPPER }),
     PARASHIELD_JWT_KEY: keys.jwt,
     PARASHIELD_PII_SALT_KEY: keys.salt,
     PARASHIELD_ORIGIN: 'http://127.0.0.1:' + browserPort,
@@ -107,7 +109,7 @@ async function main() {
   });
   if (process.env.PARASHIELD_SERVICES_ONLY !== '1') {
     start('Frontend', process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', browserPort, '--strictPort'], {
-      ...common, VITE_DATA_MODE: process.env.VITE_DATA_MODE ?? 'ledger', VITE_GATEWAY_URL: gateway,
+      ...common, VITE_GATEWAY_URL: gateway,
     });
     log('ParaShield frontend: http://127.0.0.1:' + browserPort);
   }

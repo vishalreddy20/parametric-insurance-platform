@@ -50,7 +50,7 @@ test('HTTP routes enforce worker ownership, schema validation and role scope', a
     policyId: 'worker-a', platformId: 'zomato', accessCode },
     { username: 'platform-a', role: 'platform', actor: 'platform-a', platformId: 'zomato', accessCode }], Buffer.alloc(32, 1));
   const logs: Record<string, unknown>[] = [];
-  const server = createApp({ ledger, auth, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
+  const server = createApp({ ledger, auth, testFixtureAuth: true, saltKey: Buffer.alloc(32), readinessActor: 'insurer',
     settlementEnabled: false, simulatePremium: async (payment) => payment, log: (entry) => logs.push(entry) }).listen(0, '127.0.0.1');
   context.after(() => { server.close(); });
   await once(server, 'listening');

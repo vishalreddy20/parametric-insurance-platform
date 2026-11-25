@@ -22,6 +22,7 @@ trap cleanup EXIT
 
 npm --prefix gateway run build
 npm --prefix oracles run build
+export PARASHIELD_TEST_FIXTURE_AUTH=1
 export PARASHIELD_DEMO_IDENTITY_DIR="$run_dir/msp"
 export PARASHIELD_DEMO_MASTER="$(openssl rand -hex 32)"
 export PARASHIELD_JWT_KEY="$(openssl rand -hex 32)"

@@ -1,45 +1,51 @@
-import { lazy, Suspense, useCallback, useState } from 'react';
-import type { DataProvider, Session } from './data/provider';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import type { Session } from './data/provider';
 import { ledgerProvider } from './data/ledger-provider';
+import { readableError } from './data/use-resource';
 
 const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
 const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard').then((module) => ({ default: module.WorkerDashboard })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then((module) => ({ default: module.AdminPanel })));
-const demoEnabled = import.meta.env.VITE_DATA_MODE === 'demo';
+const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
 
-function AppViews({ provider }: { provider: DataProvider }) {
-  const [view, setView] = useState<'landing' | 'sign-in'>('landing');
+function AppViews() {
+  const [view, setView] = useState<'landing' | 'sign-in' | 'register'>('landing');
   const [session, setSession] = useState<Session | null>(null);
   const [message, setMessage] = useState('');
-  const logout = useCallback(() => { setSession(null); setMessage(''); setView('landing'); }, []);
+  const [initializing, setInitializing] = useState(true);
+  useEffect(() => {
+    let active = true;
+    void provider.currentSession().then((current) => { if (active) setSession(current); })
+      .catch(() => {}).finally(() => { if (active) setInitializing(false); });
+    return () => { active = false; };
+  }, []);
   const expired = useCallback(() => { setSession(null); setMessage('Your session expired. Sign in again.'); setView('sign-in'); }, []);
+  const logout = useCallback(() => {
+    if (!session) return;
+    setMessage('');
+    void provider.signOut(session).then(() => { setSession(null); setView('landing'); })
+      .catch((error) => setMessage(readableError(error)));
+  }, [session]);
 
-  if (session?.role === 'worker' && session.policyId && session.workerId) {
-    return <WorkerDashboard provider={provider} session={session} onExpired={expired} logout={logout} />;
-  }
-  if (session?.role === 'insurer' || session?.role === 'regulator') {
-    return <AdminPanel provider={provider} session={session} onExpired={expired} logout={logout} />;
-  }
-  if (view === 'landing') return <LandingPage demo={provider.mode === 'demo'} onGetStarted={() => setView('sign-in')} />;
-  return <AuthPage provider={provider} message={message} onBack={logout} onSuccess={(signedIn) => {
-    if (!['worker', 'insurer', 'regulator'].includes(signedIn.role)) {
-      setMessage('This simulated service role uses the API.');
-      return;
-    }
+  if (initializing) return <p role="status">Checking your session…</p>;
+  if (session) return <>
+    {message && <p role="alert">{message}</p>}
+    {session.role === 'worker' && session.policyId && session.workerId
+      ? <WorkerDashboard provider={provider} session={session} onExpired={expired} logout={logout} />
+      : session.role === 'insurer' || session.role === 'regulator'
+        ? <AdminPanel provider={provider} session={session} onExpired={expired} logout={logout} />
+        : <main><h1>Account</h1><p>Role: {session.role}</p><button type="button" onClick={logout}>Sign out</button></main>}
+  </>;
+  if (view === 'landing') return <LandingPage onSignIn={() => setView('sign-in')} onCreateAccount={() => setView('register')} />;
+  return <AuthPage provider={provider} message={message} createAccount={view === 'register'} onBack={() => {
+    setMessage(''); setView('landing');
+  }} onSuccess={(signedIn) => {
     setMessage('');
     setSession(signedIn);
   }} />;
 }
 
-const provider = ledgerProvider(import.meta.env.VITE_GATEWAY_URL ?? 'http://127.0.0.1:8080');
-const DemoApp = lazy(async () => {
-  const { demoProvider } = await import('./data/demo-provider');
-  return { default: () => <AppViews provider={demoProvider} /> };
-});
-
 export default function App() {
-  return <Suspense fallback={<div className="zs-page-loader" role="status"><div className="zs-page-loader-spinner" /><p>Loading ParaShield…</p></div>}>
-    {demoEnabled ? <DemoApp /> : <AppViews provider={provider} />}
-  </Suspense>;
+  return <Suspense fallback={<p role="status">Loading ParaShield…</p>}><AppViews /></Suspense>;
 }

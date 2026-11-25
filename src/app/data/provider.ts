@@ -6,8 +6,7 @@ export type PayoutStatus = 'RESERVED' | 'SETTLED' | 'FAILED';
 export type SimulationMode = 'normal' | 'offline' | 'disagree';
 
 export interface Session {
-  token: string;
-  role: 'worker' | 'platform' | 'insurer' | 'bank' | 'oracle' | 'regulator';
+  role: 'worker' | 'platform' | 'insurer' | 'admin' | 'regulator';
   policyId?: string;
   workerId?: string;
   platformId?: 'zomato' | 'swiggy';
@@ -82,9 +81,16 @@ export interface Reconciliation {
   reservedPaise: number; settledPaise: number; failedPaise: number;
 }
 
+export type SignInResult =
+  | { status: 'enrol'; setupKey: string }
+  | { status: 'challenge' }
+  | { status: 'signed-in'; session: Session; recoveryCodes: string[] };
+
 export interface DataProvider {
-  mode: 'demo' | 'ledger';
-  signIn(username: string, accessCode: string): Promise<Session>;
+  signIn(username: string, accessCode: string, mfa?: { code: string; recovery: boolean }): Promise<SignInResult>;
+  currentSession(): Promise<Session>;
+  signOut(session: Session): Promise<void>;
+  register(username: string, accessCode: string, platformId: 'zomato' | 'swiggy'): Promise<void>;
   policy(session: Session): Promise<Policy | null>;
   enroll(session: Session, terms: Enroll): Promise<Policy>;
   payPremium(session: Session): Promise<{ status: 'PAID' | 'FAILED'; callbackStatus: string }>;

@@ -14,7 +14,6 @@ function Proof({ provider, session, payout, onExpired }: {
   provider: DataProvider; session: Session; payout: Payout; onExpired: () => void;
 }) {
   const load = useCallback(async () => {
-    if (provider.mode === 'demo') return null;
     const [event, proof] = await Promise.all([
       provider.event(session, payout.eventKey),
       payout.txId ? provider.proof(session, payout.txId) : Promise.resolve(null),
@@ -24,7 +23,7 @@ function Proof({ provider, session, payout, onExpired }: {
   const { value, error, loading, refresh } = useResource(load, onExpired);
   if (loading) return <p role="status">Fetching ledger proof…</p>;
   if (error) return <p className="ps-error" role="alert">{error} <button className="btn-secondary" onClick={refresh}>Retry</button></p>;
-  if (!value) return <p className="ps-muted">SIMULATED local record.</p>;
+  if (!value) return <p className="ps-muted">Ledger proof is unavailable.</p>;
   return (
     <div className="ps-proof">
       <dl>
@@ -86,7 +85,7 @@ export function WorkerDashboard({ provider, session, onExpired, logout }: {
 
   return (
     <>
-      <SessionHeader title="Delivery partner dashboard" demo={provider.mode === 'demo'} logout={logout} />
+      <SessionHeader title="Delivery partner dashboard" logout={logout} />
       {policy && <nav className="zs-tab-nav" aria-label="Worker dashboard">
         {tabs.map(({ id, Icon, label }) => <button className={'zs-tab-btn' + (tab === id ? ' is-active' : '')}
           aria-current={tab === id ? 'page' : undefined} key={id} onClick={() => setTab(id)}><Icon size={15} /> {label}</button>)}
@@ -127,7 +126,7 @@ export function WorkerDashboard({ provider, session, onExpired, logout }: {
               <div className="ps-section-heading"><div><strong>{money(payout.amountPaise)}</strong><p>{dateLabel(payout.finalizedAt ?? payout.reservedAt)}</p></div>
                 <span className="badge badge-info">{payout.status}</span></div>
               <button className="btn-secondary" aria-expanded={selected === payout.id}
-                onClick={() => setSelected(selected === payout.id ? undefined : payout.id)}>{provider.mode === 'demo' ? 'Record details' : 'Ledger proof'}</button>
+                onClick={() => setSelected(selected === payout.id ? undefined : payout.id)}>Ledger proof</button>
               {selected === payout.id && <Proof provider={provider} session={session} payout={payout} onExpired={onExpired} />}
             </li>)}</ul>
           </section>}

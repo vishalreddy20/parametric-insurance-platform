@@ -1,3 +1,5 @@
+import { createHmac } from 'node:crypto';
+import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { createApp } from './app.js';
@@ -6,6 +8,11 @@ import { DemoAuth, principalSchema } from './auth.js';
 import { FabricLedger, LedgerIdentityValidationError } from './ledger.js';
 import { callMockUPI, Checkpoints, consumeEvents, Fanout, mockSettlement } from './worker.js';
 import { id } from './schema.js';
+import { AccountHttp } from './accounts/http.js';
+import { Mfa } from './accounts/mfa.js';
+import { PasswordHasher } from './accounts/password.js';
+import { SqliteAccounts } from './accounts/repository.js';
+import { Sessions } from './accounts/sessions.js';
 
 const configSchema = z.strictObject({
   identities: z.record(id, z.strictObject({
@@ -29,6 +36,9 @@ const envSchema = z.object({
   PARASHIELD_GATEWAY_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   PARASHIELD_GATEWAY_HOST: z.string().default('127.0.0.1'),
   PARASHIELD_ORIGIN: z.url().optional(),
+  PARASHIELD_TEST_FIXTURE_AUTH: z.literal('1').optional(),
+  PARASHIELD_ACCOUNT_DB: z.string().min(1).optional(),
+  PARASHIELD_PASSWORD_PEPPER: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
   PARASHIELD_ORACLE_URL: z.url().optional(),
   PARASHIELD_BENCHMARK_REPORT: z.string().min(1).optional(),
   PARASHIELD_UPI_URL: z.url().optional(),
@@ -61,7 +71,25 @@ async function main() {
     throw error;
   }
   const settlement = upiURL && upiAuth ? mockSettlement(upiURL, upiAuth) : undefined;
-  const app = createApp({ ledger, auth, saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
+  let accountStore: SqliteAccounts | undefined;
+  let accounts: AccountHttp | undefined;
+  try {
+    if (settings.PARASHIELD_ORIGIN) {
+      const pepper = settings.PARASHIELD_PASSWORD_PEPPER;
+      const hasher = await PasswordHasher.create(pepper ? Buffer.from(pepper, 'hex') : undefined);
+      const encryptionKey = createHmac('sha256', Buffer.from(settings.PARASHIELD_JWT_KEY, 'hex')).update('account-mfa-v1').digest();
+      accountStore = new SqliteAccounts(settings.PARASHIELD_ACCOUNT_DB ?? join(settings.PARASHIELD_GATEWAY_STATE_DIR, 'accounts.sqlite'));
+      accounts = new AccountHttp({ origin: settings.PARASHIELD_ORIGIN, store: accountStore, hasher,
+        mfa: new Mfa(accountStore, encryptionKey), sessions: new Sessions(accountStore) });
+    }
+  } catch (error) {
+    accountStore?.close();
+    ledger.close();
+    throw error;
+  }
+  const app = createApp({ ledger, auth, accounts,
+    testFixtureAuth: !accounts && settings.PARASHIELD_TEST_FIXTURE_AUTH === '1',
+    saltKey: Buffer.from(settings.PARASHIELD_PII_SALT_KEY, 'hex'),
     readinessActor: config.insurer, settlementEnabled: Boolean(settlement),
     simulatePremium: upiURL && upiAuth ? (payment) => callMockUPI(upiURL, upiAuth, '/v1/premiums', payment) : undefined,
     corsOrigin: settings.PARASHIELD_ORIGIN,
@@ -76,10 +104,10 @@ async function main() {
         throw error;
       }
     },
-    runSimulation: settings.PARASHIELD_ORACLE_URL ? async (authorization, body) => {
+    runSimulation: settings.PARASHIELD_ORACLE_URL ? async (credentials, body) => {
       try {
         const service = await fetch(new URL('/v1/simulations', settings.PARASHIELD_ORACLE_URL), {
-          method: 'POST', headers: { Authorization: authorization, 'Content-Type': 'application/json' },
+          method: 'POST', headers: { ...credentials, 'Content-Type': 'application/json' },
           body: JSON.stringify(body), signal: AbortSignal.timeout(90_000),
         });
         if (service.ok) return await service.json();
@@ -95,6 +123,7 @@ async function main() {
   try {
     await new Promise<void>((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
   } catch (error) {
+    accountStore?.close();
     ledger.close();
     throw error;
   }
@@ -112,7 +141,7 @@ async function main() {
     const drained = new Promise<void>((resolve) => { server.close(() => resolve()); });
     const force = setTimeout(() => { server.closeAllConnections(); ledger.close(); }, 20_000);
     force.unref();
-    void Promise.allSettled([background, drained]).finally(() => { ledger.close(); clearTimeout(force); });
+    void Promise.allSettled([background, drained]).finally(() => { accountStore?.close(); ledger.close(); clearTimeout(force); });
   };
   process.once('SIGTERM', shutdown);
   process.once('SIGINT', shutdown);

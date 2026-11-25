@@ -51,7 +51,7 @@ export function AdminPanel({ provider, session, onExpired, logout }: {
 
   return (
     <>
-      <SessionHeader title={regulator ? 'Read-only regulator view' : 'Insurer dashboard'} logout={logout} demo={provider.mode === 'demo'} />
+      <SessionHeader title={regulator ? 'Read-only regulator view' : 'Insurer dashboard'} logout={logout} />
       <main className="ps-main">
         <div className="ps-section-heading"><h2>{regulator ? 'Ledger audit' : 'Coverage and events'}</h2>
           <button className="btn-secondary" disabled={loading} onClick={refresh}><RefreshCw size={15} /> Refresh</button></div>

@@ -56,14 +56,19 @@ and starts the API, simulator, mock UPI and frontend. Open
 http://127.0.0.1:5173. Health and ledger readiness are available at
 `http://127.0.0.1:8080/health` and `http://127.0.0.1:8080/ready`.
 
-The launcher prints the writable runtime path and the generated local demo
-credentials manifest path. See the [five-minute demo](docs/DEMO.md) to use the
-worker, insurer and regulator identities. Ctrl+C stops the application
-services. Export the printed `DRUNIX_RUNTIME` and run
-`scripts/network-down.sh` to delete sample ledger volumes.
+The launcher prints the writable DRUNIX runtime and external application state
+paths. Workers can create their own account from the sign-in page. Staff
+accounts require interactive provisioning. Use the account database in the
+external application state directory printed by the launcher.
 
-For the local fixture view, run `npm ci` then
-`VITE_DATA_MODE=demo npm run dev`. It uses simulated local records.
+```bash
+export PARASHIELD_ACCOUNT_DB=/path/to/external-state/ledger-data/gateway/accounts.sqlite
+scripts/provision-user.sh insurer your-insurer-username
+```
+
+Staff set up an authenticator on first sign-in. Keep recovery codes private.
+Set the same `PARASHIELD_PASSWORD_PEPPER` for the launcher and provisioning
+command if you configure a pepper. See [authentication details](docs/SECURITY.md).
 
 ## Configuration
 
